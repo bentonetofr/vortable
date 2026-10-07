@@ -90,6 +90,7 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
       },
       deleteSelected: () => editor()?.deleteSelected(),
       centerOnZone: () => editor()?.centerOnZone(),
+      scene: () => editor(),
       editCharacter: opts.onEditCharacter,
       curate: opts.curate
         ? async (pack, id, override) => {

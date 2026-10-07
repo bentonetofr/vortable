@@ -1,28 +1,42 @@
 // ────────────────────────────────────────────────────────
 // Cena do editor: mostra a zona e aplica as ferramentas com o mouse.
 //   pincel/borracha: pinta os vértices de um quadrado de N×N tiles
+//                    (Shift + clique: linha reta desde o último ponto)
 //   balde: troca todos os vértices ligados com o mesmo terreno
-//   objeto: carimba o objeto escolhido (fantasma segue o mouse)
-//   selecionar: clica num objeto pra selecionar/arrastar; Del apaga
+//   objeto: carimba o objeto escolhido; arrastando, vai carimbando
+//           espaçado (Shift: variante e espelho sorteados)
+//   selecionar: clique seleciona (Shift/Ctrl soma), arrastar no vazio faz
+//               um retângulo de seleção, arrastar um objeto move o grupo
 //   saída: arraste pra desenhar a área que leva a outra zona; clique pra
 //          selecionar/arrastar; Del apaga (o destino se escolhe no painel)
 //   início: onde o jogador aparece
 //   Alt+clique: conta-gotas (copia terreno ou objeto)
-// Câmera: botão do meio/direito (ou Espaço + arrastar) move, roda dá zoom.
+// Câmera: roda dá zoom suave (no cursor); Espaço + arrastar, botão do
+// meio/direito ou setas/WASD movem; Alt + roda muda o pincel.
 // ────────────────────────────────────────────────────────
 
 import Phaser from 'phaser'
-import { objectDef, objectSolids, sheetTexture } from '../assets/objects'
+import { objectDef, objectSolids, sheetTexture, variantsOf } from '../assets/objects'
 import { isFence, isOverlay, terrainById } from '../assets/terrains'
 import { FenceLayer, fenceAt, fenceSolids } from '../world/fences'
 import { Ground, cornerTerrain, overlayTerrain, solidTerrainRects } from '../world/ground'
 import { createObjectSprite, updateObjectSprite, type ObjectSprite } from '../world/objects'
+import { isTyping } from '../world/Player'
 import { TILE, newId, type Portal, type ZoneObject } from '../types'
 import type { EditorState } from './EditorState'
 
-const ZOOM_MIN = 0.25
-const ZOOM_MAX = 4
+export const ZOOM_MIN = 0.1
+export const ZOOM_MAX = 8
+/** Quanto a roda mexe no zoom por pixel de rolagem (uma "trava" da roda ≈ 100px ≈ ×1,16). */
+const WHEEL_ZOOM = 0.0015
+/** Velocidade da animação do zoom (maior = chega mais rápido no alvo). */
+const ZOOM_EASE = 18
+/** Velocidade do movimento da tela pelo teclado, em px de tela por segundo. */
+const PAN_SPEED = 700
 const SELECT_TINT = 0x9fd3ff
+const BRUSH_MAX = 8
+
+type Keys = Record<'up' | 'down' | 'left' | 'right' | 'w' | 'a' | 's' | 'd' | 'shift', Phaser.Input.Keyboard.Key>
 
 export class EditorScene extends Phaser.Scene {
   private state!: EditorState
@@ -42,11 +56,27 @@ export class EditorScene extends Phaser.Scene {
   /** A pincelada atual já guardou o passo de desfazer? (só guarda se mudar algo) */
   private strokeSaved = false
   private lastPaint: { tx: number; ty: number } | null = null
+  /** Onde a última pincelada terminou (Shift + clique continua dali em linha reta). */
+  private lastStrokeEnd: { tx: number; ty: number } | null = null
   private panning: { x: number; y: number } | null = null
-  private dragging: { index: number; dx: number; dy: number; moved: boolean } | null = null
+  /** Arrastando objetos selecionados: posição inicial de cada um. */
+  private dragging: { start: { x: number; y: number }; from: Map<number, { x: number; y: number }>; moved: boolean } | null = null
+  /** Retângulo de seleção (mundo); `add` = soma à seleção que já existia. */
+  private marquee: { x0: number; y0: number; x1: number; y1: number; add: boolean } | null = null
+  /** Carimbando objetos arrastando: onde saiu o último. */
+  private stamping: { x: number; y: number; random: boolean } | null = null
   private drawingPortal: { x0: number; y0: number; x1: number; y1: number } | null = null
   private movingPortal: { id: string; dx: number; dy: number; moved: boolean } | null = null
   private spaceKey!: Phaser.Input.Keyboard.Key
+  private keys!: Keys
+
+  /**
+   * Zoom pra onde a câmera está indo (anima até lá), o ponto de tela que fica
+   * parado e o ponto do MUNDO que estava ali quando o zoom começou (guardado
+   * uma vez: recalcular a cada quadro acumularia o arredondamento da câmera).
+   */
+  private zoomTarget = 2
+  private zoomAnchor: { x: number; y: number; wx: number; wy: number } | null = null
 
   constructor() {
     super('editor')
@@ -70,13 +100,21 @@ export class EditorScene extends Phaser.Scene {
     this.refreshOverlays()
 
     const cam = this.cameras.main
+    this.zoomTarget = this.state.zoom
     cam.setBackgroundColor('#0b0f18').setZoom(this.state.zoom).setRoundPixels(true)
     this.fitBounds()
     const view = this.state.view ?? this.state.zone.spawn
     cam.centerOn(view.x, view.y)
 
     this.input.mouse?.disableContextMenu()
-    this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE, false)
+    const kb = this.input.keyboard!
+    const K = Phaser.Input.Keyboard.KeyCodes
+    // sem "capturar" as teclas: os campos de texto continuam funcionando
+    this.spaceKey = kb.addKey(K.SPACE, false)
+    this.keys = kb.addKeys({ up: K.UP, down: K.DOWN, left: K.LEFT, right: K.RIGHT, w: K.W, a: K.A, s: K.S, d: K.D, shift: K.SHIFT }, false) as Keys
+    this.spaceKey.on('down', () => this.updateCursorStyle())
+    this.spaceKey.on('up', () => this.updateCursorStyle())
+
     this.input.on('pointerdown', this.onDown, this)
     this.input.on('pointermove', this.onMove, this)
     this.input.on('pointerup', this.onUp, this)
@@ -100,8 +138,109 @@ export class EditorScene extends Phaser.Scene {
     })
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       off()
+      this.input.setDefaultCursor('')
       this.state.view = { x: cam.midPoint.x, y: cam.midPoint.y }
     })
+  }
+
+  // ── Câmera ─────────────────────────────────────────────
+
+  update(_time: number, delta: number) {
+    const cam = this.cameras.main
+    const dt = Math.min(delta, 50) / 1000
+
+    // zoom anima até o alvo, em escala logarítmica (cada passo "parece" igual)
+    if (cam.zoom !== this.zoomTarget) {
+      const a = 1 - Math.exp(-ZOOM_EASE * dt)
+      let z = Math.exp(Math.log(cam.zoom) + (Math.log(this.zoomTarget) - Math.log(cam.zoom)) * a)
+      if (Math.abs(Math.log(z / this.zoomTarget)) < 0.002) z = this.zoomTarget
+      this.applyZoom(z, this.zoomAnchor ?? this.anchorAt(cam.width / 2, cam.height / 2))
+      if (z === this.zoomTarget) this.zoomAnchor = null
+    }
+
+    // setas/WASD movem a tela (setas empurram os objetos selecionados — ver nudge)
+    if (this.keyboardFree()) {
+      const k = this.keys
+      const arrowsMoveView = !(this.state.tool === 'select' && this.state.selected.length)
+      let dx = 0, dy = 0
+      if (k.a.isDown || (arrowsMoveView && k.left.isDown)) dx -= 1
+      if (k.d.isDown || (arrowsMoveView && k.right.isDown)) dx += 1
+      if (k.w.isDown || (arrowsMoveView && k.up.isDown)) dy -= 1
+      if (k.s.isDown || (arrowsMoveView && k.down.isDown)) dy += 1
+      if (dx || dy) {
+        const speed = (PAN_SPEED * (k.shift.isDown ? 2.5 : 1) * dt) / cam.zoom
+        this.panBy(dx * speed, dy * speed)
+      }
+    }
+  }
+
+  /** Teclas de câmera só valem fora de campos de texto e janelas. */
+  private keyboardFree() {
+    return !isTyping() && !this.state.modalOpen && !(document.activeElement as HTMLElement | null)?.closest?.('.vt-modal')
+  }
+
+  /** Ponto de tela (px) + o ponto do mundo que está nele agora. */
+  private anchorAt(x: number, y: number) {
+    const cam = this.cameras.main
+    // a câmera do Phaser dá zoom em volta do centro: mundo = scroll + w/2 + (tela − w/2)/zoom
+    const hw = cam.width / 2, hh = cam.height / 2
+    return { x, y, wx: cam.scrollX + hw + (x - hw) / cam.zoom, wy: cam.scrollY + hh + (y - hh) / cam.zoom }
+  }
+
+  /** Muda o zoom mantendo o ponto do mundo `anchor.wx/wy` no ponto de tela `anchor.x/y`. */
+  private applyZoom(z: number, anchor: { x: number; y: number; wx: number; wy: number }) {
+    const cam = this.cameras.main
+    const hw = cam.width / 2, hh = cam.height / 2
+    cam.setZoom(z)
+    cam.scrollX = anchor.wx - hw - (anchor.x - hw) / z
+    cam.scrollY = anchor.wy - hh - (anchor.y - hh) / z
+    this.state.zoom = z
+    this.state.emit('view')
+    this.afterView()
+  }
+
+  /** Move a tela (unidades do mundo). Um zoom em andamento passa a segurar o ponto novo. */
+  private panBy(dx: number, dy: number) {
+    const cam = this.cameras.main
+    cam.scrollX += dx
+    cam.scrollY += dy
+    if (this.zoomAnchor) this.zoomAnchor = this.anchorAt(this.zoomAnchor.x, this.zoomAnchor.y)
+    this.afterView()
+  }
+
+  /** O que depende do zoom/posição da câmera (espessura das linhas, rótulos). */
+  private afterView() {
+    this.drawSelection()
+    this.drawPortals()
+    this.drawCursor(this.input.activePointer)
+  }
+
+  /** Zoom relativo (×factor), animado; `anchor` em px de tela (padrão: centro). */
+  zoomBy(factor: number, anchor?: { x: number; y: number }) {
+    this.zoomTo(this.zoomTarget * factor, anchor)
+  }
+
+  zoomTo(z: number, anchor?: { x: number; y: number }) {
+    this.zoomTarget = Phaser.Math.Clamp(z, ZOOM_MIN, ZOOM_MAX)
+    const cam = this.cameras.main
+    const at = anchor ?? { x: cam.width / 2, y: cam.height / 2 }
+    // mesmo ponto de tela de uma rolagem anterior ainda em andamento: mantém o ponto do mundo
+    if (!this.zoomAnchor || Math.abs(this.zoomAnchor.x - at.x) > 1 || Math.abs(this.zoomAnchor.y - at.y) > 1) this.zoomAnchor = this.anchorAt(at.x, at.y)
+  }
+
+  /** Enquadra a zona inteira na tela. */
+  fitZone() {
+    const z = this.state.zone, cam = this.cameras.main
+    const fit = Math.min(cam.width / (z.width * TILE + 96), cam.height / (z.height * TILE + 96))
+    this.zoomTarget = Phaser.Math.Clamp(fit, ZOOM_MIN, ZOOM_MAX)
+    this.zoomAnchor = null
+    this.applyZoom(this.zoomTarget, this.anchorAt(cam.width / 2, cam.height / 2))
+    this.centerOnZone()
+  }
+
+  private updateCursorStyle() {
+    const grab = this.spaceKey.isDown && this.keyboardFree()
+    this.input.setDefaultCursor(this.panning ? 'grabbing' : grab ? 'grab' : '')
   }
 
   // ── Construção ─────────────────────────────────────────
@@ -111,6 +250,7 @@ export class EditorScene extends Phaser.Scene {
     this.ground.rt.destroy()
     this.ground = new Ground(this, this.state.zone)
     this.fences.setZone(this.state.zone)
+    this.lastStrokeEnd = null
     this.rebuildObjects()
     this.fitBounds()
     this.refreshOverlays()
@@ -122,7 +262,7 @@ export class EditorScene extends Phaser.Scene {
     this.applySelection()
   }
 
-  /** Reaplica cada objeto no seu sprite (espelho, variante) sem refazer tudo. */
+  /** Reaplica cada objeto no seu sprite (espelho, variante, altura) sem refazer tudo. */
   private syncObjects() {
     this.state.zone.objects.forEach((o, i) => {
       const s = this.sprites[i]
@@ -156,8 +296,6 @@ export class EditorScene extends Phaser.Scene {
   // ── Sobreposições ──────────────────────────────────────
 
   private onUiChange() {
-    const cam = this.cameras.main
-    if (cam.zoom !== this.state.zoom) cam.setZoom(this.state.zoom)
     this.applySelection()
     this.refreshOverlays()
     if (this.state.tool === 'object' && this.state.objectKind) {
@@ -191,12 +329,14 @@ export class EditorScene extends Phaser.Scene {
         const def = objectDef(o.kind)
         if (def && !o.z) for (const r of objectSolids(def, o)) this.collisionGfx.fillRect(r.x, r.y, r.w, r.h)
       }
-      // linha do pé do selecionado: quem passa acima dela fica atrás
-      const sel = this.state.selected !== null ? z.objects[this.state.selected] : null
-      const def = sel && objectDef(sel.kind)
-      if (sel && def && (def.kind === 'stand' || def.kind === 'wall')) {
-        this.collisionGfx.lineStyle(1 / this.cameras.main.zoom, 0xfacc15, 1)
-          .lineBetween(sel.x - def.w / 2, sel.y - def.sort, sel.x + def.w / 2, sel.y - def.sort)
+      // linha do pé dos selecionados: quem passa acima dela fica atrás
+      for (const i of this.state.selected) {
+        const sel = z.objects[i]
+        const def = sel && objectDef(sel.kind)
+        if (sel && def && (def.kind === 'stand' || def.kind === 'wall')) {
+          this.collisionGfx.lineStyle(1 / this.cameras.main.zoom, 0xfacc15, 1)
+            .lineBetween(sel.x - def.w / 2, sel.y - def.sort, sel.x + def.w / 2, sel.y - def.sort)
+        }
       }
     }
   }
@@ -244,24 +384,33 @@ export class EditorScene extends Phaser.Scene {
   }
 
   private applySelection() {
-    this.sprites.forEach((s, i) => (i === this.state.selected ? s?.setTint(SELECT_TINT) : s?.clearTint()))
+    const sel = new Set(this.state.selected)
+    this.sprites.forEach((s, i) => (sel.has(i) ? s?.setTint(SELECT_TINT) : s?.clearTint()))
     this.drawSelection()
   }
 
   private drawSelection() {
     const g = this.selectGfx
     g.clear()
-    const s = this.state.selected !== null ? this.sprites[this.state.selected] : null
-    if (!s) return
-    const b = s.getBounds()
     const w = 2 / this.cameras.main.zoom
-    g.lineStyle(w * 2, 0x000000, 0.5).strokeRect(b.x, b.y, b.width, b.height)
-    g.lineStyle(w, 0xffc174, 1).strokeRect(b.x, b.y, b.width, b.height)
-    // elevado: mostra o ponto no chão que decide quem fica na frente
-    const o = this.state.zone.objects[this.state.selected!]
-    if (o?.z) {
-      g.lineStyle(w, 0xffc174, 0.8).lineBetween(o.x, o.y, o.x, o.y - o.z)
-      g.strokeEllipse(o.x, o.y, 10, 5)
+    for (const i of this.state.selected) {
+      const s = this.sprites[i]
+      if (!s) continue
+      const b = s.getBounds()
+      g.lineStyle(w * 2, 0x000000, 0.5).strokeRect(b.x, b.y, b.width, b.height)
+      g.lineStyle(w, 0xffc174, 1).strokeRect(b.x, b.y, b.width, b.height)
+      // elevado: mostra o ponto no chão que decide quem fica na frente
+      const o = this.state.zone.objects[i]
+      if (o?.z) {
+        g.lineStyle(w, 0xffc174, 0.8).lineBetween(o.x, o.y, o.x, o.y - o.z)
+        g.strokeEllipse(o.x, o.y, 10, 5)
+      }
+    }
+    if (this.marquee) {
+      const m = this.marquee
+      const x = Math.min(m.x0, m.x1), y = Math.min(m.y0, m.y1)
+      g.fillStyle(0x9fd3ff, 0.12).fillRect(x, y, Math.abs(m.x1 - m.x0), Math.abs(m.y1 - m.y0))
+      g.lineStyle(w, 0x9fd3ff, 0.9).strokeRect(x, y, Math.abs(m.x1 - m.x0), Math.abs(m.y1 - m.y0))
     }
   }
 
@@ -275,6 +424,12 @@ export class EditorScene extends Phaser.Scene {
     if (tool === 'brush' || tool === 'erase') {
       const { tx0, ty0, n } = this.brushTiles(wx, wy)
       g.lineStyle(px * 2, tool === 'erase' ? 0xef4444 : 0xffc174, 0.9).strokeRect(tx0 * TILE, ty0 * TILE, n * TILE, n * TILE)
+      // Shift: mostra a linha reta que vai sair do último ponto
+      const shift = (p.event as MouseEvent | undefined)?.shiftKey || this.keys?.shift.isDown
+      if (shift && this.lastStrokeEnd && !this.painting) {
+        const from = this.lastStrokeEnd
+        g.lineStyle(px * 2, 0xffc174, 0.6).lineBetween((from.tx + 0.5) * TILE, (from.ty + 0.5) * TILE, (Math.floor(wx / TILE) + 0.5) * TILE, (Math.floor(wy / TILE) + 0.5) * TILE)
+      }
     } else if (tool === 'fill') {
       const vx = Math.round(wx / TILE), vy = Math.round(wy / TILE)
       g.fillStyle(0xffc174, 0.9).fillCircle(vx * TILE, vy * TILE, px * 4)
@@ -290,21 +445,24 @@ export class EditorScene extends Phaser.Scene {
   // ── Mouse ──────────────────────────────────────────────
 
   private onDown(p: Phaser.Input.Pointer) {
+    const ev = p.event as MouseEvent
     if (p.middleButtonDown() || p.rightButtonDown() || this.spaceKey.isDown) {
       this.panning = { x: p.x, y: p.y }
+      this.updateCursorStyle()
       return
     }
     const { tool } = this.state
     const wx = p.worldX, wy = p.worldY
 
-    if ((p.event as MouseEvent).altKey) {
+    if (ev.altKey) {
       this.eyedropper(p)
       return
     }
     if (tool === 'brush' || tool === 'erase') {
       this.strokeSaved = false
       this.painting = true
-      this.lastPaint = null
+      // Shift + clique: linha reta desde onde a última pincelada terminou
+      this.lastPaint = ev.shiftKey && this.lastStrokeEnd ? this.lastStrokeEnd : null
       this.paintAt(wx, wy)
     } else if (tool === 'fill') {
       this.fillAt(wx, wy)
@@ -312,20 +470,26 @@ export class EditorScene extends Phaser.Scene {
       const { x, y } = this.snapped(wx, wy)
       if (!this.inside(x, y)) return
       this.state.checkpoint()
-      const o: ZoneObject = { kind: this.state.objectKind, x, y, ...(this.state.flip ? { flip: true } : {}) }
-      this.state.zone.objects.push(o)
-      this.sprites.push(this.makeSprite(o))
-      this.refreshOverlays()
-      this.state.edited()
+      this.stamping = { x, y, random: ev.shiftKey }
+      this.placeObject(x, y, ev.shiftKey)
     } else if (tool === 'select') {
       const index = this.objectAt(p)
-      this.state.set({ selected: index })
-      if (index !== null) {
-        const o = this.state.zone.objects[index]
-        this.dragging = { index, dx: o.x - wx, dy: o.y - wy, moved: false }
-      } else {
-        this.panning = { x: p.x, y: p.y }
+      const add = ev.shiftKey || ev.ctrlKey || ev.metaKey
+      if (index === null) {
+        // vazio: retângulo de seleção (Shift/Ctrl soma ao que já está)
+        if (!add) this.state.set({ selected: [] })
+        this.marquee = { x0: wx, y0: wy, x1: wx, y1: wy, add }
+        return
       }
+      const sel = this.state.selected
+      if (add) {
+        this.state.set({ selected: sel.includes(index) ? sel.filter((i) => i !== index) : [...sel, index] })
+        if (!this.state.selected.includes(index)) return
+      } else if (!sel.includes(index)) {
+        this.state.set({ selected: [index] })
+      }
+      const from = new Map(this.state.selected.map((i) => [i, { x: this.state.zone.objects[i].x, y: this.state.zone.objects[i].y }]))
+      this.dragging = { start: { x: wx, y: wy }, from, moved: false }
     } else if (tool === 'portal') {
       const hit = this.portalAt(wx, wy)
       if (hit) {
@@ -354,12 +518,27 @@ export class EditorScene extends Phaser.Scene {
 
     if (this.panning) {
       const cam = this.cameras.main
-      cam.scrollX -= (p.x - this.panning.x) / cam.zoom
-      cam.scrollY -= (p.y - this.panning.y) / cam.zoom
+      this.panBy(-(p.x - this.panning.x) / cam.zoom, -(p.y - this.panning.y) / cam.zoom)
       this.panning = { x: p.x, y: p.y }
       return
     }
     if (this.painting) this.paintAt(p.worldX, p.worldY)
+    if (this.stamping) {
+      // carimbo contínuo: um objeto novo a cada "largura" de distância
+      const def = this.state.objectKind ? objectDef(this.state.objectKind) : undefined
+      const gap = Math.max(16, (def?.w ?? 32) * 0.8)
+      const { x, y } = this.snapped(p.worldX, p.worldY)
+      if (Math.hypot(x - this.stamping.x, y - this.stamping.y) >= gap && this.inside(x, y)) {
+        this.stamping.x = x
+        this.stamping.y = y
+        this.placeObject(x, y, this.stamping.random || (p.event as MouseEvent).shiftKey)
+      }
+    }
+    if (this.marquee) {
+      this.marquee.x1 = p.worldX
+      this.marquee.y1 = p.worldY
+      this.drawSelection()
+    }
     if (this.drawingPortal) {
       this.drawingPortal.x1 = p.worldX
       this.drawingPortal.y1 = p.worldY
@@ -381,16 +560,27 @@ export class EditorScene extends Phaser.Scene {
     }
     if (this.dragging) {
       const d = this.dragging
+      let dx = Math.round(p.worldX - d.start.x), dy = Math.round(p.worldY - d.start.y)
+      if (!d.moved && Math.hypot(dx, dy) < 2) return this.drawCursor(p)
       if (!d.moved) {
         this.state.checkpoint()
         d.moved = true
       }
-      const o = this.state.zone.objects[d.index]
-      const { x, y } = this.snapped(p.worldX + d.dx, p.worldY + d.dy)
-      o.x = x
-      o.y = y
-      const s = this.sprites[d.index]
-      if (s) updateObjectSprite(s, o)
+      // com encaixe ligado, o primeiro objeto encaixa e os outros andam junto
+      if (this.state.snap) {
+        const [first] = d.from.values()
+        const s = this.snapped(first.x + dx, first.y + dy)
+        dx = s.x - first.x
+        dy = s.y - first.y
+      }
+      for (const [i, at] of d.from) {
+        const o = this.state.zone.objects[i]
+        if (!o) continue
+        o.x = at.x + dx
+        o.y = at.y + dy
+        const s = this.sprites[i]
+        if (s) updateObjectSprite(s, o)
+      }
       this.drawSelection()
     }
     this.drawCursor(p)
@@ -399,10 +589,32 @@ export class EditorScene extends Phaser.Scene {
   private onUp() {
     if (this.painting) {
       this.painting = false
+      this.lastStrokeEnd = this.lastPaint
       // pincelada que não mudou nada (fora da zona, mesmo terreno) não vira passo
       if (this.strokeSaved) {
         this.refreshOverlays()
         this.state.edited()
+      }
+    }
+    if (this.stamping) {
+      this.stamping = null
+      this.refreshOverlays()
+      this.state.edited()
+    }
+    if (this.marquee) {
+      const m = this.marquee
+      this.marquee = null
+      const x0 = Math.min(m.x0, m.x1), x1 = Math.max(m.x0, m.x1), y0 = Math.min(m.y0, m.y1), y1 = Math.max(m.y0, m.y1)
+      if (x1 - x0 > 2 || y1 - y0 > 2) {
+        const hit: number[] = []
+        this.sprites.forEach((s, i) => {
+          if (!s) return
+          const b = s.getBounds()
+          if (b.right >= x0 && b.x <= x1 && b.bottom >= y0 && b.y <= y1) hit.push(i)
+        })
+        this.state.set({ selected: m.add ? [...new Set([...this.state.selected, ...hit])] : hit })
+      } else {
+        this.drawSelection()
       }
     }
     if (this.dragging?.moved) {
@@ -427,19 +639,26 @@ export class EditorScene extends Phaser.Scene {
     this.movingPortal = null
     this.dragging = null
     this.panning = null
+    this.updateCursorStyle()
   }
 
   private onWheel(p: Phaser.Input.Pointer, _objs: unknown, _dx: number, dy: number) {
+    const ev = p.event as WheelEvent
+    // rolagem por "linhas" (algumas rodas/sistemas) → px
+    const pixels = ev.deltaMode === 1 ? dy * 16 : ev.deltaMode === 2 ? dy * 400 : dy
+    if (ev.altKey) {
+      // Alt + roda: tamanho do pincel
+      ev.preventDefault()
+      if (pixels) this.state.set({ brush: Phaser.Math.Clamp(this.state.brush + (pixels > 0 ? -1 : 1), 1, BRUSH_MAX) })
+      return
+    }
+    // passo proporcional ao quanto rolou: roda dá passos pequenos, trackpad é contínuo
+    const factor = Math.exp(Phaser.Math.Clamp(-pixels * WHEEL_ZOOM, -0.7, 0.7))
+    // ponto do cursor tirado do próprio evento (o ponteiro do Phaser pode estar atrasado)
+    const rect = this.game.canvas.getBoundingClientRect()
     const cam = this.cameras.main
-    const before = cam.getWorldPoint(p.x, p.y)
-    const zoom = Phaser.Math.Clamp(cam.zoom * (dy > 0 ? 0.8 : 1.25), ZOOM_MIN, ZOOM_MAX)
-    cam.setZoom(zoom)
-    const after = cam.getWorldPoint(p.x, p.y)
-    cam.scrollX += before.x - after.x
-    cam.scrollY += before.y - after.y
-    this.state.set({ zoom })
-    this.drawSelection()
-    this.drawPortals()
+    const at = rect.width ? { x: ((ev.clientX - rect.left) * cam.width) / rect.width, y: ((ev.clientY - rect.top) * cam.height) / rect.height } : { x: p.x, y: p.y }
+    this.zoomBy(factor, at)
   }
 
   // ── Ferramentas ────────────────────────────────────────
@@ -574,6 +793,21 @@ export class EditorScene extends Phaser.Scene {
     this.state.edited()
   }
 
+  /** Põe um objeto (o passo de desfazer é guardado por quem chamou). `random` = variante e espelho sorteados. */
+  private placeObject(x: number, y: number, random: boolean) {
+    let kind = this.state.objectKind!
+    let flip = this.state.flip
+    if (random) {
+      const def = objectDef(kind)
+      const variants = def ? variantsOf(def) : []
+      if (variants.length > 1) kind = variants[Math.floor(Math.random() * variants.length)].id
+      flip = Math.random() < 0.5
+    }
+    const o: ZoneObject = { kind, x, y, ...(flip ? { flip: true } : {}) }
+    this.state.zone.objects.push(o)
+    this.sprites.push(this.makeSprite(o))
+  }
+
   private snapped(x: number, y: number) {
     if (!this.state.snap) return { x: Math.round(x), y: Math.round(y) }
     const g = TILE / 2
@@ -627,19 +861,146 @@ export class EditorScene extends Phaser.Scene {
       this.state.emit('ui')
       return
     }
-    const i = this.state.selected
-    if (i === null) return
+    const sel = new Set(this.state.selected)
+    if (!sel.size) return
     this.state.checkpoint()
-    this.state.zone.objects.splice(i, 1)
-    this.sprites.splice(i, 1)[0]?.destroy()
-    this.state.selected = null
+    this.state.zone.objects = this.state.zone.objects.filter((_, i) => !sel.has(i))
+    this.sprites = this.sprites.filter((s, i) => {
+      if (sel.has(i)) s?.destroy()
+      return !sel.has(i)
+    })
+    this.state.selected = []
     this.refreshOverlays()
     this.state.edited()
     this.state.emit('ui')
   }
 
+  /** Seleciona todos os objetos da zona. */
+  selectAll() {
+    this.state.set({ tool: 'select' })
+    this.state.set({ selected: this.state.zone.objects.map((_, i) => i) })
+  }
+
+  /** Copia os selecionados (posições relativas ao centro do grupo). Devolve quantos. */
+  copySelected() {
+    const list = this.state.selected.map((i) => this.state.zone.objects[i]).filter(Boolean)
+    if (!list.length) return 0
+    const cx = list.reduce((a, o) => a + o.x, 0) / list.length
+    const cy = list.reduce((a, o) => a + o.y, 0) / list.length
+    this.state.clipboard = list.map((o) => ({ ...o, x: Math.round(o.x - cx), y: Math.round(o.y - cy) }))
+    return list.length
+  }
+
+  cutSelected() {
+    const n = this.copySelected()
+    if (n) this.deleteSelected()
+    return n
+  }
+
+  /** Cola no mouse (ou no meio da tela); os colados ficam selecionados. */
+  paste(at?: { x: number; y: number }) {
+    const clip = this.state.clipboard
+    if (!clip.length) return 0
+    const p = this.input.activePointer
+    const cam = this.cameras.main
+    const over = p.x >= 0 && p.y >= 0 && p.x <= cam.width && p.y <= cam.height
+    const base = at ?? (over ? this.snapped(p.worldX, p.worldY) : { x: Math.round(cam.midPoint.x), y: Math.round(cam.midPoint.y) })
+    this.state.checkpoint()
+    const first = this.state.zone.objects.length
+    for (const o of clip) {
+      const copy: ZoneObject = { ...o, x: base.x + o.x, y: base.y + o.y }
+      this.state.zone.objects.push(copy)
+      this.sprites.push(this.makeSprite(copy))
+    }
+    this.state.set({ tool: 'select' })
+    this.state.set({ selected: clip.map((_, k) => first + k) })
+    this.refreshOverlays()
+    this.state.edited()
+    return clip.length
+  }
+
+  /** Duplica os selecionados um pouco ao lado. */
+  duplicate() {
+    const list = this.state.selected.map((i) => this.state.zone.objects[i]).filter(Boolean)
+    if (!list.length) return 0
+    this.copySelected()
+    const cx = list.reduce((a, o) => a + o.x, 0) / list.length
+    const cy = list.reduce((a, o) => a + o.y, 0) / list.length
+    return this.paste({ x: Math.round(cx + 16), y: Math.round(cy + 16) })
+  }
+
+  /** Empurra os selecionados (setas). Teclas seguidas viram um passo só de desfazer. */
+  private lastNudge = 0
+  nudge(dx: number, dy: number) {
+    const sel = this.state.selected
+    if (!sel.length) return false
+    const now = performance.now()
+    if (now - this.lastNudge > 700) this.state.checkpoint()
+    this.lastNudge = now
+    for (const i of sel) {
+      const o = this.state.zone.objects[i]
+      if (!o) continue
+      o.x += dx
+      o.y += dy
+      const s = this.sprites[i]
+      if (s) updateObjectSprite(s, o)
+    }
+    this.drawSelection()
+    this.refreshOverlays()
+    this.state.edited()
+    return true
+  }
+
+  /** Espelha os selecionados (ou o carimbo). */
+  flipSelected() {
+    const sel = this.state.selected
+    if (this.state.tool === 'object' && !sel.length) {
+      this.state.set({ flip: !this.state.flip })
+      return
+    }
+    if (!sel.length) return
+    this.state.checkpoint()
+    for (const i of sel) {
+      const o = this.state.zone.objects[i]
+      if (!o) continue
+      if (o.flip) delete o.flip
+      else o.flip = true
+    }
+    this.state.edited()
+    this.state.emit('objects')
+  }
+
+  /** Próxima/anterior variante (cor, estado) dos selecionados — ou do carimbo. */
+  cycleVariant(dir: 1 | -1) {
+    const next = (kind: string) => {
+      const def = objectDef(kind)
+      if (!def) return kind
+      const list = variantsOf(def)
+      const i = list.findIndex((v) => v.id === def.id)
+      return list[(i + dir + list.length) % list.length].id
+    }
+    const sel = this.state.selected
+    if (!sel.length) {
+      if (this.state.objectKind) this.state.set({ objectKind: next(this.state.objectKind) })
+      return
+    }
+    this.state.checkpoint()
+    for (const i of sel) {
+      const o = this.state.zone.objects[i]
+      if (o) o.kind = next(o.kind)
+    }
+    this.state.edited()
+    this.state.emit('objects')
+  }
+
+  /** Muda o tamanho do pincel (+1/−1). */
+  brushBy(d: number) {
+    this.state.set({ brush: Phaser.Math.Clamp(this.state.brush + d, 1, BRUSH_MAX) })
+  }
+
   centerOnZone() {
     const z = this.state.zone
     this.cameras.main.centerOn((z.width * TILE) / 2, (z.height * TILE) / 2)
+    this.afterView()
   }
 }

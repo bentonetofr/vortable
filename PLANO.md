@@ -113,7 +113,7 @@ scripts/      ferramentas de assets
 - Pacotes de amostra: árvores (67 modelos nomeados, 247 peças com variantes), LPC Base
   (estantes, armários, cristaleiras, mesas, cadeiras, cama, fogões, baús, barris, placas,
   pedras, copas e troncos montáveis, luzes) e a tocha animada — 126 peças na paleta
-- Luz por peça já fica gravada (tochas, fogões, postes) e passa a brilhar no M3.3
+- Luz por peça já fica gravada (tochas, fogões, postes) e passa a brilhar no M3.4
 - ✅ *Qualquer peça LPC pode entrar no editor com comportamento certo*
 
 ### M3.2 — Grande leva de arte ✅ (concluído)
@@ -151,7 +151,25 @@ terrenos, variantes de estado (portas, baús, plantações), animações dentro 
   atlas (são tilesets de construção, não objetos); terra arada que funcione fora da grama
 - ✅ *Dá pra montar uma vila, uma taverna mobiliada e uma masmorra*
 
-### M3.3 — Iluminação e atmosfera
+### M3.3 — Controles e conforto do editor ✅ (concluído)
+Editar tem que ser gostoso: câmera que responde na hora e atalhos de quem usa Inkarnate,
+Photoshop e Figma.
+- **Zoom contínuo e suave**: a roda (e o "pinça" do trackpad, e Ctrl+roda) dá zoom em passos
+  pequenos, animado, sempre em direção ao cursor; de 10% a 800%. `Ctrl +`/`Ctrl −`,
+  `Ctrl 0` enquadra a zona, `Ctrl 1` = 100%, `Ctrl 2` = 200%. Controle de zoom no canto da tela
+- **Mover a tela**: Espaço + arrastar (cursor de mão), botão do meio ou direito, setas/WASD
+  (Shift = rápido)
+- **Pincel**: `Shift + clique` pinta em linha reta desde o último ponto (paredes, cercas,
+  caminhos); `Alt + roda` muda o tamanho do pincel
+- **Objetos**: seleção múltipla (Shift/Ctrl + clique, ou arrastar um retângulo no vazio),
+  mover em grupo, `Ctrl A`, `Ctrl C / X / V`, `Ctrl D` duplica, setas empurram 1px
+  (Shift = 8px), `Del` apaga todos, `F` espelha todos, `,` e `.` trocam a variante
+- **Carimbo esperto**: arrastar com a ferramenta de objeto vai "pintando" objetos
+  espaçados; com Shift, cada um sai com variante e espelho sorteados (florestas em segundos)
+- **`?` mostra todos os atalhos** numa janela
+- ✅ *Editar uma zona grande é rápido e não cansa*
+
+### M3.4 — Iluminação e atmosfera
 - **Luz ambiente por zona**: cor + intensidade, com presets (Dia, Entardecer, Noite,
   Interior, Caverna, Masmorra)
 - **Fontes de luz**: objetos com luz própria (tocha, lampião, vela, lareira, janela acesa) e

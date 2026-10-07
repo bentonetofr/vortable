@@ -9,6 +9,7 @@ import { h, injectStyle } from '../ui/dom'
 import { creditsBody } from '../ui/credits'
 import { ICONS } from './icons'
 import type { EditorState, Tool } from './EditorState'
+import { ZOOM_MAX, ZOOM_MIN, type EditorScene } from './EditorScene'
 import { TERRAINS, canBeBase, isFence, isOverlay, terrainById, terrainTexture, terrainThumb } from '../assets/terrains'
 import { KIND_LABELS, objectCatalog, objectDef, objectSolids, paletteObjects, sheetTexture, variantsOf, type ObjectDef } from '../assets/objects'
 import { curateForm, type CurateOverride } from './curate'
@@ -27,6 +28,8 @@ export interface EditorHooks {
   stopTest(): void
   deleteSelected(): void
   centerOnZone(): void
+  /** A cena do editor, quando está ativa (câmera, seleção, área de transferência). */
+  scene(): EditorScene | null
   /** Abrir o criador de personagem (se quem montou o editor oferecer). */
   editCharacter?: () => void
   /** Curadoria (só no desenvolvimento): grava o ajuste de uma peça no pacote e recarrega o catálogo. */
@@ -81,6 +84,8 @@ export class EditorUI {
   private objectCells = new Map<string, HTMLElement>()
   private testing = false
   private modals: (() => void)[] = []
+  private zoomLabel!: HTMLButtonElement
+  private zoomSlider!: HTMLInputElement
   private offState: () => void
   private onKey = (e: KeyboardEvent) => this.handleKey(e)
   private onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -89,7 +94,7 @@ export class EditorUI {
 
   constructor(parent: HTMLElement, private state: EditorState, private storage: WorldStorage, private hooks: EditorHooks) {
     injectStyle('editor', css)
-    this.stage = h('div', { class: 'vt-stage' })
+    this.stage = h('div', { class: 'vt-stage' }, this.buildZoomBar())
     this.root = h('div', { class: 'vt-root' },
       this.buildTop(),
       this.buildTools(),
@@ -109,6 +114,8 @@ export class EditorUI {
     this.root.addEventListener('click', (e) => (e.target as HTMLElement).closest('button')?.blur())
 
     this.offState = state.on((c) => {
+      if (c === 'view') return this.updateZoomBar()
+      if (c === 'cursor') return this.refresh()
       if (c === 'zone') this.nameInput.value = state.zone.name
       if (c === 'zone' || c === 'edit') this.renderZoneProps()
       if (c === 'zone' || c === 'world' || state.selectedPortal !== this.shownPortal) this.renderPortal()
@@ -124,6 +131,7 @@ export class EditorUI {
 
   /** Chamado quando a arte terminou de carregar (as miniaturas dependem dela). */
   assetsReady() {
+    this.updateZoomBar()
     this.renderPane()
     this.renderZoneProps()
     this.refresh()
@@ -225,6 +233,38 @@ export class EditorUI {
     toggle(ICONS.snap, 'Encaixar objetos na grade (N)', () => this.state.snap, () => this.state.set({ snap: !this.state.snap }))
     el.append(h('button', { class: 'vt-tool', title: 'Centralizar a zona (Home)', html: ICONS.center, onclick: () => this.hooks.centerOnZone() }))
     return el
+  }
+
+  /** Controle de zoom no canto do palco: −, régua, porcentagem (volta a 100%), +, enquadrar. */
+  private buildZoomBar() {
+    const steps = 1000
+    // régua em escala logarítmica: o meio é ~90%, cada pedaço "parece" igual
+    const toSlider = (z: number) => String(Math.round((Math.log(z / ZOOM_MIN) / Math.log(ZOOM_MAX / ZOOM_MIN)) * steps))
+    const fromSlider = (v: number) => ZOOM_MIN * Math.pow(ZOOM_MAX / ZOOM_MIN, v / steps)
+    this.zoomSlider = h('input', {
+      class: 'vt-zoom-range', type: 'range', min: 0, max: steps, value: toSlider(this.state.zoom),
+      title: 'Zoom (roda do mouse, Ctrl + / Ctrl −)',
+      oninput: () => this.hooks.scene()?.zoomTo(fromSlider(Number(this.zoomSlider.value))),
+    }) as HTMLInputElement
+    this.zoomSlider.dataset.toSlider = '1'
+    this.zoomLabel = h('button', { class: 'vt-zoom-label', title: 'Voltar a 100% (Ctrl 1)', onclick: () => this.hooks.scene()?.zoomTo(1) }, '') as HTMLButtonElement
+    this.toSlider = toSlider
+    return h('div', { class: 'vt-zoombar' },
+      h('button', { class: 'vt-btn', title: 'Menos zoom (Ctrl −)', onclick: () => this.hooks.scene()?.zoomBy(1 / 1.25) }, '−'),
+      this.zoomSlider,
+      h('button', { class: 'vt-btn', title: 'Mais zoom (Ctrl +)', onclick: () => this.hooks.scene()?.zoomBy(1.25) }, '+'),
+      this.zoomLabel,
+      h('button', { class: 'vt-btn', title: 'Enquadrar a zona (Ctrl 0)', html: ICONS.center, onclick: () => this.hooks.scene()?.fitZone() }),
+    )
+  }
+
+  private toSlider: (z: number) => string = () => '0'
+
+  private updateZoomBar() {
+    if (!this.zoomLabel) return
+    this.zoomLabel.textContent = `${Math.round(this.state.zoom * 100)}%`
+    // não briga com quem está arrastando a régua
+    if (document.activeElement !== this.zoomSlider) this.zoomSlider.value = this.toSlider(this.state.zoom)
   }
 
   private buildPanel() {
@@ -381,20 +421,9 @@ export class EditorUI {
     this.refresh()
   }
 
-  /** Espelha o objeto selecionado (ou o que vai ser carimbado). */
+  /** Espelha os selecionados (ou o que vai ser carimbado). */
   private flip() {
-    const s = this.state
-    if (s.tool === 'select' && s.selected !== null) {
-      const o = s.zone.objects[s.selected]
-      if (!o) return
-      s.checkpoint()
-      if (o.flip) delete o.flip
-      else o.flip = true
-      s.edited()
-      s.emit('objects')
-    } else if (s.tool === 'object') {
-      s.set({ flip: !s.flip })
-    }
+    this.hooks.scene()?.flipSelected()
   }
 
   // ── Painel: peça escolhida / objeto selecionado ────────
@@ -403,9 +432,10 @@ export class EditorUI {
     const s = this.state
     let def: ObjectDef | undefined
     let placed: ZoneObject | null = null
-    if (s.tool === 'select' && s.selected !== null) {
-      placed = s.zone.objects[s.selected] ?? null
-      def = placed ? objectDef(placed.kind) : undefined
+    if (s.tool === 'select' && s.selected.length > 1) return this.renderMultiInfo()
+    if (s.tool === 'select' && s.single) {
+      placed = s.single
+      def = objectDef(placed.kind)
     } else if (s.tool === 'object' && s.objectKind) {
       def = objectDef(s.objectKind)
     }
@@ -459,6 +489,26 @@ export class EditorUI {
         this.hooks.curate ? h('button', { class: 'vt-btn', title: 'Ajustar nome, colisão, tipo e luz da peça no pacote (desenvolvimento)', onclick: () => this.openCurate(d) }, 'Curar') : null,
         placed ? h('button', { class: 'vt-btn vt-danger', title: 'Apagar (Del)', html: ICONS.trash, onclick: () => this.hooks.deleteSelected() }) : null,
       ),
+    )
+  }
+
+  /** Vários objetos selecionados: quantos, e o que dá pra fazer com todos. */
+  private renderMultiInfo() {
+    const n = this.state.selected.length
+    const key = `multi|${n}|${this.state.selected.join(',')}`
+    if (key === this.shownObject) return
+    this.shownObject = key
+    this.objectEl.hidden = false
+    const btn = (label: string, title: string, fn: () => void, extra = '') => h('button', { class: `vt-btn ${extra}`, title, onclick: fn }, label)
+    this.objectEl.replaceChildren(
+      h('h4', { class: 'vt-subtitle' }, `${n} objetos selecionados`),
+      h('div', { class: 'vt-row vt-objactions' },
+        btn('Espelhar', 'Espelhar todos (F)', () => this.flip()),
+        btn('Variante', 'Próxima variante de cada um (.)', () => this.hooks.scene()?.cycleVariant(1)),
+        btn('Duplicar', 'Duplicar (Ctrl D)', () => this.hooks.scene()?.duplicate()),
+        h('button', { class: 'vt-btn vt-danger', title: 'Apagar todos (Del)', html: ICONS.trash, onclick: () => this.hooks.deleteSelected() }),
+      ),
+      h('small', { class: 'vt-note' }, 'Arraste um deles pra mover o grupo · setas empurram 1px (Shift: 8px)'),
     )
   }
 
@@ -666,7 +716,6 @@ export class EditorUI {
     const parts: Node[] = []
     if (s.cursor) parts.push(h('span', {}, `Tile ${s.cursor.tx}, ${s.cursor.ty}`))
     parts.push(h('span', {}, `${z.width}×${z.height} tiles`))
-    parts.push(h('span', {}, `Zoom ${Math.round(s.zoom * 100)}%`))
     parts.push(h('span', {}, `${z.objects.length} objetos`))
     parts.push(s.dirty ? h('span', { class: 'vt-dirty' }, '● não salvo') : h('span', {}, 'salvo'))
     const chosenTerrain = terrainById.get(s.terrain)
@@ -674,15 +723,16 @@ export class EditorUI {
     const fence = !!chosenTerrain && isFence(chosenTerrain)
     const layerNote = overlay ? ' (camada de cima)' : fence ? ' (cerca: pinta tiles e liga sozinha)' : ''
     const hint = {
-      brush: `Pincel: ${chosenTerrain?.label ?? ''}${layerNote} — arraste pra pintar`,
+      brush: `Pincel: ${chosenTerrain?.label ?? ''}${layerNote} — arraste pra pintar · Shift + clique: linha reta · Alt + roda: tamanho`,
       fill: fence ? 'Balde não vale pra cercas — use o pincel' : `Balde: ${chosenTerrain?.label ?? ''}${layerNote} — clique pra preencher a área`,
       erase: overlay ? 'Borracha — apaga tapetes e molduras (camada de cima)' : fence ? 'Borracha — apaga cercas' : 'Borracha — volta ao terreno de fundo',
-      object: s.objectKind ? 'Clique pra colocar · F espelha · Esc solta o objeto' : 'Escolha um objeto na aba Objetos',
-      select: s.selected !== null ? 'Arraste pra mover · F espelha · Del apaga' : 'Clique num objeto pra selecionar',
+      object: s.objectKind ? 'Clique ou arraste pra colocar (Shift: variantes sorteadas) · , . trocam a variante · F espelha · Esc solta' : 'Escolha um objeto na aba Objetos',
+      select: s.selected.length ? 'Arraste pra mover · setas empurram · F espelha · Ctrl D duplica · Del apaga' : 'Clique num objeto (Shift soma) ou arraste um retângulo pra selecionar',
       portal: s.selectedPortal ? 'Escolha o destino no painel · arraste pra mover · Del apaga' : 'Arraste pra desenhar uma saída · clique numa saída pra editar',
       spawn: 'Clique onde o jogador deve aparecer',
     }[s.tool]
-    parts.push(h('span', { class: 'vt-hint' }, `${hint} · Alt+clique copia · botão direito arrasta a tela · roda dá zoom`))
+    parts.push(h('span', { class: 'vt-hint' }, `${hint} · Espaço + arrastar move a tela · roda dá zoom`))
+    parts.push(h('button', { class: 'vt-link', title: 'Todos os atalhos (?)', onclick: () => this.openShortcuts() }, 'Atalhos'))
     parts.push(h('button', { class: 'vt-link', onclick: () => this.openCredits() }, 'Créditos'))
     this.statusEl.replaceChildren(...parts)
   }
@@ -820,9 +870,56 @@ export class EditorUI {
       spawn: { x: Math.min(z.spawn.x, W - 16), y: Math.min(z.spawn.y, H - 16) },
     }
     this.state.zone = resized
-    this.state.selected = null
+    this.state.selected = []
     this.state.emit('zone')
     this.toast(`Zona agora tem ${width}×${height} tiles.`)
+  }
+
+  private openShortcuts() {
+    const rows: [string, string][][] = [
+      [
+        ['Roda do mouse', 'Zoom suave no ponto do cursor (trackpad: pinça)'],
+        ['Ctrl + / Ctrl −', 'Mais / menos zoom'],
+        ['Ctrl 0', 'Enquadrar a zona inteira'],
+        ['Ctrl 1 · Ctrl 2', 'Zoom 100% · 200%'],
+        ['Espaço + arrastar', 'Mover a tela (também: botão do meio ou direito)'],
+        ['WASD / setas', 'Mover a tela (Shift: rápido)'],
+        ['Home', 'Centralizar a zona'],
+      ],
+      [
+        ['B · G · E', 'Pincel · balde · borracha'],
+        ['O · V', 'Colocar objeto · selecionar'],
+        ['X · P', 'Saída · ponto de início'],
+        ['[ · ] ou Alt + roda', 'Tamanho do pincel'],
+        ['Shift + clique', 'Pincel: linha reta desde o último ponto'],
+        ['Alt + clique', 'Conta-gotas (copia terreno ou objeto)'],
+        ['H · K · N', 'Grade · colisões · encaixe na grade'],
+      ],
+      [
+        ['Arrastar (objeto)', 'Carimba vários seguidos; com Shift, variantes e espelho sorteados'],
+        ['Shift/Ctrl + clique', 'Somar/tirar da seleção'],
+        ['Arrastar no vazio', 'Selecionar com um retângulo'],
+        ['Ctrl A', 'Selecionar todos os objetos'],
+        ['Ctrl C · X · V', 'Copiar · recortar · colar (no mouse)'],
+        ['Ctrl D', 'Duplicar'],
+        ['Setas', 'Empurrar a seleção 1px (Shift: 8px)'],
+        [', · .', 'Variante anterior / próxima'],
+        ['F', 'Espelhar'],
+        ['Del', 'Apagar'],
+        ['Esc', 'Soltar a seleção / o objeto'],
+      ],
+      [
+        ['Ctrl Z · Ctrl Y', 'Desfazer · refazer'],
+        ['Ctrl S', 'Salvar'],
+        ['?', 'Esta janela'],
+      ],
+    ]
+    const titles = ['Câmera', 'Ferramentas', 'Objetos', 'Geral']
+    const body = rows.map((list, i) => h('div', { class: 'vt-keys' },
+      h('h4', {}, titles[i]),
+      ...list.map(([k, v]) => h('div', { class: 'vt-keyrow' }, h('kbd', {}, k), h('span', {}, v))),
+    ))
+    const close = this.modal('Atalhos', [h('div', { class: 'vt-keys-grid' }, ...body)], [h('button', { class: 'vt-btn', onclick: () => close() }, 'Fechar')], undefined, true)
   }
 
   private openCredits() {
@@ -868,6 +965,7 @@ export class EditorUI {
   private modal(title: string, body: Node[], foot: Node[], onDismiss?: () => void, wide = false) {
     const close = () => {
       this.modals = this.modals.filter((m) => m !== dismiss)
+      this.state.modalOpen = this.modals.length > 0
       bg.remove()
     }
     const dismiss = () => {
@@ -875,6 +973,7 @@ export class EditorUI {
       onDismiss?.()
     }
     this.modals.push(dismiss)
+    this.state.modalOpen = true
     const bg = h('div', {
       class: 'vt-modal-bg',
       onmousedown: (e: MouseEvent) => { if (e.target === bg) dismiss() },
@@ -1139,15 +1238,38 @@ export class EditorUI {
       if (e.key === 'Escape') this.modals[this.modals.length - 1]()
       return
     }
-    const typing = target.matches('input, textarea, select')
+    const typing = target.matches('input:not([type=range]), textarea, select')
     const ctrl = e.ctrlKey || e.metaKey
     const k = e.key.toLowerCase()
+    const scene = this.hooks.scene()
 
     if (ctrl && k === 's') { e.preventDefault(); this.save(); return }
     if (typing) return
     if (ctrl && k === 'z' && !e.shiftKey) { e.preventDefault(); this.state.undo(); return }
     if (ctrl && (k === 'y' || (k === 'z' && e.shiftKey))) { e.preventDefault(); this.state.redo(); return }
+    // zoom pelo teclado (também segura o zoom do navegador)
+    if (ctrl && (k === '=' || k === '+')) { e.preventDefault(); scene?.zoomBy(1.25); return }
+    if (ctrl && (k === '-' || k === '_')) { e.preventDefault(); scene?.zoomBy(1 / 1.25); return }
+    if (ctrl && k === '0') { e.preventDefault(); scene?.fitZone(); return }
+    if (ctrl && k === '1') { e.preventDefault(); scene?.zoomTo(1); return }
+    if (ctrl && k === '2') { e.preventDefault(); scene?.zoomTo(2); return }
+    if (ctrl && k === 'a') { e.preventDefault(); scene?.selectAll(); return }
+    if (ctrl && k === 'c') { e.preventDefault(); const n = scene?.copySelected() ?? 0; if (n) this.toast(`${n} objeto${n > 1 ? 's' : ''} copiado${n > 1 ? 's' : ''}.`); return }
+    if (ctrl && k === 'x') { e.preventDefault(); scene?.cutSelected(); return }
+    if (ctrl && k === 'v') { e.preventDefault(); if (!scene?.paste()) this.toast('Nada copiado ainda (Ctrl C com objetos selecionados).'); return }
+    if (ctrl && k === 'd') { e.preventDefault(); scene?.duplicate(); return }
     if (ctrl) return
+
+    // setas: com objetos selecionados empurram; sem, a cena move a tela
+    const arrows: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }
+    if (arrows[e.key]) {
+      e.preventDefault()
+      if (this.state.tool === 'select' && this.state.selected.length) {
+        const step = e.shiftKey ? 8 : 1
+        scene?.nudge(arrows[e.key][0] * step, arrows[e.key][1] * step)
+      }
+      return
+    }
 
     const tool = TOOLS.find((t) => t.key.toLowerCase() === k)
     if (tool) { this.setTool(tool.id); return }
@@ -1157,9 +1279,18 @@ export class EditorUI {
     else if (k === 'k') this.state.set({ showCollision: !this.state.showCollision })
     else if (k === 'n') this.state.set({ snap: !this.state.snap })
     else if (k === 'f') this.flip()
+    else if (e.key === ',' || e.key === '<') scene?.cycleVariant(-1)
+    else if (e.key === '.' || e.key === '>') scene?.cycleVariant(1)
+    else if (e.key === '?' || e.key === 'F1') { e.preventDefault(); this.openShortcuts() }
+    else if (k === '+' || k === '=') scene?.zoomBy(1.25)
+    else if (k === '-') scene?.zoomBy(1 / 1.25)
     else if (e.key === 'Home') this.hooks.centerOnZone()
     else if (e.key === 'Delete' || e.key === 'Backspace') this.hooks.deleteSelected()
-    else if (e.key === 'Escape') this.state.set({ tool: 'select', selected: null })
+    else if (e.key === 'Escape') {
+      // primeiro solta a seleção; de novo, volta pra ferramenta de seleção
+      if (this.state.selected.length) this.state.set({ selected: [] })
+      else this.state.set({ tool: 'select' })
+    }
     else if (e.key === ' ') e.preventDefault()
   }
 }

@@ -20,20 +20,32 @@ npm run dev
 
 ### Atalhos do editor
 
+`?` (ou o link *Atalhos* no rodapé) mostra todos dentro do editor.
+
 | Tecla | Ação |
 |---|---|
+| roda do mouse (ou pinça do trackpad) | zoom suave, no ponto do cursor (10% a 800%) |
+| `Ctrl +` / `Ctrl −` | mais / menos zoom |
+| `Ctrl 0` · `Ctrl 1` · `Ctrl 2` | enquadrar a zona · 100% · 200% |
+| `Espaço`+arrastar, botão do meio ou direito | mover a tela |
+| `WASD` / setas | mover a tela (`Shift` = rápido) |
 | `B` / `G` / `E` | pincel / balde / borracha |
 | `O` / `V` / `P` | colocar objeto / selecionar e mover / ponto de início |
 | `X` | saída: arraste pra desenhar a área que leva a outra zona; o destino se escolhe no painel |
-| `[` `]` | tamanho do pincel |
+| `[` `]` ou `Alt`+roda | tamanho do pincel |
+| `Shift`+clique (pincel) | linha reta desde o último ponto |
+| arrastar (objeto) | carimba vários seguidos; com `Shift`, variantes e espelho sorteados |
+| `Shift`/`Ctrl`+clique, arrastar no vazio | somar à seleção / selecionar com retângulo |
+| `Ctrl A` · `Ctrl C` · `Ctrl X` · `Ctrl V` · `Ctrl D` | selecionar tudo · copiar · recortar · colar no mouse · duplicar |
+| setas (com seleção) | empurrar 1px (`Shift` = 8px) |
+| `,` `.` | variante anterior / próxima |
+| `F` | espelhar |
 | `H` / `K` / `N` | grade / colisões / encaixar na grade |
 | `Ctrl+Z` / `Ctrl+Y` | desfazer / refazer |
 | `Ctrl+S` | salvar |
-| `Del` | apagar objeto selecionado |
-| botão direito ou do meio, `Espaço`+arrastar | mover a tela |
-| roda do mouse | zoom |
+| `Del` | apagar a seleção |
 | `Alt`+clique | conta-gotas: copia o terreno ou o objeto sob o mouse |
-| `Esc` | sair do teste / soltar ferramenta |
+| `Esc` | soltar a seleção / sair do teste |
 
 ### Mundo e zonas
 

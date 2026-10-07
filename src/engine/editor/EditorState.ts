@@ -4,7 +4,7 @@
 // escutam as mudanças por aqui — nenhuma fala direto com a outra.
 // ────────────────────────────────────────────────────────
 
-import type { WorldData, ZoneData } from '../types'
+import type { WorldData, ZoneData, ZoneObject } from '../types'
 import type { ZoneSummary } from '../storage'
 
 export type Tool = 'brush' | 'fill' | 'erase' | 'object' | 'select' | 'portal' | 'spawn'
@@ -17,8 +17,9 @@ export type Tool = 'brush' | 'fill' | 'erase' | 'object' | 'select' | 'portal' |
  * world  = dados do mundo ou lista de zonas salvas mudaram
  * objects = objetos mudaram no lugar (espelhar, trocar variante) → reaplicar sprites
  * catalog = o catálogo de objetos mudou (curadoria) → refazer sprites e paleta
+ * view   = a câmera mudou (zoom): só o indicador de zoom acompanha
  */
-export type Change = 'zone' | 'edit' | 'ui' | 'cursor' | 'world' | 'objects' | 'catalog'
+export type Change = 'zone' | 'edit' | 'ui' | 'cursor' | 'world' | 'objects' | 'catalog' | 'view'
 
 const HISTORY_MAX = 100
 
@@ -33,8 +34,12 @@ export class EditorState {
   snap = false
   showGrid = false
   showCollision = false
-  /** Índice do objeto selecionado em zone.objects. */
-  selected: number | null = null
+  /** Índices dos objetos selecionados em zone.objects (vários com Shift ou retângulo). */
+  selected: number[] = []
+  /** Objetos copiados (Ctrl C), com posição relativa ao centro do grupo. Vale entre zonas. */
+  clipboard: ZoneObject[] = []
+  /** Há uma janela aberta por cima do editor (o teclado é dela). */
+  modalOpen = false
   /** Id da saída selecionada (ferramenta de saída). */
   selectedPortal: string | null = null
   /** O mundo e as zonas salvas nele (pro mapa do mundo e destinos das saídas). */
@@ -66,7 +71,7 @@ export class EditorState {
 
   set(patch: Partial<Pick<EditorState, 'tool' | 'terrain' | 'brush' | 'objectKind' | 'flip' | 'snap' | 'showGrid' | 'showCollision' | 'selected' | 'selectedPortal' | 'zoom'>>) {
     Object.assign(this, patch)
-    if (patch.tool && patch.tool !== 'select') this.selected = null
+    if (patch.tool && patch.tool !== 'select') this.selected = []
     if (patch.tool && patch.tool !== 'portal') this.selectedPortal = null
     this.emit('ui')
   }
@@ -111,7 +116,7 @@ export class EditorState {
 
   private replace(zone: ZoneData, dirty = true) {
     this.zone = zone
-    this.selected = null
+    this.selected = []
     this.selectedPortal = null
     this.dirty = dirty
     this.emit('zone')
@@ -120,6 +125,11 @@ export class EditorState {
   markSaved() {
     this.dirty = false
     this.emit('ui')
+  }
+
+  /** O objeto selecionado, quando é um só. */
+  get single() {
+    return this.selected.length === 1 ? this.zone.objects[this.selected[0]] ?? null : null
   }
 
   get portal() {

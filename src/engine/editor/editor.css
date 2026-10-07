@@ -493,3 +493,52 @@
   overflow-wrap: anywhere;
   color: var(--vt-text-2);
 }
+
+/* ── Zoom (canto do palco) ──────────────────────── */
+.vt-zoombar {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--vt-surface) 88%, transparent);
+  border: 1px solid var(--vt-border-dim);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+.vt-zoombar .vt-btn { padding: 2px 8px; min-width: 28px; justify-content: center; }
+.vt-zoombar .vt-btn svg { width: 14px; height: 14px; }
+.vt-zoom-range { width: 120px; accent-color: var(--vt-accent); cursor: pointer; }
+.vt-zoom-label {
+  min-width: 48px;
+  padding: 2px 4px;
+  background: none;
+  border: 0;
+  color: var(--vt-text-2);
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.vt-zoom-label:hover { color: var(--vt-accent-bright); }
+.vt-root.vt-testing .vt-zoombar { display: none; }
+@media (max-width: 720px) { .vt-zoom-range { display: none; } }
+
+/* ── Janela de atalhos ──────────────────────────── */
+.vt-keys-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px 24px; }
+.vt-keys h4 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--vt-muted); }
+.vt-keyrow { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 3px 0; font-size: 13px; }
+.vt-keyrow kbd {
+  justify-self: start;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--vt-border);
+  background: var(--vt-bg);
+  color: var(--vt-accent-bright);
+  font: 600 11px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: nowrap;
+}
+.vt-keyrow span { color: var(--vt-text-2); }
