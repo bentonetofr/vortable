@@ -5,37 +5,20 @@
 // ────────────────────────────────────────────────────────
 
 import Phaser from 'phaser'
-import { OBJECT_SHEETS, objectById } from '../assets/catalog'
-import type { ZoneData } from '../types'
+import { footRect, objectDef, sheetTexture } from '../assets/objects'
+import type { ZoneObject } from '../types'
 
-interface Rect { id: number; x: number; y: number; w: number; h: number }
-
-const sheetKey = (id: string) => `objsheet:${id}`
-const rectsKey = (id: string) => `objrects:${id}`
-
-export function preloadObjects(scene: Phaser.Scene, assetBase: string) {
-  for (const s of OBJECT_SHEETS) {
-    scene.load.image(sheetKey(s.id), assetBase + s.url)
-    scene.load.json(rectsKey(s.id), assetBase + s.rects)
-  }
+export function createObjectSprite(scene: Phaser.Scene, o: ZoneObject) {
+  const def = objectDef(o.kind)
+  if (!def) return null
+  return scene.add.image(o.x, o.y, sheetTexture(def.sheet), def.id).setOrigin(0.5, 1).setDepth(o.y)
 }
 
-/** Cria um quadro nomeado pra cada retângulo das folhas de objetos. */
-export function registerObjectFrames(scene: Phaser.Scene) {
-  for (const s of OBJECT_SHEETS) {
-    const tex = scene.textures.get(sheetKey(s.id))
-    const rects = scene.cache.json.get(rectsKey(s.id)) as Rect[]
-    for (const r of rects) if (!tex.has(String(r.id))) tex.add(String(r.id), 0, r.x, r.y, r.w, r.h)
-  }
-}
-
-export function spawnObjects(scene: Phaser.Scene, zone: ZoneData, solids: Phaser.Physics.Arcade.StaticGroup) {
-  for (const o of zone.objects) {
-    const def = objectById.get(o.kind)
-    if (!def) continue
-    scene.add.image(o.x, o.y, sheetKey(def.sheet), String(def.rect)).setOrigin(0.5, 1).setDepth(o.y)
-    const { w, h, lift } = def.foot
-    const foot = scene.add.zone(o.x, o.y - lift - h / 2, w, h)
-    solids.add(foot)
+/** Corpos estáticos invisíveis nos pés dos objetos. */
+export function addObjectSolids(scene: Phaser.Scene, objects: ZoneObject[], solids: Phaser.Physics.Arcade.StaticGroup) {
+  for (const o of objects) {
+    const def = objectDef(o.kind)
+    const r = def && footRect(def, o.x, o.y)
+    if (r) solids.add(scene.add.zone(r.x + r.w / 2, r.y + r.h / 2, r.w, r.h))
   }
 }

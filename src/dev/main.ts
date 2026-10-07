@@ -1,9 +1,12 @@
 // Harness de desenvolvimento: roda o Vortable sozinho, sem o Vorterium.
+//   /            → editor de zonas
+//   /?jogar      → só o jogo, na zona de demonstração
 
 import { mountVortable, paletteNames, type Appearance } from '../engine'
 import { makeDemoZone } from './demoZone'
 
 const assetBase = './assets/'
+const play = new URLSearchParams(location.search).has('jogar')
 
 const appearance: Appearance = {
   layers: [
@@ -17,7 +20,14 @@ const appearance: Appearance = {
   ],
 }
 
-const vortable = mountVortable(document.getElementById('app')!, { zone: makeDemoZone(), appearance, assetBase })
+document.getElementById('hud')!.hidden = !play
+
+const vortable = mountVortable(document.getElementById('app')!, {
+  mode: play ? 'play' : 'edit',
+  zone: makeDemoZone(),
+  appearance,
+  assetBase,
+})
 
 const pick = <T,>(list: T[]) => list[Math.floor(Math.random() * list.length)]
 
@@ -39,5 +49,6 @@ async function randomAppearance(): Promise<Appearance> {
 }
 
 window.addEventListener('keydown', async (e) => {
-  if (e.key === 'r' || e.key === 'R') vortable.setAppearance(await randomAppearance())
+  const typing = (e.target as HTMLElement).matches('input, textarea, select')
+  if (!typing && (e.key === 'r' || e.key === 'R')) vortable.setAppearance(await randomAppearance())
 })

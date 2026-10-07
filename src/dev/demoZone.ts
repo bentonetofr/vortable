@@ -1,4 +1,4 @@
-// Zona de teste do M0, gerada por código (no M1 ela sai do editor).
+// Zona de demonstração gerada por código (ponto de partida do editor).
 
 import { TILE, type ZoneData, type ZoneObject } from '../engine'
 import { seeded } from '../engine/rng'
@@ -41,7 +41,12 @@ export function makeDemoZone(): ZoneData {
 
   const rnd = seeded(7)
   const objects: ZoneObject[] = []
-  const trees = ['tree-round', 'tree-tall', 'tree-old', 'tree-leafy', 'tree-pine', 'tree-big']
+  const trees = [
+    'trees-green@0,102', 'trees-green@64,96', 'trees-green@128,104', 'trees-green@231,104', 'trees-green@320,102',
+    'trees-green@544,96', 'trees-green@8,232', 'trees-green@66,230', 'trees-green@164,224', 'trees-green@264,224',
+    'trees-green@485,226', 'trees-green@583,224', 'trees-green@0,356', 'trees-green@64,356', 'trees-green@129,352',
+    'trees-green@321,352', 'trees-green@418,352', 'trees-green@556,356',
+  ]
   const spawn = { x: 20 * TILE, y: 21 * TILE }
   const farFromSpawn = (x: number, y: number) => Math.hypot(x - spawn.x, y - spawn.y) > 4 * TILE
   const place = (kind: string, x: number, y: number) => objects.push({ kind, x: Math.round(x), y: Math.round(y) })
@@ -57,7 +62,7 @@ export function makeDemoZone(): ZoneData {
     const x = 80 + rnd() * (width * TILE - 160)
     const y = 160 + rnd() * (height * TILE - 200)
     if (!isOpen(x, y, 2) || !farFromSpawn(x, y)) continue
-    place(rnd() < 0.25 ? 'bush' : trees[Math.floor(rnd() * trees.length)], x, y)
+    place(rnd() < 0.25 ? 'trees-green@224,368' : trees[Math.floor(rnd() * trees.length)], x, y)
   }
 
   return { version: 1, id: 'demo', name: 'Clareira de teste', width, height, base: 'grass', corners, objects, spawn }

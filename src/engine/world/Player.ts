@@ -31,7 +31,7 @@ export class Player {
     this.keys = kb.addKeys({
       up: K.UP, down: K.DOWN, left: K.LEFT, right: K.RIGHT,
       w: K.W, a: K.A, s: K.S, d: K.D, shift: K.SHIFT,
-    }) as Keys
+    }, false) as Keys
     this.play('idle')
   }
 

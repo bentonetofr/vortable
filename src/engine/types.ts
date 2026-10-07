@@ -19,7 +19,7 @@ export interface ZoneData {
   base: string
   /**
    * Terreno de cada vértice da grade, (width+1) × (height+1), linha a linha.
-   * '' = só o terreno base. As bordas entre terrenos saem daqui (autotile).
+   * '' = terreno base. As bordas entre terrenos saem daqui (autotile).
    */
   corners: string[]
   objects: ZoneObject[]
@@ -27,11 +27,30 @@ export interface ZoneData {
   spawn: { x: number; y: number }
 }
 
-/** Um objeto colocado na zona (árvore, pedra, casa...). x/y = base do objeto, em pixels. */
+/** Um objeto colocado na zona. kind = id no catálogo; x/y = base-centro, em px. */
 export interface ZoneObject {
   kind: string
   x: number
   y: number
+}
+
+export const ZONE_MIN = 8
+export const ZONE_MAX = 128
+
+export function newZone(name: string, width: number, height: number, base = 'grass'): ZoneData {
+  width = Math.max(ZONE_MIN, Math.min(ZONE_MAX, Math.round(width)))
+  height = Math.max(ZONE_MIN, Math.min(ZONE_MAX, Math.round(height)))
+  return {
+    version: 1,
+    id: `zona-${Date.now().toString(36)}`,
+    name,
+    width,
+    height,
+    base,
+    corners: new Array((width + 1) * (height + 1)).fill(''),
+    objects: [],
+    spawn: { x: (width * TILE) / 2, y: (height * TILE) / 2 },
+  }
 }
 
 /** Uma cor escolhida de uma paleta LPC (ex.: material 'hair', cor 'ginger'). */

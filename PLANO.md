@@ -61,7 +61,7 @@ scripts/      ferramentas de assets
 - Colisão, câmera seguindo, **y-sort** (passar atrás/na frente de árvores)
 - ✅ *"Já parece um joguinho"*
 
-### M1 — Editor de zonas
+### M1 — Editor de zonas ✅ (concluído)
 - Camadas: chão, decoração, objetos, acima-do-jogador (telhados, copas)
 - **Autotile** de terrenos (grama, terra, água, areia...)
 - Paleta de objetos com busca e categorias

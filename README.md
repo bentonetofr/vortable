@@ -7,13 +7,32 @@ Plano completo: [PLANO.md](PLANO.md)
 
 ## Rodar
 
+Dois cliques em **Testar.bat**, ou:
+
 ```bash
 npm install
 npm run dev
 ```
 
-Abre em http://localhost:5180 — `WASD`/setas andam, `Shift` corre, `R` sorteia a aparência,
-`C` mostra as caixas de colisão.
+- http://localhost:5180 — **editor de zonas**
+- http://localhost:5180/?jogar — só o jogo, na zona de demonstração
+
+### Atalhos do editor
+
+| Tecla | Ação |
+|---|---|
+| `B` / `G` / `E` | pincel / balde / borracha |
+| `O` / `V` / `P` | colocar objeto / selecionar e mover / ponto de início |
+| `[` `]` | tamanho do pincel |
+| `H` / `K` / `N` | grade / colisões / encaixar na grade |
+| `Ctrl+Z` / `Ctrl+Y` | desfazer / refazer |
+| `Ctrl+S` | salvar |
+| `Del` | apagar objeto selecionado |
+| botão direito ou do meio, `Espaço`+arrastar | mover a tela |
+| roda do mouse | zoom |
+| `Esc` | sair do teste / soltar ferramenta |
+
+No jogo: `WASD`/setas andam, `Shift` corre, `C` mostra colisões, `R` sorteia a aparência.
 
 ## Estrutura
 
@@ -21,7 +40,8 @@ Abre em http://localhost:5180 — `WASD`/setas andam, `Shift` corre, `R` sorteia
   Entrada: `mountVortable(div, opções)`.
 - `src/dev/` — harness para rodar o motor sozinho.
 - `public/assets/lpc/` — arte LPC (personagem em camadas + paletas, terrenos, árvores).
-- `scripts/extract-sprites.mjs` — detecta objetos soltos numa folha e gera o JSON de retângulos.
+- `assets-src/` — arte original. `node scripts/build-catalog.mjs` recorta os objetos, calcula a
+  colisão de cada um e gera `public/assets/catalog/objects.json`.
 
 ## Licença da arte
 

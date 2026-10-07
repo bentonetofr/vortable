@@ -1,12 +1,12 @@
 // ────────────────────────────────────────────────────────
-// Cena principal: desenha uma zona (chão + objetos), coloca o jogador
+// Cena de jogo: desenha uma zona (chão + objetos), coloca o jogador
 // e segue ele com a câmera.
 // ────────────────────────────────────────────────────────
 
 import Phaser from 'phaser'
 import { buildCharacter } from '../character/compose'
-import { preloadTerrains, renderGround, solidTerrainRects } from '../world/ground'
-import { preloadObjects, registerObjectFrames, spawnObjects } from '../world/objects'
+import { Ground, solidTerrainRects } from '../world/ground'
+import { addObjectSolids, createObjectSprite } from '../world/objects'
 import { Player } from '../world/Player'
 import { TILE, type Appearance, type ZoneData } from '../types'
 
@@ -28,31 +28,31 @@ export class WorldScene extends Phaser.Scene {
 
   init(data: WorldSceneData) {
     this.cfg = data
-  }
-
-  preload() {
-    preloadTerrains(this, this.cfg.assetBase)
-    preloadObjects(this, this.cfg.assetBase)
+    this.player = undefined
   }
 
   async create() {
     const { zone, assetBase, appearance } = this.cfg
     const W = zone.width * TILE, H = zone.height * TILE
 
-    renderGround(this, zone)
-    registerObjectFrames(this)
+    new Ground(this, zone)
+    for (const o of zone.objects) createObjectSprite(this, o)
 
     const solids = this.physics.add.staticGroup()
     for (const r of solidTerrainRects(zone)) solids.add(this.add.zone(r.x + r.w / 2, r.y + r.h / 2, r.w, r.h))
-    spawnObjects(this, zone, solids)
+    addObjectSolids(this, zone.objects, solids)
 
     this.physics.world.setBounds(0, 0, W, H)
-    this.cameras.main.setBounds(0, 0, W, H).setZoom(2).setRoundPixels(true).setBackgroundColor('#12100e')
+    const cam = this.cameras.main
+    cam.setBounds(0, 0, W, H).setZoom(2).setRoundPixels(true).setBackgroundColor('#12100e')
+    // zona menor que a tela: centraliza em vez de grudar no canto
+    if (W * 2 < cam.width || H * 2 < cam.height) cam.removeBounds()
 
     await buildCharacter(this, PLAYER_KEY, assetBase, appearance)
+    if (!this.sys.isActive()) return
     this.player = new Player(this, PLAYER_KEY, zone.spawn.x, zone.spawn.y)
     this.physics.add.collider(this.player.sprite, solids)
-    this.cameras.main.startFollow(this.player.sprite, true, 0.15, 0.15)
+    cam.startFollow(this.player.sprite, true, 0.15, 0.15)
 
     this.input.keyboard!.on('keydown-C', () => {
       const w = this.physics.world
@@ -60,7 +60,6 @@ export class WorldScene extends Phaser.Scene {
       if (!w.debugGraphic) w.createDebugGraphic()
       w.debugGraphic.clear().setDepth(1e9).setVisible(w.drawDebug)
     })
-    this.events.emit('vortable-ready')
   }
 
   /** Troca a aparência do jogador sem recarregar a cena. */
