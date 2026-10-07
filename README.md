@@ -15,6 +15,7 @@ npm run dev
 ```
 
 - http://localhost:5180 — **editor de zonas**
+- http://localhost:5180/?personagem — **criador de personagem** (ou o botão *Personagem* no editor)
 - http://localhost:5180/?jogar — só o jogo, começando na zona inicial do mundo (★ no mapa do mundo)
 
 ### Atalhos do editor
@@ -44,6 +45,14 @@ npm run dev
 - **Nova → Interior** cria uma zona pequena com fundo escuro; use os terrenos de *Interior*
   (pisos, tapetes, paredes).
 
+### Personagem
+
+- 385 itens LPC em 46 espaços (corpo, cabeça, cabelo, barba, roupa, chapéu, capa, cicatrizes...),
+  corpo masculino ou feminino, 22 tons de pele e cores por peça.
+- **Salvar** guarda o personagem e o deixa *em uso*: é ele que aparece no Testar e no jogo.
+- As folhas ficam em `public/assets/character/sheets/` (baixadas por
+  `node scripts/build-character-catalog.mjs`, que também gera o catálogo e os créditos).
+
 No jogo: `WASD`/setas andam, `Shift` corre, `C` mostra colisões, `R` sorteia a aparência.
 
 ## Estrutura
@@ -53,6 +62,7 @@ No jogo: `WASD`/setas andam, `Shift` corre, `C` mostra colisões, `R` sorteia a 
 - `src/dev/` — harness para rodar o motor sozinho.
 - `public/assets/lpc/` — arte LPC usada direto (personagem em camadas + paletas, terrenos).
 - `public/assets/catalog/` — objetos recortados pelo script de catálogo (não editar à mão).
+- `public/assets/character/` — catálogo, paletas e folhas do personagem (gerados por script).
 - `assets-src/` — arte original. `node scripts/build-catalog.mjs` recorta os objetos, calcula a
   colisão de cada um e gera `public/assets/catalog/objects.json`.
 

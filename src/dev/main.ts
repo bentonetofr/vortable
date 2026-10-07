@@ -1,63 +1,55 @@
 // Harness de desenvolvimento: roda o Vortable sozinho, sem o Vorterium.
-//   /            → editor de zonas
-//   /?jogar      → só o jogo, começando na zona inicial do mundo
+//   /              → editor de zonas
+//   /?personagem   → criador de personagem
+//   /?jogar        → só o jogo, começando na zona inicial do mundo
 
-import { LocalWorldStorage, mountVortable, paletteNames, type Appearance, type ZoneData } from '../engine'
+import {
+  LocalCharacterStorage, LocalWorldStorage, defaultAppearance, loadCharacterData, mountCharacterCreator, mountVortable,
+  normalizeAppearance, randomAppearance, type Appearance, type ZoneData,
+} from '../engine'
 import { makeDemoZone } from './demoZone'
 
 const assetBase = './assets/'
-const play = new URLSearchParams(location.search).has('jogar')
+const params = new URLSearchParams(location.search)
+const app = document.getElementById('app')!
+const hud = document.getElementById('hud')!
+const go = (query: string) => (location.search = query)
 
-const appearance: Appearance = {
-  layers: [
-    { sheet: 'body',             palette: { material: 'body',  color: 'light' } },
-    { sheet: 'head',             palette: { material: 'body',  color: 'light' } },
-    { sheet: 'eyes',             palette: { material: 'eye',   color: 'brown' } },
-    { sheet: 'feet_shoes',       palette: { material: 'cloth', color: 'brown' } },
-    { sheet: 'legs_pants',       palette: { material: 'cloth', color: 'navy' } },
-    { sheet: 'torso_longsleeve', palette: { material: 'cloth', color: 'forest' } },
-    { sheet: 'hair_messy1',      palette: { material: 'hair',  color: 'chestnut' } },
-  ],
+const worlds = new LocalWorldStorage()
+const characters = new LocalCharacterStorage()
+
+/** Aparência do personagem em uso (o último salvo no criador). */
+async function activeAppearance(): Promise<Appearance> {
+  const data = await loadCharacterData(assetBase)
+  const [list, active] = await Promise.all([characters.list(), characters.getActive()])
+  const chosen = list.find((c) => c.id === active) ?? list[0]
+  return normalizeAppearance(data, chosen?.appearance ?? defaultAppearance())
 }
 
-document.getElementById('hud')!.hidden = !play
-
-// editor abre a última zona salva (ou a demonstração, na primeira vez);
-// o jogo começa na zona inicial do mundo
-const storage = new LocalWorldStorage()
+/** Editor abre a última zona salva (ou a demonstração, na primeira vez). */
 async function editorZone(): Promise<ZoneData> {
-  const [last] = await storage.list().catch(() => [])
-  return (last && (await storage.load(last.id))) || makeDemoZone()
+  const [last] = await worlds.list().catch(() => [])
+  return (last && (await worlds.load(last.id))) || makeDemoZone()
 }
 
-const vortable = mountVortable(document.getElementById('app')!, {
-  mode: play ? 'play' : 'edit',
-  zone: play ? undefined : await editorZone(),
-  appearance,
-  assetBase,
-  storage,
-})
+if (params.has('personagem')) {
+  hud.hidden = true
+  mountCharacterCreator(app, { assetBase, storage: characters, back: { label: 'Voltar ao editor', onClick: () => go('') } })
+} else {
+  const play = params.has('jogar')
+  hud.hidden = !play
+  const vortable = mountVortable(app, {
+    mode: play ? 'play' : 'edit',
+    zone: play ? undefined : await editorZone(),
+    appearance: await activeAppearance(),
+    assetBase,
+    storage: worlds,
+    onEditCharacter: () => go('?personagem'),
+  })
 
-const pick = <T,>(list: T[]) => list[Math.floor(Math.random() * list.length)]
-
-async function randomAppearance(): Promise<Appearance> {
-  const [skins, eyes, cloth, hair] = await Promise.all(
-    ['body', 'eye', 'cloth', 'hair'].map((m) => paletteNames(assetBase, m)),
-  )
-  const skin = pick(skins)
-  const colors: Record<string, { material: string; color: string }> = {
-    body: { material: 'body', color: skin },
-    head: { material: 'body', color: skin },
-    eyes: { material: 'eye', color: pick(eyes) },
-    feet_shoes: { material: 'cloth', color: pick(cloth) },
-    legs_pants: { material: 'cloth', color: pick(cloth) },
-    torso_longsleeve: { material: 'cloth', color: pick(cloth) },
-    hair_messy1: { material: 'hair', color: pick(hair) },
-  }
-  return { layers: appearance.layers.map((l) => ({ sheet: l.sheet, palette: colors[l.sheet] })) }
+  // R sorteia uma aparência pra testar (não salva)
+  window.addEventListener('keydown', async (e) => {
+    const typing = (e.target as HTMLElement).matches('input, textarea, select')
+    if (!typing && (e.key === 'r' || e.key === 'R')) vortable.setAppearance(randomAppearance(await loadCharacterData(assetBase)))
+  })
 }
-
-window.addEventListener('keydown', async (e) => {
-  const typing = (e.target as HTMLElement).matches('input, textarea, select')
-  if (!typing && (e.key === 'r' || e.key === 'R')) vortable.setAppearance(await randomAppearance())
-})

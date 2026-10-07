@@ -92,18 +92,33 @@ export function newZone(name: string, width: number, height: number, base = 'gra
   }
 }
 
-/** Uma cor escolhida de uma paleta LPC (ex.: material 'hair', cor 'ginger'). */
-export interface PaletteChoice {
-  material: string
-  color: string
+export type BodyType = 'male' | 'female'
+
+/** Um item escolhido num espaço do personagem (cabelo, camisa...). */
+export interface AppearanceItem {
+  /** Id no catálogo do personagem. */
+  id: string
+  /** Variante (itens que vêm em versões prontas, sem troca de cor). */
+  variant?: string
+  /** Cor escolhida por canal (ex.: { color: 'ginger' } ou { color_2: 'blue' }). */
+  colors?: Record<string, string>
 }
 
-/** Uma camada da aparência: qual folha LPC e com qual cor. */
-export interface AppearanceLayer {
-  sheet: string
-  palette?: PaletteChoice
-}
-
+/** A aparência de um boneco: corpo, cor da pele e o item de cada espaço. */
 export interface Appearance {
-  layers: AppearanceLayer[]
+  version: 2
+  body: BodyType
+  /** Cor da pele (paleta "body"); cabeça, orelhas etc. acompanham. */
+  skin: string
+  /** id do espaço → item. */
+  slots: Record<string, AppearanceItem>
+}
+
+/** Um personagem salvo. */
+export interface CharacterSave {
+  version: 1
+  id: string
+  name: string
+  appearance: Appearance
+  updatedAt: number
 }

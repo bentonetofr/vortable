@@ -1,21 +1,26 @@
 // ────────────────────────────────────────────────────────
-// Monta o boneco: pega as camadas LPC (corpo, cabeça, roupa, cabelo...),
-// troca as cores de cada uma pela paleta escolhida e empilha tudo numa
-// folha só por animação. O jogo desenha 1 sprite por boneco, não 10.
+// Monta o boneco: pega as camadas de cada item escolhido (corpo, cabeça,
+// roupa, cabelo...), troca as cores de cada canal pela cor escolhida e
+// empilha tudo (pela ordem zPos do LPC) numa folha só por animação.
+// O jogo desenha 1 sprite por boneco, não 15.
 // ────────────────────────────────────────────────────────
 
 import Phaser from 'phaser'
-import { ANIMS, FRAME, PALETTES, characterSheetById, type AnimName } from '../assets/catalog'
-import type { Appearance, Dir } from '../types'
+import { layerDir, loadCharacterData, type CharItem, type CharacterData } from './catalog'
+import type { Appearance, AppearanceItem, Dir } from '../types'
 
+export const FRAME = 64
 export const DIR_ROWS: Dir[] = ['up', 'left', 'down', 'right']
 
-type Palettes = Record<string, Record<string, string[]>>
+/** Animações LPC: quadros por linha; linhas sempre up, left, down, right. */
+export const ANIMS = {
+  walk: { frames: 9, rate: 10 },
+  run: { frames: 8, rate: 12 },
+  idle: { frames: 2, rate: 2 },
+} as const
+export type AnimName = keyof typeof ANIMS
 
 const imageCache = new Map<string, Promise<HTMLImageElement>>()
-let palettesPromise: Promise<Palettes> | null = null
-/** De qual pasta de assets as paletas em cache vieram. */
-let palettesBase = ''
 
 function loadImage(url: string): Promise<HTMLImageElement> {
   let p = imageCache.get(url)
@@ -34,44 +39,33 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   return p
 }
 
-function loadPalettes(assetBase: string): Promise<Palettes> {
-  if (palettesBase !== assetBase) {
-    palettesPromise = null
-    palettesBase = assetBase
-  }
-  palettesPromise ??= Promise.all(
-    Object.entries(PALETTES).map(async ([material, def]) => {
-      const res = await fetch(assetBase + def.url)
-      if (!res.ok) throw new Error(`não carregou ${def.url} (${res.status})`)
-      return [material, (await res.json()) as Record<string, string[]>] as const
-    }),
-  )
-    .then((entries) => Object.fromEntries(entries))
-    .catch((err) => {
-      palettesPromise = null // deixa tentar de novo depois
-      throw err
-    })
-  return palettesPromise
-}
-
-export async function paletteNames(assetBase: string, material: string): Promise<string[]> {
-  return Object.keys((await loadPalettes(assetBase))[material] ?? {})
-}
-
 function hexToRgb(hex: string): number {
   return parseInt(hex.replace('#', ''), 16)
 }
 
-/** Troca cada cor da paleta base pela cor de mesma posição na paleta escolhida. */
-function recolor(ctx: CanvasRenderingContext2D, w: number, h: number, from: string[], to: string[]) {
+/** Mapa cor-original → cor-nova de todos os canais de um item escolhido. */
+function colorMap(data: CharacterData, item: CharItem, chosen: AppearanceItem, skin: string) {
   const map = new Map<number, number>()
-  from.forEach((c, i) => to[i] && map.set(hexToRgb(c), hexToRgb(to[i])))
-  const img = ctx.getImageData(0, 0, w, h)
+  for (const ch of item.colors ?? []) {
+    const name = ch.material === 'body' && item.matchBody ? skin : chosen.colors?.[ch.key]
+    const target = name ? data.palettes[ch.material]?.[name] : undefined
+    if (!target) continue
+    ch.source.forEach((c, i) => {
+      const to = target[Math.min(i, target.length - 1)]
+      if (to) map.set(hexToRgb(c), hexToRgb(to))
+    })
+  }
+  return map
+}
+
+function recolor(canvas: HTMLCanvasElement, map: Map<number, number>) {
+  if (!map.size) return
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })!
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height)
   const d = img.data
   for (let i = 0; i < d.length; i += 4) {
     if (d[i + 3] === 0) continue
-    const rgb = (d[i] << 16) | (d[i + 1] << 8) | d[i + 2]
-    const swap = map.get(rgb)
+    const swap = map.get((d[i] << 16) | (d[i + 1] << 8) | d[i + 2])
     if (swap !== undefined) {
       d[i] = swap >> 16
       d[i + 1] = (swap >> 8) & 0xff
@@ -81,71 +75,134 @@ function recolor(ctx: CanvasRenderingContext2D, w: number, h: number, from: stri
   ctx.putImageData(img, 0, 0)
 }
 
-async function composeAnim(assetBase: string, appearance: Appearance, anim: AnimName, palettes: Palettes) {
+/**
+ * Item sem a animação pedida: monta a partir da "walk" (parado = quadro 0
+ * de cada direção; correndo = os 8 quadros do passo).
+ */
+function fromWalk(walk: HTMLImageElement, anim: AnimName) {
+  const { frames } = ANIMS[anim]
+  const c = document.createElement('canvas')
+  c.width = frames * FRAME
+  c.height = 4 * FRAME
+  const ctx = c.getContext('2d')!
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < frames; col++) {
+      const src = anim === 'idle' ? 0 : (col % 8) + 1
+      ctx.drawImage(walk, src * FRAME, row * FRAME, FRAME, FRAME, col * FRAME, row * FRAME, FRAME, FRAME)
+    }
+  }
+  return c
+}
+
+interface PlacedLayer {
+  z: number
+  order: number
+  url: string
+  fallback: boolean
+  map: Map<number, number>
+}
+
+/** Todas as camadas da aparência, em ordem de desenho. */
+function layersOf(data: CharacterData, assetBase: string, a: Appearance, anim: AnimName, only?: string): PlacedLayer[] {
+  const out: PlacedLayer[] = []
+  let order = 0
+  for (const [slot, chosen] of Object.entries(a.slots)) {
+    if (only && slot !== only) continue
+    const item = data.byId.get(chosen.id)
+    if (!item) continue
+    const has = item.anims.includes(anim)
+    const file = has ? anim : 'walk'
+    const map = colorMap(data, item, chosen, a.skin)
+    for (const layer of item.layers) {
+      const dir = layerDir(layer, a.body)
+      const rel = chosen.variant ? `${dir}${file}/${chosen.variant}.png` : `${dir}${file}.png`
+      out.push({ z: layer.z, order: order++, url: assetBase + data.catalog.sheets + rel, fallback: !has, map })
+    }
+  }
+  return out.sort((x, y) => x.z - y.z || x.order - y.order)
+}
+
+/** Folha de uma animação com a aparência inteira (ou só de um espaço, pras miniaturas). */
+export async function composeAnim(assetBase: string, a: Appearance, anim: AnimName, only?: string) {
+  const data = await loadCharacterData(assetBase)
   const { frames } = ANIMS[anim]
   const out = document.createElement('canvas')
   out.width = frames * FRAME
   out.height = 4 * FRAME
   const octx = out.getContext('2d')!
 
-  const layers = appearance.layers
-    .map((l) => ({ layer: l, def: characterSheetById.get(l.sheet) }))
-    .filter((x) => x.def)
-    .sort((a, b) => a.def!.z - b.def!.z)
-
-  const images = await Promise.all(layers.map(({ def }) => loadImage(`${assetBase}${def!.dir}/${anim}.png`).catch(() => null)))
-
-  layers.forEach(({ layer, def }, i) => {
+  const layers = layersOf(data, assetBase, a, anim, only)
+  const images = await Promise.all(layers.map((l) => loadImage(l.url).catch((err) => {
+    console.warn('[vortable] camada do boneco não carregou:', err.message)
+    return null
+  })))
+  layers.forEach((l, i) => {
     const img = images[i]
     if (!img) return
-    // a folha foi desenhada na paleta base do material DELA; a cor escolhida
-    // pode vir de outro material (ex.: cabelo com cor de tecido)
-    const from = palettes[def!.material]?.[PALETTES[def!.material]?.base]
-    const choice = layer.palette
-    const target = choice ? palettes[choice.material]?.[choice.color] : undefined
-    if (!from || !target || from === target) {
-      octx.drawImage(img, 0, 0)
-      return
-    }
-    const tmp = document.createElement('canvas')
-    tmp.width = img.width
-    tmp.height = img.height
-    const tctx = tmp.getContext('2d', { willReadFrequently: true })!
-    tctx.drawImage(img, 0, 0)
-    recolor(tctx, tmp.width, tmp.height, from, target)
-    octx.drawImage(tmp, 0, 0)
+    const sheet = document.createElement('canvas')
+    sheet.width = out.width
+    sheet.height = out.height
+    const src = l.fallback ? fromWalk(img, anim) : img
+    sheet.getContext('2d')!.drawImage(src, 0, 0)
+    recolor(sheet, l.map)
+    octx.drawImage(sheet, 0, 0)
   })
   return out
 }
 
 /**
- * Gera (ou regera) as texturas e animações de um boneco no Phaser.
- * Texturas: `${key}:walk`, `${key}:idle`...  Animações: `${key}:walk:down`...
+ * Um quadro só (64×64) da "walk", pra miniaturas: rápido porque recolore
+ * só o quadro. Passe uma aparência com só os espaços que quer ver.
  */
+export async function composeFrame(assetBase: string, a: Appearance, row = 2, col = 0) {
+  const data = await loadCharacterData(assetBase)
+  const out = document.createElement('canvas')
+  out.width = out.height = FRAME
+  const octx = out.getContext('2d')!
+  const layers = layersOf(data, assetBase, a, 'walk')
+  const images = await Promise.all(layers.map((l) => loadImage(l.url).catch(() => null)))
+  layers.forEach((l, i) => {
+    const img = images[i]
+    if (!img) return
+    const tile = document.createElement('canvas')
+    tile.width = tile.height = FRAME
+    tile.getContext('2d')!.drawImage(img, col * FRAME, row * FRAME, FRAME, FRAME, 0, 0, FRAME, FRAME)
+    recolor(tile, l.map)
+    octx.drawImage(tile, 0, 0)
+  })
+  return out
+}
+
+/** As três animações (prévia do criador e textura do jogo). */
+export async function composeAll(assetBase: string, a: Appearance) {
+  const names = Object.keys(ANIMS) as AnimName[]
+  const canvases = await Promise.all(names.map((n) => composeAnim(assetBase, a, n)))
+  return Object.fromEntries(names.map((n, i) => [n, canvases[i]])) as Record<AnimName, HTMLCanvasElement>
+}
+
 /** Qual aparência cada chave já tem montada (trocar de zona não remonta o boneco). */
 const built = new WeakMap<Phaser.Textures.TextureManager, Map<string, string>>()
 
+/**
+ * Gera (ou regera) as texturas e animações de um boneco no Phaser.
+ * Texturas: `${key}:walk`, `${key}:idle`...  Animações: `${key}:walk:down`...
+ */
 export async function buildCharacter(scene: Phaser.Scene, key: string, assetBase: string, appearance: Appearance) {
   const sig = JSON.stringify(appearance)
   let cache = built.get(scene.textures)
   if (!cache) built.set(scene.textures, (cache = new Map()))
   if (cache.get(key) === sig && scene.textures.exists(`${key}:walk`)) return
 
-  const palettes = await loadPalettes(assetBase)
-  const names = Object.keys(ANIMS) as AnimName[]
-  const canvases = await Promise.all(names.map((a) => composeAnim(assetBase, appearance, a, palettes)))
-
-  names.forEach((anim, i) => {
+  const sheets = await composeAll(assetBase, appearance)
+  for (const anim of Object.keys(ANIMS) as AnimName[]) {
     const texKey = `${key}:${anim}`
     const { frames, rate } = ANIMS[anim]
     for (const dir of DIR_ROWS) scene.anims.remove(`${texKey}:${dir}`)
     if (scene.textures.exists(texKey)) scene.textures.remove(texKey)
 
-    const tex = scene.textures.addCanvas(texKey, canvases[i])!
+    const tex = scene.textures.addCanvas(texKey, sheets[anim])!
     for (let row = 0; row < 4; row++) {
-      for (let col = 0; col < frames; col++) {
-        tex.add(row * frames + col, 0, col * FRAME, row * FRAME, FRAME, FRAME)
-      }
+      for (let col = 0; col < frames; col++) tex.add(row * frames + col, 0, col * FRAME, row * FRAME, FRAME, FRAME)
     }
     DIR_ROWS.forEach((dir, row) => {
       // no walk o quadro 0 é a pose parada; o ciclo é 1..8
@@ -157,6 +214,6 @@ export async function buildCharacter(scene: Phaser.Scene, key: string, assetBase
         repeat: -1,
       })
     })
-  })
+  }
   cache.set(key, sig)
 }

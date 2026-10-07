@@ -81,11 +81,15 @@ scripts/      ferramentas de assets
 - ⏳ Pendente (leva de arte): casas por fora com porta, móveis, paredes com perspectiva
 - ✅ *Mundo explorável com várias áreas*
 
-### M3 — Criador de personagem
-- Camadas LPC: corpo, pele, olhos, cabelo, barba, cicatrizes/marcas, roupas, armadura, capa, sapatos, acessórios, armas
-- Recoloração por paleta
-- Prévia animada (andar, atacar, conjurar...), aleatorizar, salvar
-- Personagem compilado em um spritesheet único (performance)
+### M3 — Criador de personagem ✅ (concluído)
+- Catálogo gerado do Universal LPC (commit fixo): 385 itens, 46 espaços em 5 abas
+  (Corpo, Cabelo, Roupa, Acessórios, Marcas — inclui cicatrizes, ferimentos, prótese)
+- Corpo masculino/feminino, pele (22 tons), até 3 cores por item, variantes,
+  camadas na frente/atrás do corpo (capas, asas), cabeças humanas e fantásticas
+- Prévia animada (parado/andando/correndo, 4 direções), miniaturas, aleatório
+- Personagens salvos (contrato `CharacterStorage`); o "em uso" vai pro Testar e pro jogo
+- Folhas (~13 MB) no projeto, sem depender de CDN; créditos gerados automaticamente
+- ⏳ Pendente: tipos de corpo extras do LPC (musculoso, adolescente, criança), expressões
 - ✅ *Cada jogador cria seu boneco único*
 
 ### M4 — Integração Vorterium + multiplayer

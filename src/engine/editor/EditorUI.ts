@@ -5,6 +5,7 @@
 // ────────────────────────────────────────────────────────
 
 import css from './editor.css?inline'
+import { h, injectStyle } from '../ui/dom'
 import { ICONS } from './icons'
 import type { EditorState, Tool } from './EditorState'
 import { TERRAINS, canBeBase, terrainById, terrainFrameRect, terrainTexture } from '../assets/terrains'
@@ -20,21 +21,8 @@ export interface EditorHooks {
   stopTest(): void
   deleteSelected(): void
   centerOnZone(): void
-}
-
-type Children = (Node | string | null | undefined | false)[]
-
-function h<K extends keyof HTMLElementTagNameMap>(tag: K, props: Record<string, unknown> = {}, ...children: Children) {
-  const el = document.createElement(tag)
-  for (const [k, v] of Object.entries(props)) {
-    if (v === undefined || v === null || v === false) continue
-    if (k === 'class') el.className = String(v)
-    else if (k === 'html') el.innerHTML = String(v)
-    else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v as EventListener)
-    else el.setAttribute(k, v === true ? '' : String(v))
-  }
-  for (const c of children) if (c !== null && c !== undefined && c !== false) el.append(c)
-  return el
+  /** Abrir o criador de personagem (se quem montou o editor oferecer). */
+  editCharacter?: () => void
 }
 
 const TOOLS: { id: Tool; label: string; key: string }[] = [
@@ -48,8 +36,6 @@ const TOOLS: { id: Tool; label: string; key: string }[] = [
 ]
 
 const BRUSH_MAX = 8
-
-let styleInjected = false
 
 export class EditorUI {
   readonly root: HTMLDivElement
@@ -82,10 +68,7 @@ export class EditorUI {
   }
 
   constructor(parent: HTMLElement, private state: EditorState, private storage: WorldStorage, private hooks: EditorHooks) {
-    if (!styleInjected) {
-      document.head.append(h('style', { 'data-vortable': '' }, css))
-      styleInjected = true
-    }
+    injectStyle('editor', css)
     this.stage = h('div', { class: 'vt-stage' })
     this.root = h('div', { class: 'vt-root' },
       this.buildTop(),
@@ -182,6 +165,7 @@ export class EditorUI {
       this.undoBtn,
       this.redoBtn,
       h('span', { class: 'vt-spacer' }),
+      this.hooks.editCharacter ? this.iconBtn(ICONS.person, 'Personagem', () => this.openCharacter()) : null,
       this.iconBtn(ICONS.play, 'Testar', () => this.startTest(), 'vt-primary'),
     )
   }
@@ -621,6 +605,11 @@ export class EditorUI {
     this.state.selected = null
     this.state.emit('zone')
     this.toast(`Zona agora tem ${width}×${height} tiles.`)
+  }
+
+  private async openCharacter() {
+    if (!(await this.resolveUnsaved())) return
+    this.hooks.editCharacter?.()
   }
 
   private startTest() {

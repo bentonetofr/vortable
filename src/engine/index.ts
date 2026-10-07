@@ -16,11 +16,14 @@ import { EditorUI } from './editor/EditorUI'
 import { LocalWorldStorage, type WorldStorage } from './storage'
 import { newZone, type Appearance, type ZoneData } from './types'
 
+import { CreatorUI } from './character/CreatorUI'
+import { LocalCharacterStorage, type CharacterStorage } from './character/storage'
+
 export * from './types'
 export * from './storage'
-export { CHARACTER_SHEETS, PALETTES } from './assets/catalog'
+export * from './character/storage'
 export { TERRAINS } from './assets/terrains'
-export { paletteNames } from './character/compose'
+export { defaultAppearance, randomAppearance, loadCharacterData, normalizeAppearance } from './character/catalog'
 
 export interface VortableOptions {
   mode?: 'play' | 'edit'
@@ -34,6 +37,8 @@ export interface VortableOptions {
   assetBase?: string
   /** Onde ficam o mundo e as zonas. Padrão: localStorage do navegador. */
   storage?: WorldStorage
+  /** Editor: mostra o botão "Personagem" e chama isto ao clicar. */
+  onEditCharacter?: () => void
 }
 
 export interface VortableHandle {
@@ -75,6 +80,7 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
       },
       deleteSelected: () => editor()?.deleteSelected(),
       centerOnZone: () => editor()?.centerOnZone(),
+      editCharacter: opts.onEditCharacter,
     })
     host = ui.stage
   }
@@ -133,4 +139,23 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
       game.destroy(true)
     },
   }
+}
+
+export interface CreatorMountOptions {
+  /** URL da pasta de assets (com / no fim). Padrão: './assets/'. */
+  assetBase?: string
+  /** Onde ficam os personagens. Padrão: localStorage do navegador. */
+  storage?: CharacterStorage
+  /** Botão de voltar (ex.: pro editor), opcional. */
+  back?: { label: string; onClick: () => void }
+}
+
+/** Criador de personagem (não usa o Phaser: só DOM e canvas). */
+export function mountCharacterCreator(parent: HTMLElement, opts: CreatorMountOptions = {}) {
+  const ui = new CreatorUI(parent, {
+    assetBase: opts.assetBase ?? './assets/',
+    storage: opts.storage ?? new LocalCharacterStorage(),
+    back: opts.back,
+  })
+  return { destroy: () => ui.destroy() }
 }
