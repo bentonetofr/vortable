@@ -144,13 +144,22 @@ function cornerMask(c: (TerrainDef | null)[], r: number) {
 /**
  * Tiles bloqueados pelo terreno: 3+ cantos sólidos. Junta vizinhos na mesma
  * linha. Nos cômodos (zone.rooms) a estrutura manda: todo tile que toca a
- * parede é sólido, e a borda em volta do cômodo também (em qualquer fundo).
+ * parede é sólido, e todo tile da BORDA (cantos dentro e fora do cômodo)
+ * também — é nele que a moldura e a faixa escura são desenhadas, a partir
+ * da linha exata onde o piso acaba. Vale em qualquer fundo.
  */
 export function solidTerrainRects(zone: ZoneData) {
   const rects: { x: number; y: number; w: number; h: number }[] = []
   const W = zone.width + 1
   const roles = zone.rooms ? roomRoles(zone) : null
   const isWall = (vx: number, vy: number) => !!roles && roles[vy * W + vx].endsWith('#w')
+  const isIn = (vx: number, vy: number) => !!roles && roles[vy * W + vx] !== ''
+  /** Tile com cantos dentro e fora do cômodo (a borda, onde fica a moldura). */
+  const isEdge = (tx: number, ty: number) => {
+    if (!roles) return false
+    const n = (isIn(tx, ty) ? 1 : 0) + (isIn(tx + 1, ty) ? 1 : 0) + (isIn(tx, ty + 1) ? 1 : 0) + (isIn(tx + 1, ty + 1) ? 1 : 0)
+    return n > 0 && n < 4
+  }
   for (let ty = 0; ty < zone.height; ty++) {
     let runStart = -1
     for (let tx = 0; tx <= zone.width; tx++) {
@@ -161,7 +170,7 @@ export function solidTerrainRects(zone: ZoneData) {
         if (cornerTerrain(zone, tx + 1, ty).solid) n++
         if (cornerTerrain(zone, tx, ty + 1).solid) n++
         if (cornerTerrain(zone, tx + 1, ty + 1).solid) n++
-        blocked = n >= 3 || isWall(tx, ty) || isWall(tx + 1, ty) || isWall(tx, ty + 1) || isWall(tx + 1, ty + 1)
+        blocked = n >= 3 || isEdge(tx, ty) || isWall(tx, ty) || isWall(tx + 1, ty) || isWall(tx, ty + 1) || isWall(tx + 1, ty + 1)
       }
       if (blocked && runStart < 0) runStart = tx
       if (!blocked && runStart >= 0) {
@@ -170,18 +179,15 @@ export function solidTerrainRects(zone: ZoneData) {
       }
     }
   }
-  // borda: vazio encostado em outro terreno, ou qualquer vértice fora de um
-  // cômodo encostado nele, ganha um bloco em volta (fecha as paredes finas
-  // entre cômodos e segura o boneco antes da moldura)
+  // vazio pintado à mão (fora dos cômodos) encostado em outro terreno: um
+  // bloco em volta do vértice, pra uma linha fina de vazio também fechar
   const E = 12
-  const inRoom = (vx: number, vy: number) => !!roles && roles[vy * W + vx] !== ''
   for (let vy = 0; vy <= zone.height; vy++) {
     for (let vx = 0; vx <= zone.width; vx++) {
-      const near = [[vx + 1, vy], [vx - 1, vy], [vx, vy + 1], [vx, vy - 1]]
-        .filter(([x, y]) => x >= 0 && y >= 0 && x <= zone.width && y <= zone.height)
-      const voidEdge = cornerTerrain(zone, vx, vy).edgeSolid && near.some(([x, y]) => !cornerTerrain(zone, x, y).edgeSolid)
-      const roomEdge = !!roles && !inRoom(vx, vy) && near.some(([x, y]) => inRoom(x, y))
-      if (voidEdge || roomEdge) rects.push({ x: vx * TILE - E, y: vy * TILE - E, w: E * 2, h: E * 2 })
+      if (!cornerTerrain(zone, vx, vy).edgeSolid || isIn(vx, vy)) continue
+      const touches = [[vx + 1, vy], [vx - 1, vy], [vx, vy + 1], [vx, vy - 1]].some(([x, y]) =>
+        x >= 0 && y >= 0 && x <= zone.width && y <= zone.height && !cornerTerrain(zone, x, y).edgeSolid)
+      if (touches) rects.push({ x: vx * TILE - E, y: vy * TILE - E, w: E * 2, h: E * 2 })
     }
   }
   return rects
