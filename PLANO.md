@@ -169,30 +169,33 @@ Photoshop e Figma.
 - **`?` mostra todos os atalhos** numa janela
 - ✅ *Editar uma zona grande é rápido e não cansa*
 
-### M3.4 — Estruturas (paredes em todas as direções)
-Hoje a parede é um terreno pintado: só dá a face de frente, então não fecha um cômodo nem faz
-corredor. A ideia é uma **camada de estruturas** (como a de cercas: um valor por tile) em que
-a parede é desenhada **vista de cima**, em qualquer direção, e o motor monta o resto:
-- **Topo da parede** (o que se vê de cima): se liga aos vizinhos sozinho — reta, quina,
-  T, cruz, ponta — em todas as direções, com contorno escuro. Materiais: pedra, tijolo,
-  madeira, rocha de caverna, e os 32 acabamentos do [LPC] Walls (escuro com moldura)
-- **Face (frente)**: onde a parede tem chão logo ao sul, aparece a face embaixo do topo,
-  com altura escolhida (0 = só o topo, como no print; 1 a 3 tiles = perspectiva de verdade),
-  usando os 252 estilos de face que já existem (moldura em cima, rodapé embaixo)
-- **Profundidade certa**: quem está atrás (ao norte) de uma parede fica escondido por ela;
-  quem está na frente aparece na frente. Paredes laterais (verticais) são finas e não
-  escondem ninguém indevidamente
-- **Colisão** no topo e na face; **vãos de porta** são só um buraco na parede (e as portas
-  do M3.2 encaixam na face)
-- **Ferramentas**:
-  - *Parede*: pinta a linha (com Shift+clique = linha reta, que já existe)
-  - *Cômodo*: arrastar um retângulo cria as 4 paredes e o piso de dentro de uma vez
-  - *Porta*: clique numa parede abre um vão (e opcionalmente põe a porta)
-  - Borracha e conta-gotas valem pra estruturas
-- **Estrutura = material do topo + estilo da face + altura**, escolhidos no painel; dá pra
-  misturar (castelo de pedra com face de tijolo, casa de madeira, caverna de rocha)
-- Por fora, a mesma ideia serve de base pro **telhado** (próximo passo das casas)
-- ✅ *Dá pra desenhar um castelo, uma masmorra ou uma casa por dentro como no print*
+### M3.4 — Estruturas (cômodos estilo Stardew) e painel novo
+**Cômodos como no Stardew Valley**: hoje dá pra chegar no visual (parede de 3 tiles em cima,
+borda escura com moldura em volta, piso dentro), mas pintando 3 camadas à mão. A ferramenta
+nova faz isso numa ação só, em qualquer forma:
+- **Ferramenta Cômodo**: arrastar um retângulo (ou pintar a forma com o pincel — salas em L,
+  corredores, a entradinha da porta embaixo) e sai pronto: piso dentro, **parede com face**
+  em cima de cada trecho que tem a borda ao norte, **moldura escura** em toda a volta
+  (esquerda, direita, embaixo) e vazio por fora
+- Cômodos vizinhos viram uma casa com **paredes internas**; borracha de cômodo encolhe/abre
+  vãos e a parede se refaz sozinha (porta entre cômodos = um corredor de 1 tile)
+- **Estilo do cômodo** = piso + parede (252) + moldura (32) + altura da parede (0 a 4;
+  0 = só a borda, pra corredores de castelo/masmorra vistos de cima) e **estilos prontos**
+  (casa de fazenda, taverna, castelo, masmorra, caverna)
+- Trocar o estilo de um cômodo já feito (clique no cômodo com o estilo novo)
+- Colisão e profundidade certas (a face da parede bloqueia; quem anda atrás de móveis altos
+  some atrás deles, como já acontece)
+- Portas e janelas do M3.2 encaixam na face da parede
+
+**Painel de peças mais limpo** (o monte de abas some):
+- Em cima: busca + **6 grupos com ícone** (Favoritos, Recentes, Natureza, Casa, Vila,
+  Masmorra) no lugar de 25 categorias soltas
+- Embaixo do grupo: só as **subcategorias dele**, numa linha que rola
+- A grade mostra as peças **divididas por subcategoria** com o nome e a contagem
+- Categorias repetidas/confusas são unidas ("Tocos e galhos" + "Troncos e galhos"; "Interior")
+- Mesmo esquema na aba de terrenos (Natureza, Interior, Paredes, Cercas) e a aba nova de
+  **cômodos**
+- ✅ *Montar o interior de uma casa como no Stardew leva um minuto*
 
 ### M3.5 — Iluminação e atmosfera
 - **Luz ambiente por zona**: cor + intensidade, com presets (Dia, Entardecer, Noite,
