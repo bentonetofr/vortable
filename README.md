@@ -60,7 +60,7 @@ npm run dev
 
 ### Cômodos (interiores estilo Stardew)
 
-Aba **Cômodos** (ou tecla `C`), numa zona de interior (fundo *Vazio*):
+Aba **Cômodos** (ou tecla `C`) — funciona em zona de interior (fundo *Vazio*) ou de exterior:
 - **Cômodo**: arraste um retângulo e sai pronto — piso, parede com face em cima, moldura escura
   em volta. Encostado num cômodo de outro estilo, nasce uma parede fina entre os dois; do mesmo
   estilo, vira um cômodo maior.

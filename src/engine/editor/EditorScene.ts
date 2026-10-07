@@ -26,7 +26,7 @@ import { createObjectSprite, updateObjectSprite, type ObjectSprite } from '../wo
 import { isTyping } from '../world/Player'
 import { TILE, newId, type Portal, type ZoneObject } from '../types'
 import type { EditorState } from './EditorState'
-import { applyRooms, connectedRoom, decodeRoom, encodeRoom, roomRoles } from './rooms'
+import { applyRooms, connectedRoom, decodeRoom, encodeRoom, roomRoles } from '../world/rooms'
 
 export const ZOOM_MIN = 0.1
 export const ZOOM_MAX = 8

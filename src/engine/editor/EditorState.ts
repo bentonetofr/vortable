@@ -5,7 +5,7 @@
 // ────────────────────────────────────────────────────────
 
 import type { WorldData, ZoneData, ZoneObject } from '../types'
-import { ROOM_PRESETS, type RoomStyle } from './rooms'
+import { ROOM_PRESETS, type RoomStyle } from '../world/rooms'
 import type { ZoneSummary } from '../storage'
 
 export type Tool = 'brush' | 'fill' | 'erase' | 'object' | 'select' | 'room' | 'portal' | 'spawn'

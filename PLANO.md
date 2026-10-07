@@ -197,8 +197,8 @@ nova faz isso numa ação só, em qualquer forma:
   **cômodos**
 - Feito: modos Cômodo / Parede / Porta; paredes finas automáticas entre cômodos de estilos
   diferentes; 6 estilos prontos; o vazio na borda de um cômodo colide (paredes finas fecham)
-- ⏳ Cômodos numa zona de exterior (fundo grama) ficam sem a parede fina sólida — por enquanto
-  são pra zonas de interior
+- Colisão vem da estrutura: todo tile que toca a parede é sólido (a parede inteira, até o
+  rodapé) e a borda em volta do cômodo também, em qualquer fundo (vale em zona de exterior)
 - ✅ *Montar o interior de uma casa como no Stardew leva um minuto*
 
 ### M3.5 — Iluminação e atmosfera
