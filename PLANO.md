@@ -71,11 +71,14 @@ scripts/      ferramentas de assets
   colisão pintadas à mão, ajuste fino do pé de cada objeto
 - ✅ *Mestre cria uma zona e anda nela*
 
-### M2 — Mundo e zonas conectadas
-- Saídas: bordas, portas, escadas → levam a outra zona
-- Carrega apenas a zona atual; transição com fade
-- Visão geral do mundo (grafo de zonas)
-- Interiores (casa = outra zona)
+### M2 — Mundo e zonas conectadas ✅ (concluído)
+- Saídas (portas, bordas, escadas) desenhadas no editor, com destino escolhido no painel
+  e "ligar ida e volta" (cria a saída de volta na outra zona)
+- Carrega apenas a zona atual; transição com fade; chega na saída de destino
+- Mapa do mundo: cartões arrastáveis, setas das ligações, zona inicial (★)
+- Interiores básicos: fundo vazio, pisos (madeira, pedra, 3 tapetes), paredes (tijolo, pedra)
+- Contrato `WorldStorage` (mundo + zonas) — é o que o Vorterium vai implementar no M4
+- ⏳ Pendente (leva de arte): casas por fora com porta, móveis, paredes com perspectiva
 - ✅ *Mundo explorável com várias áreas*
 
 ### M3 — Criador de personagem

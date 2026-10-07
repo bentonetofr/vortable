@@ -15,10 +15,11 @@ type Keys = Record<'up' | 'down' | 'left' | 'right' | 'w' | 'a' | 's' | 'd' | 's
 
 export class Player {
   readonly sprite: Phaser.Physics.Arcade.Sprite
-  private dir: Dir = 'down'
   private keys: Keys
+  /** Parado à força (trocando de zona, cutscene): ignora o teclado. */
+  frozen = false
 
-  constructor(scene: Phaser.Scene, private charKey: string, x: number, y: number) {
+  constructor(scene: Phaser.Scene, private charKey: string, x: number, y: number, private dir: Dir = 'down') {
     this.sprite = scene.physics.add.sprite(x, y, `${charKey}:idle`, 0)
     this.sprite.setOrigin(0.5, FEET_Y / 64)
     // caixa de colisão só nos pés, pra poder passar "atrás" das coisas
@@ -41,7 +42,22 @@ export class Player {
     this.play(this.sprite.body!.velocity.length() > 0 ? 'walk' : 'idle')
   }
 
+  get facing() {
+    return this.dir
+  }
+
+  /** Retângulo do pé (o que colide e o que pisa nas saídas), em px do mundo. */
+  get foot() {
+    const b = this.sprite.body as Phaser.Physics.Arcade.Body
+    return { x: b.x, y: b.y, w: b.width, h: b.height }
+  }
+
   update() {
+    if (this.frozen) {
+      this.sprite.setVelocity(0, 0)
+      this.play('idle')
+      return
+    }
     const k = this.keys
     // digitando num campo de texto da página (ex.: chat do Vorterium): o boneco não anda
     const typing = isTyping()

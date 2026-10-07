@@ -15,7 +15,7 @@ npm run dev
 ```
 
 - http://localhost:5180 — **editor de zonas**
-- http://localhost:5180/?jogar — só o jogo, na última zona salva
+- http://localhost:5180/?jogar — só o jogo, começando na zona inicial do mundo (★ no mapa do mundo)
 
 ### Atalhos do editor
 
@@ -23,6 +23,7 @@ npm run dev
 |---|---|
 | `B` / `G` / `E` | pincel / balde / borracha |
 | `O` / `V` / `P` | colocar objeto / selecionar e mover / ponto de início |
+| `X` | saída: arraste pra desenhar a área que leva a outra zona; o destino se escolhe no painel |
 | `[` `]` | tamanho do pincel |
 | `H` / `K` / `N` | grade / colisões / encaixar na grade |
 | `Ctrl+Z` / `Ctrl+Y` | desfazer / refazer |
@@ -32,6 +33,16 @@ npm run dev
 | roda do mouse | zoom |
 | `Alt`+clique | conta-gotas: copia o terreno ou o objeto sob o mouse |
 | `Esc` | sair do teste / soltar ferramenta |
+
+### Mundo e zonas
+
+- Cada zona é um pedaço do mundo; só a zona atual fica carregada.
+- **Saídas** (ferramenta `X`) levam a outra zona. No painel, escolha *Leva para* e *Chega em*;
+  **Ligar ida e volta** faz a saída de lá trazer de volta (e cria uma, se não existir).
+- **Mundo** (barra de cima) mostra o mapa do mundo: zonas como cartões, setas pras saídas,
+  ★ = onde os jogadores começam. Arraste os cartões pra organizar.
+- **Nova → Interior** cria uma zona pequena com fundo escuro; use os terrenos de *Interior*
+  (pisos, tapetes, paredes).
 
 No jogo: `WASD`/setas andam, `Shift` corre, `C` mostra colisões, `R` sorteia a aparência.
 

@@ -1,11 +1,12 @@
 // ────────────────────────────────────────────────────────
-// Contrato de armazenamento das zonas. O motor só conhece esta
-// interface; quem monta o Vortable entrega a implementação:
-//   • LocalZoneStorage — no navegador (harness de dev, uso offline)
-//   • (M4) Supabase, pela ponte no Vorterium
+// Contrato de armazenamento de um mundo (as zonas + os dados do mundo).
+// O motor só conhece esta interface; quem monta o Vortable entrega a
+// implementação:
+//   • LocalWorldStorage — no navegador (harness de dev, uso offline)
+//   • (M4) Supabase, pela ponte no Vorterium (um mundo por campanha)
 // ────────────────────────────────────────────────────────
 
-import { TILE, ZONE_MAX, ZONE_MIN, type ZoneData } from './types'
+import { TILE, ZONE_MAX, ZONE_MIN, newId, type Portal, type WorldData, type ZoneData } from './types'
 
 export interface ZoneSummary {
   id: string
@@ -13,30 +14,81 @@ export interface ZoneSummary {
   width: number
   height: number
   updatedAt: number
+  /** Zonas pra onde as saídas desta levam (pro mapa do mundo, sem abrir cada zona). */
+  links: string[]
+  /** Saídas desta zona (pra escolher o destino de uma saída sem abrir a zona). */
+  portals: { id: string; name: string }[]
 }
 
-export interface ZoneStorage {
+export interface WorldStorage {
+  /** Dados do mundo; se ainda não existe, devolve um mundo novo (sem salvar). */
+  loadWorld(): Promise<WorldData>
+  saveWorld(world: WorldData): Promise<void>
   list(): Promise<ZoneSummary[]>
   load(id: string): Promise<ZoneData | null>
   save(zone: ZoneData): Promise<void>
   remove(id: string): Promise<void>
 }
 
-const PREFIX = 'vortable:zone:'
-const INDEX = 'vortable:zones'
+export function summarize(zone: ZoneData, updatedAt = Date.now()): ZoneSummary {
+  return {
+    id: zone.id,
+    name: zone.name,
+    width: zone.width,
+    height: zone.height,
+    updatedAt,
+    links: [...new Set(zone.portals.flatMap((p) => (p.to ? [p.to.zone] : [])))],
+    portals: zone.portals.map((p) => ({ id: p.id, name: p.name })),
+  }
+}
 
-/** Zonas no localStorage do navegador (pode falhar em aba anônima — aí avisa). */
-export class LocalZoneStorage implements ZoneStorage {
+export function newWorld(name = 'Meu mundo'): WorldData {
+  return { version: 1, id: newId('mundo'), name, start: null, layout: {} }
+}
+
+/**
+ * Mundo no localStorage do navegador. `space` separa mundos diferentes
+ * no mesmo navegador; o padrão ('') usa as mesmas chaves do M1, então as
+ * zonas salvas antes continuam aparecendo.
+ */
+export class LocalWorldStorage implements WorldStorage {
+  private readonly zoneKey: string
+  private readonly indexKey: string
+  private readonly worldKey: string
+
+  constructor(space = '') {
+    const ns = space ? `vortable:${space}:` : 'vortable:'
+    this.zoneKey = `${ns}zone:`
+    this.indexKey = `${ns}zones`
+    this.worldKey = `${ns}world`
+  }
+
   private readIndex(): ZoneSummary[] {
     try {
-      return JSON.parse(localStorage.getItem(INDEX) ?? '[]') as ZoneSummary[]
+      const list = JSON.parse(localStorage.getItem(this.indexKey) ?? '[]') as Partial<ZoneSummary>[]
+      // índices do M1 não tinham links/portals
+      return list.map((z) => ({ links: [], portals: [], ...z }) as ZoneSummary)
     } catch {
       return []
     }
   }
 
   private writeIndex(list: ZoneSummary[]) {
-    localStorage.setItem(INDEX, JSON.stringify(list))
+    localStorage.setItem(this.indexKey, JSON.stringify(list))
+  }
+
+  async loadWorld() {
+    try {
+      const raw = localStorage.getItem(this.worldKey)
+      if (raw) return parseWorld(JSON.parse(raw))
+    } catch {
+      /* mundo corrompido ou storage bloqueado: começa um novo */
+    }
+    return newWorld()
+  }
+
+  async saveWorld(world: WorldData) {
+    localStorage.setItem(this.worldKey, JSON.stringify(world))
   }
 
   async list() {
@@ -45,7 +97,7 @@ export class LocalZoneStorage implements ZoneStorage {
 
   async load(id: string) {
     try {
-      const raw = localStorage.getItem(PREFIX + id)
+      const raw = localStorage.getItem(this.zoneKey + id)
       return raw ? parseZone(JSON.parse(raw)) : null
     } catch {
       return null
@@ -53,13 +105,12 @@ export class LocalZoneStorage implements ZoneStorage {
   }
 
   async save(zone: ZoneData) {
-    localStorage.setItem(PREFIX + zone.id, JSON.stringify(zone))
-    const summary: ZoneSummary = { id: zone.id, name: zone.name, width: zone.width, height: zone.height, updatedAt: Date.now() }
-    this.writeIndex([summary, ...this.readIndex().filter((z) => z.id !== zone.id)])
+    localStorage.setItem(this.zoneKey + zone.id, JSON.stringify(zone))
+    this.writeIndex([summarize(zone), ...this.readIndex().filter((z) => z.id !== zone.id)])
   }
 
   async remove(id: string) {
-    localStorage.removeItem(PREFIX + id)
+    localStorage.removeItem(this.zoneKey + id)
     this.writeIndex(this.readIndex().filter((z) => z.id !== id))
   }
 }
@@ -76,11 +127,13 @@ export function localStorageAvailable() {
   }
 }
 
+const num = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n)
+
 /**
  * Confere um JSON importado e devolve uma zona utilizável. Recusa o que
  * quebraria o motor (tamanho fora do limite, grade com tamanho errado);
- * conserta o que dá (objetos malformados são descartados, início fora da
- * zona volta pro meio).
+ * conserta o que dá (objetos/saídas malformados são descartados, início
+ * fora da zona volta pro meio).
  */
 export function parseZone(json: unknown): ZoneData {
   const z = json as Partial<ZoneData> | null
@@ -92,22 +145,44 @@ export function parseZone(json: unknown): ZoneData {
     throw new Error('Zona corrompida: a grade de terrenos não bate com o tamanho.')
   }
   const W = width! * TILE, H = height! * TILE
-  const num = (n: unknown) => typeof n === 'number' && Number.isFinite(n)
   const objects = (Array.isArray(z.objects) ? z.objects : []).filter(
     (o) => o && typeof o.kind === 'string' && num(o.x) && num(o.y),
+  )
+  const portals = (Array.isArray(z.portals) ? z.portals : []).filter(
+    (p): p is Portal => !!p && typeof p.id === 'string' && num(p.x) && num(p.y) && num(p.w) && num(p.h) && p.w > 0 && p.h > 0,
   )
   const spawn = z.spawn && num(z.spawn.x) && num(z.spawn.y) && z.spawn.x >= 0 && z.spawn.y >= 0 && z.spawn.x <= W && z.spawn.y <= H
     ? z.spawn
     : { x: W / 2, y: H / 2 }
   return {
     version: 1,
-    id: typeof z.id === 'string' && z.id ? z.id : `zona-${Date.now().toString(36)}`,
+    id: typeof z.id === 'string' && z.id ? z.id : newId('zona'),
     name: typeof z.name === 'string' ? z.name : 'Zona importada',
     width: width!,
     height: height!,
     base: typeof z.base === 'string' ? z.base : 'grass',
     corners: z.corners.map((c) => (typeof c === 'string' ? c : '')),
     objects: objects.map((o) => ({ kind: o.kind, x: Math.round(o.x), y: Math.round(o.y) })),
+    portals: portals.map((p) => ({
+      id: p.id,
+      name: typeof p.name === 'string' ? p.name : 'Saída',
+      x: Math.round(p.x), y: Math.round(p.y), w: Math.round(p.w), h: Math.round(p.h),
+      to: p.to && typeof p.to.zone === 'string' && typeof p.to.portal === 'string' ? { zone: p.to.zone, portal: p.to.portal } : null,
+    })),
     spawn: { x: Math.round(spawn.x), y: Math.round(spawn.y) },
+  }
+}
+
+export function parseWorld(json: unknown): WorldData {
+  const w = json as Partial<WorldData> | null
+  if (!w || typeof w !== 'object' || w.version !== 1) throw new Error('Dados de mundo inválidos.')
+  const layout: WorldData['layout'] = {}
+  for (const [id, p] of Object.entries(w.layout ?? {})) if (p && num(p.x) && num(p.y)) layout[id] = { x: p.x, y: p.y }
+  return {
+    version: 1,
+    id: typeof w.id === 'string' ? w.id : newId('mundo'),
+    name: typeof w.name === 'string' ? w.name : 'Meu mundo',
+    start: typeof w.start === 'string' ? w.start : null,
+    layout,
   }
 }

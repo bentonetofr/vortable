@@ -4,6 +4,8 @@
 //   balde: troca todos os vértices ligados com o mesmo terreno
 //   objeto: carimba o objeto escolhido (fantasma segue o mouse)
 //   selecionar: clica num objeto pra selecionar/arrastar; Del apaga
+//   saída: arraste pra desenhar a área que leva a outra zona; clique pra
+//          selecionar/arrastar; Del apaga (o destino se escolhe no painel)
 //   início: onde o jogador aparece
 //   Alt+clique: conta-gotas (copia terreno ou objeto)
 // Câmera: botão do meio/direito (ou Espaço + arrastar) move, roda dá zoom.
@@ -14,7 +16,7 @@ import { footRect, objectDef, sheetTexture } from '../assets/objects'
 import { terrainById } from '../assets/terrains'
 import { Ground, cornerTerrain, solidTerrainRects } from '../world/ground'
 import { createObjectSprite, moveObjectSprite } from '../world/objects'
-import { TILE } from '../types'
+import { TILE, newId, type Portal } from '../types'
 import type { EditorState } from './EditorState'
 
 const ZOOM_MIN = 0.25
@@ -29,6 +31,8 @@ export class EditorScene extends Phaser.Scene {
   private collisionGfx!: Phaser.GameObjects.Graphics
   private cursorGfx!: Phaser.GameObjects.Graphics
   private selectGfx!: Phaser.GameObjects.Graphics
+  private portalGfx!: Phaser.GameObjects.Graphics
+  private portalLabels: Phaser.GameObjects.Text[] = []
   private spawnMarker!: Phaser.GameObjects.Container
   private ghost!: Phaser.GameObjects.Image
 
@@ -38,6 +42,8 @@ export class EditorScene extends Phaser.Scene {
   private lastPaint: { tx: number; ty: number } | null = null
   private panning: { x: number; y: number } | null = null
   private dragging: { index: number; dx: number; dy: number; moved: boolean } | null = null
+  private drawingPortal: { x0: number; y0: number; x1: number; y1: number } | null = null
+  private movingPortal: { id: string; dx: number; dy: number; moved: boolean } | null = null
   private spaceKey!: Phaser.Input.Keyboard.Key
 
   constructor() {
@@ -54,6 +60,7 @@ export class EditorScene extends Phaser.Scene {
     this.collisionGfx = this.add.graphics().setDepth(1e8 + 1)
     this.cursorGfx = this.add.graphics().setDepth(1e8 + 2)
     this.selectGfx = this.add.graphics().setDepth(1e8 + 2)
+    this.portalGfx = this.add.graphics().setDepth(1e8 + 1)
     this.ghost = this.add.image(0, 0, '__WHITE').setOrigin(0.5, 1).setAlpha(0.6).setDepth(1e8 + 3).setVisible(false)
     this.spawnMarker = this.makeSpawnMarker()
     this.rebuildObjects()
@@ -80,6 +87,7 @@ export class EditorScene extends Phaser.Scene {
     const off = this.state.on((c) => {
       if (c === 'zone') this.reloadZone()
       if (c === 'ui') this.onUiChange()
+      if (c === 'world' || c === 'edit') this.drawPortals()
     })
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       off()
@@ -144,6 +152,7 @@ export class EditorScene extends Phaser.Scene {
   private refreshOverlays() {
     const z = this.state.zone
     this.spawnMarker.setPosition(z.spawn.x, z.spawn.y)
+    this.drawPortals()
 
     this.gridGfx.clear()
     if (this.state.showGrid) {
@@ -164,6 +173,48 @@ export class EditorScene extends Phaser.Scene {
         if (r) this.collisionGfx.fillRect(r.x, r.y, r.w, r.h)
       }
     }
+  }
+
+  /** Saídas: retângulo roxo com o destino escrito; a selecionada em dourado. */
+  private drawPortals() {
+    const g = this.portalGfx
+    g.clear()
+    for (const t of this.portalLabels) t.destroy()
+    this.portalLabels = []
+    const px = 1 / this.cameras.main.zoom
+    const all: (Portal | { x: number; y: number; w: number; h: number; preview: true })[] = [...this.state.zone.portals]
+    if (this.drawingPortal) all.push({ ...this.portalRect(this.drawingPortal), preview: true })
+    for (const p of all) {
+      const selected = 'id' in p && p.id === this.state.selectedPortal
+      const linked = 'to' in p && !!p.to
+      g.fillStyle(linked ? 0x8b5cf6 : 0xef4444, 0.25).fillRect(p.x, p.y, p.w, p.h)
+      g.lineStyle(px * 2, selected ? 0xffc174 : linked ? 0xa78bfa : 0xef4444, 1).strokeRect(p.x, p.y, p.w, p.h)
+      if (!('id' in p)) continue
+      const label = p.to ? `${p.name} → ${this.state.zoneName(p.to.zone)}` : `${p.name} (sem destino)`
+      const t = this.add.text(p.x + p.w / 2, p.y - 2, label, {
+        fontFamily: 'system-ui', fontSize: '10px', color: '#ffffff', stroke: '#000', strokeThickness: 3,
+      }).setOrigin(0.5, 1).setResolution(4).setScale(Math.min(2, px * 2)).setDepth(1e8 + 4)
+      this.portalLabels.push(t)
+    }
+  }
+
+  private portalRect(d: { x0: number; y0: number; x1: number; y1: number }) {
+    const g = TILE / 2
+    const x0 = Math.round(Math.min(d.x0, d.x1) / g) * g, y0 = Math.round(Math.min(d.y0, d.y1) / g) * g
+    const x1 = Math.round(Math.max(d.x0, d.x1) / g) * g, y1 = Math.round(Math.max(d.y0, d.y1) / g) * g
+    const z = this.state.zone
+    const cx0 = Phaser.Math.Clamp(x0, 0, z.width * TILE), cy0 = Phaser.Math.Clamp(y0, 0, z.height * TILE)
+    const cx1 = Phaser.Math.Clamp(Math.max(x1, x0 + g), 0, z.width * TILE), cy1 = Phaser.Math.Clamp(Math.max(y1, y0 + g), 0, z.height * TILE)
+    return { x: cx0, y: cy0, w: cx1 - cx0, h: cy1 - cy0 }
+  }
+
+  private portalAt(wx: number, wy: number) {
+    const list = this.state.zone.portals
+    for (let i = list.length - 1; i >= 0; i--) {
+      const p = list[i]
+      if (wx >= p.x && wx <= p.x + p.w && wy >= p.y && wy <= p.y + p.h) return p
+    }
+    return null
   }
 
   private applySelection() {
@@ -243,6 +294,15 @@ export class EditorScene extends Phaser.Scene {
       } else {
         this.panning = { x: p.x, y: p.y }
       }
+    } else if (tool === 'portal') {
+      const hit = this.portalAt(wx, wy)
+      if (hit) {
+        this.state.set({ selectedPortal: hit.id })
+        this.movingPortal = { id: hit.id, dx: hit.x - wx, dy: hit.y - wy, moved: false }
+      } else if (this.inside(wx, wy)) {
+        this.state.set({ selectedPortal: null })
+        this.drawingPortal = { x0: wx, y0: wy, x1: wx, y1: wy }
+      }
     } else if (tool === 'spawn') {
       if (!this.inside(wx, wy)) return
       if (Math.round(wx) === this.state.zone.spawn.x && Math.round(wy) === this.state.zone.spawn.y) return
@@ -268,6 +328,25 @@ export class EditorScene extends Phaser.Scene {
       return
     }
     if (this.painting) this.paintAt(p.worldX, p.worldY)
+    if (this.drawingPortal) {
+      this.drawingPortal.x1 = p.worldX
+      this.drawingPortal.y1 = p.worldY
+      this.drawPortals()
+    }
+    if (this.movingPortal) {
+      const m = this.movingPortal
+      const portal = this.state.zone.portals.find((q) => q.id === m.id)
+      if (portal) {
+        if (!m.moved) {
+          this.state.checkpoint()
+          m.moved = true
+        }
+        const z = this.state.zone, g = TILE / 2
+        portal.x = Phaser.Math.Clamp(Math.round((p.worldX + m.dx) / g) * g, 0, z.width * TILE - portal.w)
+        portal.y = Phaser.Math.Clamp(Math.round((p.worldY + m.dy) / g) * g, 0, z.height * TILE - portal.h)
+        this.drawPortals()
+      }
+    }
     if (this.dragging) {
       const d = this.dragging
       if (!d.moved) {
@@ -298,6 +377,22 @@ export class EditorScene extends Phaser.Scene {
       this.refreshOverlays()
       this.state.edited()
     }
+    if (this.drawingPortal) {
+      const r = this.portalRect(this.drawingPortal)
+      this.drawingPortal = null
+      if (r.w >= TILE / 2 && r.h >= TILE / 2) {
+        this.state.checkpoint()
+        const n = this.state.zone.portals.length + 1
+        const portal: Portal = { id: newId('saida'), name: `Saída ${n}`, ...r, to: null }
+        this.state.zone.portals.push(portal)
+        this.state.edited()
+        this.state.set({ selectedPortal: portal.id })
+      } else {
+        this.drawPortals()
+      }
+    }
+    if (this.movingPortal?.moved) this.state.edited()
+    this.movingPortal = null
     this.dragging = null
     this.panning = null
   }
@@ -312,6 +407,7 @@ export class EditorScene extends Phaser.Scene {
     cam.scrollY += before.y - after.y
     this.state.set({ zoom })
     this.drawSelection()
+    this.drawPortals()
   }
 
   // ── Ferramentas ────────────────────────────────────────
@@ -434,6 +530,15 @@ export class EditorScene extends Phaser.Scene {
   // ── Ações chamadas pela interface ──────────────────────
 
   deleteSelected() {
+    const portal = this.state.portal
+    if (portal) {
+      this.state.checkpoint()
+      this.state.zone.portals = this.state.zone.portals.filter((p) => p !== portal)
+      this.state.selectedPortal = null
+      this.state.edited()
+      this.state.emit('ui')
+      return
+    }
     const i = this.state.selected
     if (i === null) return
     this.state.checkpoint()

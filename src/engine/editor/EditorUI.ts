@@ -7,10 +7,10 @@
 import css from './editor.css?inline'
 import { ICONS } from './icons'
 import type { EditorState, Tool } from './EditorState'
-import { TERRAINS, TERRAIN_TEXTURE, terrainFrameRect, terrainById } from '../assets/terrains'
+import { TERRAINS, canBeBase, terrainById, terrainFrameRect, terrainTexture } from '../assets/terrains'
 import { footRect, objectCatalog, objectDef, sheetTexture } from '../assets/objects'
-import { parseZone, type ZoneStorage } from '../storage'
-import { TILE, ZONE_MAX, ZONE_MIN, clampZoneSize, newZone, type ZoneData } from '../types'
+import { parseZone, summarize, type WorldStorage, type ZoneSummary } from '../storage'
+import { TILE, ZONE_MAX, ZONE_MIN, clampZoneSize, newId, newZone, type Portal, type ZoneData } from '../types'
 import { solidTerrainRects } from '../world/ground'
 
 export interface EditorHooks {
@@ -43,6 +43,7 @@ const TOOLS: { id: Tool; label: string; key: string }[] = [
   { id: 'erase', label: 'Borracha (volta ao terreno base)', key: 'E' },
   { id: 'object', label: 'Colocar objeto', key: 'O' },
   { id: 'select', label: 'Selecionar / mover objeto', key: 'V' },
+  { id: 'portal', label: 'Saída para outra zona (porta, borda, escada)', key: 'X' },
   { id: 'spawn', label: 'Ponto de início do jogador', key: 'P' },
 ]
 
@@ -64,19 +65,23 @@ export class EditorUI {
   private tabButtons = new Map<string, HTMLButtonElement>()
   private paneEl!: HTMLDivElement
   private zonePropsEl!: HTMLDivElement
+  private portalEl!: HTMLDivElement
+  private testZoneEl!: HTMLElement
+  /** Qual saída o painel está mostrando (só redesenha quando troca). */
+  private shownPortal: string | null = null
   private objectFilter = ''
   private objectCategory = 'Todas'
   private terrainCells = new Map<string, HTMLElement>()
   private objectCells = new Map<string, HTMLElement>()
   private testing = false
-  private modalOpen = false
+  private modals: (() => void)[] = []
   private offState: () => void
   private onKey = (e: KeyboardEvent) => this.handleKey(e)
   private onBeforeUnload = (e: BeforeUnloadEvent) => {
     if (this.state.dirty) e.preventDefault()
   }
 
-  constructor(parent: HTMLElement, private state: EditorState, private storage: ZoneStorage, private hooks: EditorHooks) {
+  constructor(parent: HTMLElement, private state: EditorState, private storage: WorldStorage, private hooks: EditorHooks) {
     if (!styleInjected) {
       document.head.append(h('style', { 'data-vortable': '' }, css))
       styleInjected = true
@@ -89,7 +94,8 @@ export class EditorUI {
       this.buildPanel(),
       this.buildStatus(),
       h('div', { class: 'vt-testbar' },
-        h('span', {}, 'Testando a zona — ', h('kbd', {}, 'WASD'), ' anda, ', h('kbd', {}, 'Shift'), ' corre, ', h('kbd', {}, 'C'), ' colisões'),
+        this.testZoneEl = h('b', { class: 'vt-testzone' }),
+        h('span', {}, h('kbd', {}, 'WASD'), ' anda, ', h('kbd', {}, 'Shift'), ' corre, ', h('kbd', {}, 'C'), ' colisões'),
         h('button', { class: 'vt-btn vt-primary', html: `${ICONS.stop}<span>Voltar ao editor</span>`, onclick: () => this.stopTest() }),
       ),
     )
@@ -102,6 +108,7 @@ export class EditorUI {
     this.offState = state.on((c) => {
       if (c === 'zone') this.nameInput.value = state.zone.name
       if (c === 'zone' || c === 'edit') this.renderZoneProps()
+      if (c === 'zone' || c === 'world' || state.selectedPortal !== this.shownPortal) this.renderPortal()
       this.refresh()
     })
     window.addEventListener('keydown', this.onKey)
@@ -113,6 +120,23 @@ export class EditorUI {
     this.renderPane()
     this.renderZoneProps()
     this.refresh()
+    this.reloadWorld()
+  }
+
+  /** Relê o mundo e a lista de zonas salvas. */
+  private async reloadWorld() {
+    try {
+      this.state.world = await this.storage.loadWorld()
+      this.state.zones = await this.storage.list()
+    } catch (err) {
+      this.toast(`Não deu pra ler o mundo: ${(err as Error).message}`, true)
+    }
+    this.state.emit('world')
+  }
+
+  /** Nome da zona onde o teste está agora (muda ao atravessar saídas). */
+  showTestZone(name: string) {
+    this.testZoneEl.textContent = name
   }
 
   destroy() {
@@ -148,6 +172,7 @@ export class EditorUI {
       h('span', { class: 'vt-sep' }),
       this.iconBtn(ICONS.plus, 'Nova', () => this.openNewModal()),
       this.iconBtn(ICONS.open, 'Abrir', () => this.openOpenModal()),
+      this.iconBtn(ICONS.world, 'Mundo', () => this.openWorldModal()),
       this.iconBtn(ICONS.save, 'Salvar', () => this.save()),
       h('span', { class: 'vt-sep' }),
       this.iconBtn(ICONS.download, 'Exportar', () => this.exportZone()),
@@ -203,7 +228,8 @@ export class EditorUI {
     }
     this.paneEl = h('div', { class: 'vt-pane' })
     this.zonePropsEl = h('div', { class: 'vt-zoneprops' })
-    return h('aside', { class: 'vt-panel' }, tabs, this.paneEl, this.zonePropsEl)
+    this.portalEl = h('div', { class: 'vt-zoneprops vt-portalprops' })
+    return h('aside', { class: 'vt-panel' }, tabs, this.paneEl, this.portalEl, this.zonePropsEl)
   }
 
   private buildStatus() {
@@ -222,7 +248,6 @@ export class EditorUI {
   }
 
   private renderTerrains() {
-    const img = this.hooks.textureImage(TERRAIN_TEXTURE)
     const groups = new Map<string, typeof TERRAINS>()
     for (const t of TERRAINS) groups.set(t.category, [...(groups.get(t.category) ?? []), t])
     for (const [cat, list] of groups) {
@@ -230,7 +255,7 @@ export class EditorUI {
       for (const t of list) {
         const c = h('canvas', { width: 32, height: 32 }) as HTMLCanvasElement
         const r = terrainFrameRect(t, 10)
-        c.getContext('2d')!.drawImage(img, r.x, r.y, 32, 32, 0, 0, 32, 32)
+        c.getContext('2d')!.drawImage(this.hooks.textureImage(terrainTexture(t)), r.x, r.y, 32, 32, 0, 0, 32, 32)
         const cell = h('button', {
           class: 'vt-cell',
           title: t.label + (t.solid ? ' (não dá pra andar)' : ''),
@@ -302,7 +327,7 @@ export class EditorUI {
         this.state.emit('zone')
       },
     }) as HTMLSelectElement
-    for (const t of TERRAINS.filter((t) => !t.solid)) base.append(h('option', { value: t.id, selected: t.id === z.base }, t.label))
+    for (const t of TERRAINS.filter(canBeBase)) base.append(h('option', { value: t.id, selected: t.id === z.base }, t.label))
     const w = h('input', { class: 'vt-input vt-num', type: 'number', min: ZONE_MIN, max: ZONE_MAX, value: z.width })
     const hh = h('input', { class: 'vt-input vt-num', type: 'number', min: ZONE_MIN, max: ZONE_MAX, value: z.height })
     this.zonePropsEl.replaceChildren(
@@ -315,6 +340,129 @@ export class EditorUI {
         }, 'Aplicar'),
       ),
     )
+  }
+
+  // ── Painel: saída selecionada ──────────────────────────
+
+  /** Nome, destino e ligação de volta da saída selecionada. */
+  private renderPortal() {
+    const s = this.state
+    const portal = s.portal
+    this.shownPortal = portal?.id ?? null
+    this.portalEl.hidden = !portal
+    if (!portal) {
+      this.portalEl.replaceChildren()
+      return
+    }
+    const name = h('input', {
+      class: 'vt-input',
+      value: portal.name,
+      oninput: () => {
+        portal.name = name.value
+        s.edited()
+      },
+    }) as HTMLInputElement
+
+    // destinos possíveis: esta zona + as salvas no mundo
+    const zones = [{ id: s.zone.id, name: `${s.zone.name} (esta zona)` }, ...s.zones.filter((z) => z.id !== s.zone.id)]
+    const zoneSel = h('select', { class: 'vt-select' },
+      h('option', { value: '' }, '— nenhuma —'),
+      ...zones.map((z) => h('option', { value: z.id, selected: portal.to?.zone === z.id }, z.name)),
+    ) as HTMLSelectElement
+    const portalsOf = (zoneId: string) =>
+      zoneId === s.zone.id
+        ? s.zone.portals.filter((q) => q.id !== portal.id).map((q) => ({ id: q.id, name: q.name }))
+        : s.zones.find((z) => z.id === zoneId)?.portals ?? []
+    const destSel = h('select', { class: 'vt-select' }) as HTMLSelectElement
+    const fillDest = () => {
+      const list = portalsOf(zoneSel.value)
+      destSel.replaceChildren(
+        h('option', { value: '' }, !zoneSel.value ? '—' : list.length ? '— escolha —' : '(nenhuma saída lá)'),
+        ...list.map((q) => h('option', { value: q.id, selected: portal.to?.portal === q.id }, q.name)),
+      )
+      destSel.disabled = !zoneSel.value || !list.length
+    }
+    fillDest()
+    const apply = () => {
+      const to = zoneSel.value && destSel.value ? { zone: zoneSel.value, portal: destSel.value } : null
+      if (JSON.stringify(to) === JSON.stringify(portal.to)) return
+      s.checkpoint()
+      portal.to = to
+      s.edited()
+    }
+    zoneSel.addEventListener('change', () => {
+      fillDest()
+      if (destSel.options.length === 2) destSel.selectedIndex = 1 // só uma saída lá: já escolhe
+      apply()
+    })
+    destSel.addEventListener('change', apply)
+
+    const saved = s.zones.some((z) => z.id === s.zone.id)
+    this.portalEl.replaceChildren(
+      h('h4', { class: 'vt-subtitle' }, 'Saída selecionada'),
+      h('div', { class: 'vt-row' }, h('label', {}, 'Nome'), name),
+      h('div', { class: 'vt-row' }, h('label', {}, 'Leva para'), zoneSel),
+      h('div', { class: 'vt-row' }, h('label', {}, 'Chega em'), destSel),
+      h('div', { class: 'vt-row' },
+        h('button', {
+          class: 'vt-btn',
+          style: 'flex:1',
+          title: 'A saída de lá passa a trazer de volta pra cá (se não houver uma, cria)',
+          onclick: () => this.linkBack(portal, zoneSel.value, destSel.value),
+        }, 'Ligar ida e volta'),
+        h('button', { class: 'vt-btn vt-danger', title: 'Apagar saída (Del)', html: ICONS.trash, onclick: () => this.hooks.deleteSelected() }),
+      ),
+      ...(saved ? [] : [h('small', { class: 'vt-note' }, 'Salve esta zona pra que outras zonas possam trazer o jogador até aqui.')]),
+    )
+  }
+
+  /** Faz a saída de destino apontar de volta pra esta (criando uma, se preciso). */
+  private async linkBack(portal: Portal, zoneId: string, destId: string) {
+    const s = this.state
+    if (!zoneId) return this.toast('Escolha primeiro pra qual zona a saída leva.', true)
+    const here = { zone: s.zone.id, portal: portal.id }
+    const returnPortal = (spawn: { x: number; y: number }): Portal => {
+      const g = TILE / 2
+      return { id: newId('saida'), name: `Volta: ${s.zone.name}`, x: Math.round((spawn.x - 16) / g) * g, y: Math.round((spawn.y - 16) / g) * g, w: 32, h: 32, to: null }
+    }
+
+    if (zoneId === s.zone.id) {
+      s.checkpoint()
+      let dest = s.zone.portals.find((q) => q.id === destId)
+      if (!dest) {
+        dest = returnPortal(s.zone.spawn)
+        s.zone.portals.push(dest)
+      }
+      dest.to = here
+      portal.to = { zone: zoneId, portal: dest.id }
+      s.edited()
+      this.renderPortal()
+      return this.toast('Ida e volta ligadas.')
+    }
+
+    try {
+      const target = await this.storage.load(zoneId)
+      if (!target) return this.toast('Não achei a zona de destino.', true)
+      let dest = target.portals.find((q) => q.id === destId)
+      const created = !dest
+      if (!dest) {
+        dest = returnPortal(target.spawn)
+        target.portals.push(dest)
+      }
+      dest.to = here
+      await this.storage.save(target)
+      s.checkpoint()
+      portal.to = { zone: zoneId, portal: dest.id }
+      s.edited()
+      s.zones = await this.storage.list()
+      s.emit('world')
+      this.renderPortal()
+      this.toast(created
+        ? `Criei "${dest.name}" em ${target.name}, no ponto de início de lá. Ajuste a posição quando abrir aquela zona.`
+        : 'Ida e volta ligadas.')
+    } catch (err) {
+      this.toast(`Não deu pra ligar: ${(err as Error).message}`, true)
+    }
   }
 
   // ── Estado → tela ──────────────────────────────────────
@@ -343,6 +491,7 @@ export class EditorUI {
       erase: 'Borracha — volta ao terreno de fundo',
       object: s.objectKind ? 'Clique pra colocar · Esc solta o objeto' : 'Escolha um objeto na aba Objetos',
       select: s.selected !== null ? 'Arraste pra mover · Del apaga' : 'Clique num objeto pra selecionar',
+      portal: s.selectedPortal ? 'Escolha o destino no painel · arraste pra mover · Del apaga' : 'Arraste pra desenhar uma saída · clique numa saída pra editar',
       spawn: 'Clique onde o jogador deve aparecer',
     }[s.tool]
     parts.push(h('span', { class: 'vt-hint' }, `${hint} · Alt+clique copia · botão direito arrasta a tela · roda dá zoom`))
@@ -370,10 +519,20 @@ export class EditorUI {
   private async save() {
     try {
       await this.storage.save(this.state.zone)
+      // a primeira zona salva vira o começo do mundo
+      const world = this.state.world
+      if (world && !world.start) {
+        world.start = this.state.zone.id
+        await this.storage.saveWorld(world)
+      }
       this.state.markSaved()
+      this.state.zones = await this.storage.list()
+      this.state.emit('world')
       this.toast('Zona salva.')
+      return true
     } catch (err) {
       this.toast(`Não deu pra salvar: ${(err as Error).message}`, true)
+      return false
     }
   }
 
@@ -392,7 +551,7 @@ export class EditorUI {
     if (!file) return
     try {
       const zone = parseZone(JSON.parse(await file.text()))
-      if (!this.confirmDiscard()) return
+      if (!(await this.resolveUnsaved())) return
       this.state.load(zone)
       this.state.dirty = true
       this.state.emit('ui')
@@ -403,8 +562,36 @@ export class EditorUI {
     }
   }
 
-  private confirmDiscard() {
-    return !this.state.dirty || confirm('Há mudanças não salvas nesta zona. Descartar?')
+  /**
+   * Antes de trocar de zona: se há mudanças, pergunta se salva, descarta ou
+   * cancela. Devolve true quando pode seguir.
+   */
+  private resolveUnsaved(): Promise<boolean> {
+    if (!this.state.dirty) return Promise.resolve(true)
+    return new Promise((resolve) => {
+      const done = (ok: boolean) => { close(); resolve(ok) }
+      const close = this.modal('Mudanças não salvas', [
+        h('p', { style: 'margin:0' }, `"${this.state.zone.name}" tem mudanças que ainda não foram salvas.`),
+      ], [
+        h('button', { class: 'vt-btn', onclick: () => done(false) }, 'Cancelar'),
+        h('button', { class: 'vt-btn vt-danger', onclick: () => done(true) }, 'Descartar'),
+        h('button', { class: 'vt-btn vt-primary', onclick: async () => done(await this.save()) }, 'Salvar e continuar'),
+      ], () => resolve(false))
+    })
+  }
+
+  /** Abre uma zona salva (pelo mapa do mundo ou pela lista). */
+  private async openZone(id: string) {
+    if (id === this.state.zone.id) return true
+    if (!(await this.resolveUnsaved())) return false
+    const zone = await this.storage.load(id).catch(() => null)
+    if (!zone) {
+      this.toast('Não deu pra abrir essa zona (apagada ou corrompida).', true)
+      return false
+    }
+    this.state.load(zone)
+    this.hooks.centerOnZone()
+    return true
   }
 
   private resizeZone(width: number, height: number) {
@@ -427,6 +614,7 @@ export class EditorUI {
       height,
       corners,
       objects: z.objects.filter((o) => o.x <= W && o.y <= H),
+      portals: z.portals.filter((p) => p.x < W && p.y < H).map((p) => ({ ...p, w: Math.min(p.w, W - p.x), h: Math.min(p.h, H - p.y) })),
       spawn: { x: Math.min(z.spawn.x, W - 16), y: Math.min(z.spawn.y, H - 16) },
     }
     this.state.zone = resized
@@ -465,16 +653,21 @@ export class EditorUI {
 
   // ── Janelas ────────────────────────────────────────────
 
-  private modal(title: string, body: Node[], foot: Node[]) {
-    this.modalOpen = true
+  /** Janela por cima do editor. `onDismiss` roda se fechar por fora (Esc, clique no fundo). */
+  private modal(title: string, body: Node[], foot: Node[], onDismiss?: () => void, wide = false) {
     const close = () => {
-      this.modalOpen = false
+      this.modals = this.modals.filter((m) => m !== dismiss)
       bg.remove()
     }
+    const dismiss = () => {
+      close()
+      onDismiss?.()
+    }
+    this.modals.push(dismiss)
     const bg = h('div', {
       class: 'vt-modal-bg',
-      onmousedown: (e: MouseEvent) => { if (e.target === bg) close() },
-    }, h('div', { class: 'vt-modal' },
+      onmousedown: (e: MouseEvent) => { if (e.target === bg) dismiss() },
+    }, h('div', { class: `vt-modal${wide ? ' vt-modal-wide' : ''}` },
       h('h3', {}, title),
       h('div', { class: 'vt-modal-body' }, ...body),
       h('div', { class: 'vt-modal-foot' }, ...foot),
@@ -488,15 +681,28 @@ export class EditorUI {
     const w = h('input', { class: 'vt-input vt-num', type: 'number', min: ZONE_MIN, max: ZONE_MAX, value: 40 })
     const hh = h('input', { class: 'vt-input vt-num', type: 'number', min: ZONE_MIN, max: ZONE_MAX, value: 30 })
     const base = h('select', { class: 'vt-select' }) as HTMLSelectElement
-    for (const t of TERRAINS.filter((t) => !t.solid)) base.append(h('option', { value: t.id }, t.label))
-    const create = () => {
-      if (!this.confirmDiscard()) return
-      this.state.load(newZone(name.value.trim() || 'Nova zona', Number(w.value), Number(hh.value), base.value))
-      this.hooks.centerOnZone()
+    for (const t of TERRAINS.filter(canBeBase)) base.append(h('option', { value: t.id }, t.label))
+    const kind = h('select', { class: 'vt-select' },
+      h('option', { value: 'out' }, 'Exterior (40×30, grama)'),
+      h('option', { value: 'in' }, 'Interior (16×12, vazio escuro)'),
+    ) as HTMLSelectElement
+    kind.addEventListener('change', () => {
+      const inside = kind.value === 'in'
+      w.value = inside ? '16' : '40'
+      hh.value = inside ? '12' : '30'
+      base.value = inside ? 'void' : 'grass'
+    })
+    const create = async () => {
       close()
+      if (!(await this.resolveUnsaved())) return
+      this.state.load(newZone(name.value.trim() || 'Nova zona', Number(w.value), Number(hh.value), base.value))
+      this.state.dirty = true
+      this.state.emit('ui')
+      this.hooks.centerOnZone()
     }
     const close = this.modal('Nova zona', [
       h('div', { class: 'vt-row' }, h('label', {}, 'Nome'), name),
+      h('div', { class: 'vt-row' }, h('label', {}, 'Tipo'), kind),
       h('div', { class: 'vt-row' }, h('label', {}, 'Tamanho'), w, '×', hh, h('small', { style: 'color:var(--vt-muted)' }, `tiles (${ZONE_MIN}–${ZONE_MAX})`)),
       h('div', { class: 'vt-row' }, h('label', {}, 'Fundo'), base),
     ], [
@@ -529,12 +735,8 @@ export class EditorUI {
           h('button', {
             class: 'vt-btn vt-primary',
             onclick: async () => {
-              if (!this.confirmDiscard()) return
-              const zone = await this.storage.load(z.id).catch(() => null)
-              if (!zone) return this.toast('Não deu pra abrir essa zona (apagada ou corrompida).', true)
-              this.state.load(zone)
-              this.hooks.centerOnZone()
               close()
+              await this.openZone(z.id)
             },
           }, 'Abrir'),
           h('button', {
@@ -557,6 +759,148 @@ export class EditorUI {
     render()
   }
 
+  // ── Mapa do mundo ──────────────────────────────────────
+
+  private async openWorldModal() {
+    await this.reloadWorld()
+    const s = this.state
+    const world = s.world
+    if (!world) return
+    // zonas salvas; a atual entra com as mudanças que ainda não foram salvas
+    const zones: ZoneSummary[] = s.zones.map((z) => (z.id === s.zone.id ? summarize(s.zone, z.updatedAt) : z))
+    if (!zones.some((z) => z.id === s.zone.id)) zones.unshift(summarize(s.zone, 0))
+
+    const NODE_W = 190, NODE_H = 84, GAP_X = 60, GAP_Y = 50
+    // zona sem posição: primeiro espaço livre numa grade de 4 colunas
+    const taken = (x: number, y: number) =>
+      Object.values(world.layout).some((p) => Math.abs(p.x - x) < NODE_W && Math.abs(p.y - y) < NODE_H)
+    let placedNew = false
+    for (const z of zones) {
+      if (world.layout[z.id]) continue
+      for (let i = 0; ; i++) {
+        const x = 24 + (i % 4) * (NODE_W + GAP_X), y = 24 + Math.floor(i / 4) * (NODE_H + GAP_Y)
+        if (!taken(x, y)) {
+          world.layout[z.id] = { x, y }
+          placedNew = true
+          break
+        }
+      }
+    }
+
+    const inner = h('div', { class: 'vt-world-inner' })
+    const board = h('div', { class: 'vt-world' }, inner)
+    const svgNs = 'http://www.w3.org/2000/svg'
+    const svg = document.createElementNS(svgNs, 'svg')
+    svg.classList.add('vt-world-links')
+    inner.append(svg)
+
+    const resize = () => {
+      const pos = Object.values(world.layout)
+      const w = Math.max(...pos.map((p) => p.x), 0) + NODE_W + 40
+      const hh = Math.max(...pos.map((p) => p.y), 0) + NODE_H + 40
+      inner.style.width = `${w}px`
+      inner.style.height = `${hh}px`
+      svg.setAttribute('width', String(w))
+      svg.setAttribute('height', String(hh))
+    }
+    /** Ponto onde a linha entre os centros sai pela borda do cartão de destino. */
+    const edge = (from: { x: number; y: number }, to: { x: number; y: number }) => {
+      const dx = from.x - to.x, dy = from.y - to.y
+      const k = Math.min((NODE_W / 2 + 4) / Math.abs(dx || 1e-6), (NODE_H / 2 + 4) / Math.abs(dy || 1e-6))
+      return { x: to.x + dx * k, y: to.y + dy * k }
+    }
+    const drawLinks = () => {
+      resize()
+      svg.innerHTML = '<defs><marker id="vt-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="currentColor"/></marker></defs>'
+      const center = (id: string) => {
+        const p = world.layout[id]
+        return p && { x: p.x + NODE_W / 2, y: p.y + NODE_H / 2 }
+      }
+      for (const z of zones) {
+        for (const target of z.links) {
+          const a = center(z.id), b = center(target)
+          if (!a || !b || target === z.id) continue
+          const end = edge(a, b), start = edge(b, a)
+          const line = document.createElementNS(svgNs, 'line')
+          line.setAttribute('x1', String(start.x))
+          line.setAttribute('y1', String(start.y))
+          line.setAttribute('x2', String(end.x))
+          line.setAttribute('y2', String(end.y))
+          line.setAttribute('marker-end', 'url(#vt-arrow)')
+          svg.append(line)
+        }
+      }
+    }
+
+    let saveTimer: number | undefined
+    const saveWorld = () => {
+      clearTimeout(saveTimer)
+      saveTimer = window.setTimeout(() => this.storage.saveWorld(world).catch((e) => this.toast(`Não deu pra salvar o mundo: ${e.message}`, true)), 300)
+    }
+
+    const renderNodes = () => {
+      for (const n of inner.querySelectorAll('.vt-node')) n.remove()
+      for (const z of zones) {
+        const pos = world.layout[z.id]
+        const isStart = world.start === z.id
+        const node = h('div', {
+          class: `vt-node${z.id === s.zone.id ? ' vt-current' : ''}${isStart ? ' vt-start' : ''}`,
+          style: `left:${pos.x}px;top:${pos.y}px;width:${NODE_W}px;height:${NODE_H}px`,
+        },
+          h('div', { class: 'vt-node-title' }, isStart ? h('span', { class: 'vt-star', html: ICONS.star, title: 'Os jogadores começam aqui' }) : null, h('b', {}, z.name || '(sem nome)')),
+          h('small', {}, `${z.width}×${z.height} · ${z.portals.length} saída${z.portals.length === 1 ? '' : 's'}${z.updatedAt ? '' : ' · não salva'}`),
+          h('div', { class: 'vt-node-actions' },
+            z.id === s.zone.id
+              ? h('span', { class: 'vt-tag' }, 'aberta')
+              : h('button', { class: 'vt-btn', onclick: async () => { if (await this.openZone(z.id)) close() } }, 'Abrir'),
+            !isStart && h('button', {
+              class: 'vt-btn',
+              title: 'Os jogadores começam nesta zona',
+              onclick: () => { world.start = z.id; saveWorld(); renderNodes() },
+            }, 'Começar aqui'),
+          ),
+        )
+        // arrastar o cartão (não os botões)
+        node.addEventListener('pointerdown', (e) => {
+          if ((e.target as HTMLElement).closest('button')) return
+          const start = { x: e.clientX, y: e.clientY, px: pos.x, py: pos.y }
+          node.setPointerCapture(e.pointerId)
+          node.classList.add('vt-dragging')
+          const move = (ev: PointerEvent) => {
+            pos.x = Math.max(0, Math.round(start.px + ev.clientX - start.x))
+            pos.y = Math.max(0, Math.round(start.py + ev.clientY - start.y))
+            node.style.left = `${pos.x}px`
+            node.style.top = `${pos.y}px`
+            drawLinks()
+          }
+          const up = () => {
+            node.removeEventListener('pointermove', move)
+            node.removeEventListener('pointerup', up)
+            node.classList.remove('vt-dragging')
+            saveWorld()
+          }
+          node.addEventListener('pointermove', move)
+          node.addEventListener('pointerup', up)
+        })
+        inner.append(node)
+      }
+      drawLinks()
+    }
+
+    const worldName = h('input', {
+      class: 'vt-input',
+      value: world.name,
+      oninput: () => { world.name = worldName.value; saveWorld() },
+    }) as HTMLInputElement
+    const close = this.modal('Mapa do mundo', [
+      h('div', { class: 'vt-row' }, h('label', {}, 'Mundo'), worldName),
+      board,
+      h('small', { class: 'vt-note' }, 'Arraste os cartões pra organizar. As setas são as saídas entre zonas. A estrela marca onde os jogadores começam.'),
+    ], [h('button', { class: 'vt-btn', onclick: () => close() }, 'Fechar')], undefined, true)
+    renderNodes()
+    if (placedNew) saveWorld()
+  }
+
   private toast(msg: string, error = false) {
     const t = h('div', { class: `vt-toast${error ? ' vt-error' : ''}` }, msg)
     this.root.append(t)
@@ -571,8 +915,8 @@ export class EditorUI {
       if (e.key === 'Escape') this.stopTest()
       return
     }
-    if (this.modalOpen) {
-      if (e.key === 'Escape') this.root.querySelector('.vt-modal-bg')?.dispatchEvent(new MouseEvent('mousedown'))
+    if (this.modals.length) {
+      if (e.key === 'Escape') this.modals[this.modals.length - 1]()
       return
     }
     const typing = target.matches('input, textarea, select')

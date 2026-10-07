@@ -23,8 +23,40 @@ export interface ZoneData {
    */
   corners: string[]
   objects: ZoneObject[]
-  /** Onde o jogador aparece, em pixels. */
+  /** Saídas: áreas que levam a outra zona (porta, escada, borda do mapa). */
+  portals: Portal[]
+  /** Onde o jogador aparece quando entra no mundo por esta zona, em pixels. */
   spawn: { x: number; y: number }
+}
+
+/**
+ * Uma saída: retângulo (px) que, ao ser pisado, leva pra outra zona. Quem
+ * chega por uma saída aparece no meio da saída de destino.
+ */
+export interface Portal {
+  id: string
+  name: string
+  x: number
+  y: number
+  w: number
+  h: number
+  /** Pra onde leva (zona + saída de lá). null = ainda não ligada. */
+  to: { zone: string; portal: string } | null
+}
+
+/** O mundo: as zonas de uma campanha e como elas aparecem no mapa do mundo. */
+export interface WorldData {
+  version: 1
+  id: string
+  name: string
+  /** Zona onde os jogadores começam. */
+  start: string | null
+  /** Posição de cada zona no mapa do mundo (só visual). */
+  layout: Record<string, { x: number; y: number }>
+}
+
+export function newId(prefix: string) {
+  return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 }
 
 /** Um objeto colocado na zona. kind = id no catálogo; x/y = base-centro, em px. */
@@ -48,13 +80,14 @@ export function newZone(name: string, width: number, height: number, base = 'gra
   height = clampZoneSize(height, 30)
   return {
     version: 1,
-    id: `zona-${Date.now().toString(36)}`,
+    id: newId('zona'),
     name,
     width,
     height,
     base,
     corners: new Array((width + 1) * (height + 1)).fill(''),
     objects: [],
+    portals: [],
     spawn: { x: (width * TILE) / 2, y: (height * TILE) / 2 },
   }
 }

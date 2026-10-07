@@ -122,7 +122,15 @@ async function composeAnim(assetBase: string, appearance: Appearance, anim: Anim
  * Gera (ou regera) as texturas e animações de um boneco no Phaser.
  * Texturas: `${key}:walk`, `${key}:idle`...  Animações: `${key}:walk:down`...
  */
+/** Qual aparência cada chave já tem montada (trocar de zona não remonta o boneco). */
+const built = new WeakMap<Phaser.Textures.TextureManager, Map<string, string>>()
+
 export async function buildCharacter(scene: Phaser.Scene, key: string, assetBase: string, appearance: Appearance) {
+  const sig = JSON.stringify(appearance)
+  let cache = built.get(scene.textures)
+  if (!cache) built.set(scene.textures, (cache = new Map()))
+  if (cache.get(key) === sig && scene.textures.exists(`${key}:walk`)) return
+
   const palettes = await loadPalettes(assetBase)
   const names = Object.keys(ANIMS) as AnimName[]
   const canvases = await Promise.all(names.map((a) => composeAnim(assetBase, appearance, a, palettes)))
@@ -150,4 +158,5 @@ export async function buildCharacter(scene: Phaser.Scene, key: string, assetBase
       })
     })
   })
+  cache.set(key, sig)
 }

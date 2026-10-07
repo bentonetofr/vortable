@@ -65,5 +65,5 @@ export function makeDemoZone(): ZoneData {
     place(rnd() < 0.25 ? 'trees-green@224,368' : trees[Math.floor(rnd() * trees.length)], x, y)
   }
 
-  return { version: 1, id: 'demo', name: 'Clareira de teste', width, height, base: 'grass', corners, objects, spawn }
+  return { version: 1, id: 'demo', name: 'Clareira de teste', width, height, base: 'grass', corners, objects, portals: [], spawn }
 }

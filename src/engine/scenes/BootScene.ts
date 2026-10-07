@@ -4,7 +4,8 @@
 // ────────────────────────────────────────────────────────
 
 import Phaser from 'phaser'
-import { TERRAIN_TEXTURE, TERRAIN_URL, TERRAINS, terrainFrame, terrainFrameRect } from '../assets/terrains'
+import { GEN_SOURCES, TERRAIN_GEN_TEXTURE, TERRAIN_TEXTURE, TERRAIN_URL, TERRAINS, terrainFrame, terrainFrameRect, terrainTexture } from '../assets/terrains'
+import { buildGeneratedTerrains } from '../assets/genTerrain'
 import { CATALOG_URL, setObjectCatalog, sheetTexture, type ObjectCatalog } from '../assets/objects'
 
 export class BootScene extends Phaser.Scene {
@@ -20,6 +21,7 @@ export class BootScene extends Phaser.Scene {
     this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, (file: Phaser.Loader.File) => this.failed.push(file.src))
     this.load.image(TERRAIN_TEXTURE, this.assetBase + TERRAIN_URL)
     this.load.json('catalog', this.assetBase + CATALOG_URL)
+    for (const url of GEN_SOURCES) this.load.image(`gensrc:${url}`, this.assetBase + url)
   }
 
   /** Sem a arte básica não dá pra montar nada: mostra o que faltou e para. */
@@ -32,8 +34,12 @@ export class BootScene extends Phaser.Scene {
   create() {
     if (this.failed.length) return this.fail()
 
-    const tex = this.textures.get(TERRAIN_TEXTURE)
+    // pisos e paredes de interior: montados agora a partir das texturas-fonte
+    const sources = new Map(GEN_SOURCES.map((url) => [url, this.textures.get(`gensrc:${url}`).getSourceImage() as CanvasImageSource]))
+    this.textures.addCanvas(TERRAIN_GEN_TEXTURE, buildGeneratedTerrains(sources))
+
     for (const t of TERRAINS) {
+      const tex = this.textures.get(terrainTexture(t))
       for (let n = 0; n < 21; n++) {
         const r = terrainFrameRect(t, n)
         tex.add(terrainFrame(t.id, n), 0, r.x, r.y, 32, 32)

@@ -27,7 +27,13 @@ const SHEETS = [
 ]
 
 /** Arquivos copiados como estão (terrenos etc.). */
-const COPY = [['lpc/terrain-v7.png', 'lpc/terrain.png']]
+const COPY = [
+  ['lpc/terrain-v7.png', 'lpc/terrain.png'],
+  // texturas de interior: os pisos/paredes são gerados no navegador (BootScene)
+  ['lpc/interior/inside.png', 'lpc/interior/inside.png'],
+  ['lpc/interior/castlefloors.png', 'lpc/interior/castlefloors.png'],
+  ['lpc/interior/house.png', 'lpc/interior/house.png'],
+]
 
 const GAP = 1
 const MIN = 12

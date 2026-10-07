@@ -1,7 +1,9 @@
 // ────────────────────────────────────────────────────────
-// Terrenos (folha "[LPC] Terrains" v7). Cada terreno é um bloco de
-// 3×7 tiles de 32px; os blocos ficam numa grade de 10 colunas, com
-// faixas de 224px de altura. `block` = [faixa, coluna].
+// Terrenos. A maioria vem da folha "[LPC] Terrains" v7: cada terreno é
+// um bloco de 3×7 tiles de 32px; os blocos ficam numa grade de 10
+// colunas, com faixas de 224px de altura. `block` = [faixa, coluna].
+// Os de interior (`gen`) são montados no navegador a partir de uma
+// textura de 32×32 (genTerrain.ts) e ficam numa textura à parte.
 //
 // `rank` decide quem é desenhado por cima quando dois terrenos se
 // encontram (maior = por cima). Precisa ser único.
@@ -13,14 +15,27 @@ export interface TerrainDef {
   category: string
   block: [band: number, col: number]
   rank: number
-  /** Não dá pra andar por cima (água, lava, buraco). */
+  /** Não dá pra andar por cima (água, lava, buraco, parede). */
   solid?: boolean
+  /** Pode ser o fundo da zona (padrão: só os que não são sólidos). */
+  canBeBase?: boolean
   /** Quadros de variação do miolo que existem na folha (padrão 15, 16, 17). */
   fills?: number[]
+  /**
+   * Terreno GERADO no navegador a partir de uma textura de 32×32 que se
+   * repete (pisos, paredes) ou de uma cor: bordas retas, sem franja.
+   * O bloco dele fica na textura TERRAIN_GEN_TEXTURE.
+   */
+  gen?: { url: string; x: number; y: number } | { color: string }
 }
 
 export const TERRAIN_TEXTURE = 'terrain'
+export const TERRAIN_GEN_TEXTURE = 'terrain-gen'
 export const TERRAIN_URL = 'lpc/terrain.png'
+
+const INSIDE = 'lpc/interior/inside.png'
+const CASTLE = 'lpc/interior/castlefloors.png'
+const HOUSE = 'lpc/interior/house.png'
 
 export const TERRAINS: TerrainDef[] = [
   // Gramas (no fundo de tudo)
@@ -57,9 +72,28 @@ export const TERRAINS: TerrainDef[] = [
   // Buracos
   { id: 'hole',         label: 'Buraco',           category: 'Buracos', block: [0, 7], rank: 80, solid: true, fills: [] },
   { id: 'pit',          label: 'Abismo',           category: 'Buracos', block: [0, 8], rank: 81, solid: true, fills: [] },
+  // Interiores (gerados): o vazio é o fundo; pisos e paredes por cima
+  { id: 'void',         label: 'Vazio',            category: 'Interior', block: [0, 0], rank: 1, solid: true, canBeBase: true, gen: { color: '#07080c' } },
+  { id: 'floor-wood',   label: 'Piso de madeira',  category: 'Interior', block: [0, 0], rank: 90, gen: { url: INSIDE, x: 0, y: 128 } },
+  { id: 'floor-stone',  label: 'Piso de pedra',    category: 'Interior', block: [0, 0], rank: 91, gen: { url: CASTLE, x: 192, y: 192 } },
+  { id: 'rug-purple',   label: 'Tapete roxo',      category: 'Interior', block: [0, 0], rank: 92, gen: { url: CASTLE, x: 64, y: 64 } },
+  { id: 'rug-blue',     label: 'Tapete azul',      category: 'Interior', block: [0, 0], rank: 93, gen: { url: CASTLE, x: 224, y: 64 } },
+  { id: 'rug-red',      label: 'Tapete vermelho',  category: 'Interior', block: [0, 0], rank: 94, gen: { url: CASTLE, x: 64, y: 224 } },
+  { id: 'wall-brick',   label: 'Parede de tijolo', category: 'Interior', block: [0, 0], rank: 95, solid: true, gen: { url: HOUSE, x: 32, y: 32 } },
+  { id: 'wall-stone',   label: 'Parede de pedra',  category: 'Interior', block: [0, 0], rank: 96, solid: true, gen: { url: HOUSE, x: 128, y: 128 } },
 ]
 
+// terrenos gerados ficam lado a lado na textura gerada: bloco [0, n]
+TERRAINS.filter((t) => t.gen).forEach((t, i) => (t.block = [0, i]))
+
+export const GEN_TERRAINS = TERRAINS.filter((t) => t.gen)
+/** Imagens de onde os terrenos gerados tiram a textura. */
+export const GEN_SOURCES = [...new Set(GEN_TERRAINS.flatMap((t) => (t.gen && 'url' in t.gen ? [t.gen.url] : [])))]
+
 export const terrainById = new Map(TERRAINS.map((t) => [t.id, t]))
+
+export const terrainTexture = (t: TerrainDef) => (t.gen ? TERRAIN_GEN_TEXTURE : TERRAIN_TEXTURE)
+export const canBeBase = (t: TerrainDef) => t.canBeBase ?? !t.solid
 
 /** Nome do quadro `n` (0..20) do terreno na textura. */
 export function terrainFrame(id: string, n: number) {

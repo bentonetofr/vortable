@@ -16,11 +16,11 @@
 // ────────────────────────────────────────────────────────
 
 import Phaser from 'phaser'
-import { TERRAIN_TEXTURE, TERRAINS, terrainById, terrainFrame, type TerrainDef } from '../assets/terrains'
+import { TERRAINS, terrainById, terrainFrame, terrainTexture, type TerrainDef } from '../assets/terrains'
 import { TILE, type ZoneData } from '../types'
 import { hash2 } from '../rng'
 
-const MASK_FRAMES: Record<number, number[]> = {
+export const MASK_FRAMES: Record<number, number[]> = {
   1: [14], 2: [12], 4: [8], 8: [6],
   3: [13], 12: [7], 5: [11], 10: [9],
   9: [14, 6], 6: [12, 8],
@@ -76,7 +76,7 @@ export class Ground {
     const c = [cornerTerrain(z, tx, ty), cornerTerrain(z, tx + 1, ty), cornerTerrain(z, tx, ty + 1), cornerTerrain(z, tx + 1, ty + 1)]
     const present = [...new Set(c)].sort((a, b) => a.rank - b.rank)
     const x = tx * TILE, y = ty * TILE
-    const draw = (t: TerrainDef, n: number) => this.rt.batchDrawFrame(TERRAIN_TEXTURE, terrainFrame(t.id, n), x, y)
+    const draw = (t: TerrainDef, n: number) => this.rt.batchDrawFrame(terrainTexture(t), terrainFrame(t.id, n), x, y)
 
     draw(present[0], fillFrame(present[0], tx, ty))
     for (let i = 1; i < present.length; i++) {
