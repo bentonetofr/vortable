@@ -30,7 +30,7 @@ export interface Rect {
   h: number
 }
 
-/** Luz própria do objeto (usada pela iluminação, M3.4). x/y relativos à base-centro. */
+/** Luz própria do objeto (usada pela iluminação, M3.5). x/y relativos à base-centro. */
 export interface ObjectLight {
   x: number
   y: number

@@ -113,7 +113,7 @@ scripts/      ferramentas de assets
 - Pacotes de amostra: árvores (67 modelos nomeados, 247 peças com variantes), LPC Base
   (estantes, armários, cristaleiras, mesas, cadeiras, cama, fogões, baús, barris, placas,
   pedras, copas e troncos montáveis, luzes) e a tocha animada — 126 peças na paleta
-- Luz por peça já fica gravada (tochas, fogões, postes) e passa a brilhar no M3.4
+- Luz por peça já fica gravada (tochas, fogões, postes) e passa a brilhar no M3.5
 - ✅ *Qualquer peça LPC pode entrar no editor com comportamento certo*
 
 ### M3.2 — Grande leva de arte ✅ (concluído)
@@ -169,7 +169,32 @@ Photoshop e Figma.
 - **`?` mostra todos os atalhos** numa janela
 - ✅ *Editar uma zona grande é rápido e não cansa*
 
-### M3.4 — Iluminação e atmosfera
+### M3.4 — Estruturas (paredes em todas as direções)
+Hoje a parede é um terreno pintado: só dá a face de frente, então não fecha um cômodo nem faz
+corredor. A ideia é uma **camada de estruturas** (como a de cercas: um valor por tile) em que
+a parede é desenhada **vista de cima**, em qualquer direção, e o motor monta o resto:
+- **Topo da parede** (o que se vê de cima): se liga aos vizinhos sozinho — reta, quina,
+  T, cruz, ponta — em todas as direções, com contorno escuro. Materiais: pedra, tijolo,
+  madeira, rocha de caverna, e os 32 acabamentos do [LPC] Walls (escuro com moldura)
+- **Face (frente)**: onde a parede tem chão logo ao sul, aparece a face embaixo do topo,
+  com altura escolhida (0 = só o topo, como no print; 1 a 3 tiles = perspectiva de verdade),
+  usando os 252 estilos de face que já existem (moldura em cima, rodapé embaixo)
+- **Profundidade certa**: quem está atrás (ao norte) de uma parede fica escondido por ela;
+  quem está na frente aparece na frente. Paredes laterais (verticais) são finas e não
+  escondem ninguém indevidamente
+- **Colisão** no topo e na face; **vãos de porta** são só um buraco na parede (e as portas
+  do M3.2 encaixam na face)
+- **Ferramentas**:
+  - *Parede*: pinta a linha (com Shift+clique = linha reta, que já existe)
+  - *Cômodo*: arrastar um retângulo cria as 4 paredes e o piso de dentro de uma vez
+  - *Porta*: clique numa parede abre um vão (e opcionalmente põe a porta)
+  - Borracha e conta-gotas valem pra estruturas
+- **Estrutura = material do topo + estilo da face + altura**, escolhidos no painel; dá pra
+  misturar (castelo de pedra com face de tijolo, casa de madeira, caverna de rocha)
+- Por fora, a mesma ideia serve de base pro **telhado** (próximo passo das casas)
+- ✅ *Dá pra desenhar um castelo, uma masmorra ou uma casa por dentro como no print*
+
+### M3.5 — Iluminação e atmosfera
 - **Luz ambiente por zona**: cor + intensidade, com presets (Dia, Entardecer, Noite,
   Interior, Caverna, Masmorra)
 - **Fontes de luz**: objetos com luz própria (tocha, lampião, vela, lareira, janela acesa) e
