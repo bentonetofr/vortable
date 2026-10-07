@@ -156,13 +156,14 @@ async function head(rel) {
   sizes.set(rel, size)
   return size
 }
+const variantFile = (v) => String(v).trim().replace(/\s+/g, '_')
 const sheetFile = (dir, anim, variant) => (variant ? `${dir}${anim}/${variant}.png` : `${dir}${anim}.png`)
 
 // 1ª passada: quais "walk" existem (é o que decide se a camada vale)
 const candidates = new Set()
 for (const { def: d } of defs) {
   if (!slotOfType.get(d.type_name) || d.required_tags) continue
-  const v = Array.isArray(d.variants) ? d.variants[0] : null
+  const v = Array.isArray(d.variants) ? variantFile(d.variants[0]) : null
   for (const k of Object.keys(d).filter((k) => /^layer_\d+$/.test(k))) {
     for (const b of BODIES) {
       const dir = d[k][b]
@@ -180,7 +181,8 @@ for (const { path: p, def: d } of defs) {
   const slot = slotOfType.get(d.type_name)
   if (!slot || d.required_tags) { skipped++; continue }
   const layerKeys = Object.keys(d).filter((k) => /^layer_\d+$/.test(k)).sort()
-  const variants = Array.isArray(d.variants) ? d.variants : null
+  // no LPC, variante "dark brown" fica no arquivo dark_brown.png
+  const variants = Array.isArray(d.variants) ? [...new Set(d.variants.map(variantFile))] : null
   const anims = ANIMS.filter((a) => (d.animations ?? ANIMS).includes(a))
   if (!anims.includes('walk')) { skipped++; continue }
 
@@ -243,6 +245,19 @@ for (const it of items) {
 }
 console.log(`conferindo ${needed.size} folhas de animação...`)
 await pool([...needed], 12, head)
+const walkOk = (it, v) => it.layers.every((l) => Object.values(l.paths).every((dir) => (sizes.get(sheetFile(dir, 'walk', v)) ?? -1) > 0))
+for (let i = items.length - 1; i >= 0; i--) {
+  const it = items[i]
+  // variante sem arquivo (o LPC tem algumas listadas que não existem pra todo corpo)
+  if (it.variants) {
+    it.variants = it.variants.filter((v) => walkOk(it, v))
+    if (!it.variants.length) {
+      items.splice(i, 1)
+      skipped++
+      continue
+    }
+  }
+}
 for (const it of items) {
   // animação que falta em alguma camada/variante: o jogo usa a "walk" no lugar
   it.anims = it.anims.filter((a) => it.layers.every((l) =>
@@ -294,6 +309,27 @@ for (const c of [...credits.values()].sort((a, b) => a.file.localeCompare(b.file
   md += '\n'
 }
 fs.writeFileSync(path.join(ROOT, 'assets-src', 'credits', 'CREDITS-character.md'), md)
+// cópia publicada: o jogo mostra na tela de créditos
+fs.mkdirSync(path.join(ROOT, 'public', 'assets', 'credits'), { recursive: true })
+fs.writeFileSync(path.join(ROOT, 'public', 'assets', 'credits', 'CREDITS-character.md'), md)
+
+// folhas que sobraram de versões antigas do catálogo
+let removed = 0
+const keep = new Set([...needed].map((f) => path.normalize(f)))
+;(function sweep(dir, rel = '') {
+  if (!fs.existsSync(dir)) return
+  for (const name of fs.readdirSync(dir)) {
+    const full = path.join(dir, name), r = path.join(rel, name)
+    if (fs.statSync(full).isDirectory()) {
+      sweep(full, r)
+      if (!fs.readdirSync(full).length) fs.rmdirSync(full)
+    } else if (!keep.has(path.normalize(r))) {
+      fs.unlinkSync(full)
+      removed++
+    }
+  }
+})(sheetsDir)
+if (removed) console.log(`${removed} folhas antigas removidas`)
 
 const perSlot = Object.fromEntries(SLOTS.map((s) => [s.id, items.filter((i) => i.slot === s.id).length]))
 console.log(`${items.length} itens (${skipped} ignorados), ${credits.size} créditos`)

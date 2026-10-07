@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "catalog": "node scripts/build-catalog.mjs",
+    "catalog:character": "node scripts/build-character-catalog.mjs"
   },
   "dependencies": {
     "phaser": "^3.90.0"

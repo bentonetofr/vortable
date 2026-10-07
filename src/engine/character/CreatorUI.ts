@@ -8,6 +8,7 @@
 import editorCss from '../editor/editor.css?inline'
 import css from './creator.css?inline'
 import { h, injectStyle } from '../ui/dom'
+import { creditsBody } from '../ui/credits'
 import { ICONS } from '../editor/icons'
 import {
   BODY_LABELS, defaultAppearance, itemLabel, itemsForSlot, loadCharacterData, normalizeAppearance, randomAppearance, swatch,
@@ -51,6 +52,9 @@ export class CreatorUI {
   private modals: (() => void)[] = []
   private onKey = (e: KeyboardEvent) => {
     if (e.key === 'Escape' && this.modals.length) this.modals[this.modals.length - 1]()
+  }
+  private onBeforeUnload = (e: BeforeUnloadEvent) => {
+    if (this.dirty) e.preventDefault()
   }
 
   constructor(parent: HTMLElement, private opts: CreatorOptions) {
@@ -110,6 +114,7 @@ export class CreatorUI {
     parent.append(this.root)
     this.root.addEventListener('click', (e) => (e.target as HTMLElement).closest('button')?.blur())
     window.addEventListener('keydown', this.onKey)
+    window.addEventListener('beforeunload', this.onBeforeUnload)
     this.statusEl.textContent = 'Carregando o catálogo...'
     this.init()
   }
@@ -122,7 +127,10 @@ export class CreatorUI {
       return
     }
     // abre o personagem ativo (ou o mais recente)
-    const [list, active] = await Promise.all([this.opts.storage.list(), this.opts.storage.getActive()])
+    const [list, active] = await Promise.all([
+      this.opts.storage.list().catch(() => []),
+      this.opts.storage.getActive().catch(() => null),
+    ])
     const start = list.find((c) => c.id === active) ?? list[0]
     if (start) this.character = structuredClone(start)
     this.character.appearance = normalizeAppearance(this.data, this.character.appearance)
@@ -139,6 +147,7 @@ export class CreatorUI {
     cancelAnimationFrame(this.raf)
     this.thumbObserver?.disconnect()
     window.removeEventListener('keydown', this.onKey)
+    window.removeEventListener('beforeunload', this.onBeforeUnload)
     this.root.remove()
   }
 
@@ -362,12 +371,14 @@ export class CreatorUI {
   }
 
   private refreshStatus() {
+    if (!this.data) return // catálogo ainda não carregou (ou falhou)
     const n = Object.keys(this.appearance.slots).length
     this.statusEl.replaceChildren(
       h('span', {}, `${this.data.catalog.items.length} itens no catálogo`),
       h('span', {}, `${n} peças neste personagem`),
       this.dirty ? h('span', { class: 'vt-dirty' }, '● não salvo') : h('span', {}, 'salvo'),
-      h('span', { class: 'vt-hint' }, 'Arte: Liberated Pixel Cup (LPC) — CC-BY-SA / GPL / OGA-BY · créditos em assets-src/credits'),
+      h('span', { class: 'vt-hint' }, 'Arte: Liberated Pixel Cup (LPC) — CC-BY-SA / GPL / OGA-BY · ',
+        h('button', { class: 'vt-link', onclick: () => this.openCredits() }, 'ver créditos')),
     )
   }
 
@@ -408,6 +419,7 @@ export class CreatorUI {
   private async save() {
     try {
       this.character.name = this.nameInput.value.trim() || 'Sem nome'
+      this.nameInput.value = this.character.name
       await this.opts.storage.save(this.character)
       await this.opts.storage.setActive(this.character.id)
       this.dirty = false
@@ -420,9 +432,18 @@ export class CreatorUI {
     }
   }
 
+  /** Voltar: com mudanças, pergunta se salva (OK) ou descarta (Cancelar). */
   private async goBack() {
-    if (this.dirty && !(await this.save())) return
+    if (this.dirty && confirm(`Salvar "${this.nameInput.value || 'o personagem'}" antes de voltar?\n\nOK = salvar · Cancelar = sair sem salvar`)) {
+      if (!(await this.save())) return
+    }
+    this.dirty = false // sem o aviso de "sair da página"
     this.opts.back?.onClick()
+  }
+
+  private openCredits() {
+    const close = this.modal('Créditos da arte', creditsBody(this.opts.assetBase),
+      [h('button', { class: 'vt-btn', onclick: () => close() }, 'Fechar')])
   }
 
   private newCharacter() {
@@ -445,7 +466,13 @@ export class CreatorUI {
     const list = h('div', { class: 'vt-list' })
     const close = this.modal('Personagens', [list], [h('button', { class: 'vt-btn', onclick: () => close() }, 'Fechar')])
     const render = async () => {
-      const [chars, active] = await Promise.all([this.opts.storage.list(), this.opts.storage.getActive()])
+      let chars: CharacterSave[], active: string | null
+      try {
+        [chars, active] = await Promise.all([this.opts.storage.list(), this.opts.storage.getActive()])
+      } catch (err) {
+        list.replaceChildren(h('div', { class: 'vt-empty' }, `Não deu pra ler os personagens: ${(err as Error).message}`))
+        return
+      }
       list.replaceChildren()
       if (!chars.length) list.append(h('div', { class: 'vt-empty' }, 'Nenhum personagem salvo ainda.'))
       for (const c of chars) {
@@ -472,7 +499,13 @@ export class CreatorUI {
             html: ICONS.trash,
             onclick: async () => {
               if (!confirm(`Apagar "${c.name}"? Não dá pra desfazer.`)) return
-              await this.opts.storage.remove(c.id)
+              try {
+                await this.opts.storage.remove(c.id)
+              } catch (err) {
+                return this.toast(`Não deu pra apagar: ${(err as Error).message}`, true)
+              }
+              // apagou o que está aberto: ele continua na tela, mas agora não está salvo
+              if (c.id === this.character.id) this.markDirty()
               render()
             },
           }),

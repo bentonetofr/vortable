@@ -47,7 +47,7 @@ npm run dev
 
 ### Personagem
 
-- 385 itens LPC em 46 espaços (corpo, cabeça, cabelo, barba, roupa, chapéu, capa, cicatrizes...),
+- 388 itens LPC em 46 espaços (corpo, cabeça, cabelo, barba, roupa, chapéu, capa, cicatrizes...),
   corpo masculino ou feminino, 22 tons de pele e cores por peça.
 - **Salvar** guarda o personagem e o deixa *em uso*: é ele que aparece no Testar e no jogo.
 - As folhas ficam em `public/assets/character/sheets/` (baixadas por

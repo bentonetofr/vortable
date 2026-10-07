@@ -6,6 +6,7 @@
 
 import css from './editor.css?inline'
 import { h, injectStyle } from '../ui/dom'
+import { creditsBody } from '../ui/credits'
 import { ICONS } from './icons'
 import type { EditorState, Tool } from './EditorState'
 import { TERRAINS, canBeBase, terrainById, terrainFrameRect, terrainTexture } from '../assets/terrains'
@@ -15,6 +16,8 @@ import { TILE, ZONE_MAX, ZONE_MIN, clampZoneSize, newId, newZone, type Portal, t
 import { solidTerrainRects } from '../world/ground'
 
 export interface EditorHooks {
+  /** Pasta de assets (pros créditos). */
+  assetBase: string
   /** Imagem de uma textura carregada no Phaser (pra desenhar miniaturas). */
   textureImage(key: string): CanvasImageSource
   startTest(): void
@@ -479,6 +482,7 @@ export class EditorUI {
       spawn: 'Clique onde o jogador deve aparecer',
     }[s.tool]
     parts.push(h('span', { class: 'vt-hint' }, `${hint} · Alt+clique copia · botão direito arrasta a tela · roda dá zoom`))
+    parts.push(h('button', { class: 'vt-link', onclick: () => this.openCredits() }, 'Créditos'))
     this.statusEl.replaceChildren(...parts)
   }
 
@@ -605,6 +609,11 @@ export class EditorUI {
     this.state.selected = null
     this.state.emit('zone')
     this.toast(`Zona agora tem ${width}×${height} tiles.`)
+  }
+
+  private openCredits() {
+    const close = this.modal('Créditos da arte', creditsBody(this.hooks.assetBase),
+      [h('button', { class: 'vt-btn', onclick: () => close() }, 'Fechar')])
   }
 
   private async openCharacter() {
@@ -736,9 +745,20 @@ export class EditorUI {
               if (!confirm(`Apagar "${z.name}"? Não dá pra desfazer.`)) return
               try {
                 await this.storage.remove(z.id)
+                // o mundo esquece a zona (posição no mapa e, se era, o começo)
+                const world = await this.storage.loadWorld()
+                delete world.layout[z.id]
+                if (world.start === z.id) world.start = null
+                await this.storage.saveWorld(world)
               } catch (err) {
                 this.toast(`Não deu pra apagar: ${(err as Error).message}`, true)
               }
+              // apagou a zona aberta: ela continua na tela, mas agora não está salva
+              if (z.id === this.state.zone.id) {
+                this.state.dirty = true
+                this.state.emit('ui')
+              }
+              await this.reloadWorld()
               render()
             },
           }),
@@ -821,10 +841,8 @@ export class EditorUI {
       }
     }
 
-    let saveTimer: number | undefined
     const saveWorld = () => {
-      clearTimeout(saveTimer)
-      saveTimer = window.setTimeout(() => this.storage.saveWorld(world).catch((e) => this.toast(`Não deu pra salvar o mundo: ${e.message}`, true)), 300)
+      this.storage.saveWorld(world).catch((e) => this.toast(`Não deu pra salvar o mundo: ${e.message}`, true))
     }
 
     const renderNodes = () => {

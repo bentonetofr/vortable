@@ -47,7 +47,9 @@ function hexToRgb(hex: string): number {
 function colorMap(data: CharacterData, item: CharItem, chosen: AppearanceItem, skin: string) {
   const map = new Map<number, number>()
   for (const ch of item.colors ?? []) {
-    const name = ch.material === 'body' && item.matchBody ? skin : chosen.colors?.[ch.key]
+    // canal de pele: segue o corpo (itens "matchBody") ou quando não escolheram outra cor
+    const picked = chosen.colors?.[ch.key]
+    const name = ch.material === 'body' && (item.matchBody || !picked) ? skin : picked
     const target = name ? data.palettes[ch.material]?.[name] : undefined
     if (!target) continue
     ch.source.forEach((c, i) => {
@@ -143,7 +145,7 @@ export async function composeAnim(assetBase: string, a: Appearance, anim: AnimNa
     sheet.width = out.width
     sheet.height = out.height
     const src = l.fallback ? fromWalk(img, anim) : img
-    sheet.getContext('2d')!.drawImage(src, 0, 0)
+    sheet.getContext('2d', { willReadFrequently: true })!.drawImage(src, 0, 0)
     recolor(sheet, l.map)
     octx.drawImage(sheet, 0, 0)
   })
@@ -166,7 +168,7 @@ export async function composeFrame(assetBase: string, a: Appearance, row = 2, co
     if (!img) return
     const tile = document.createElement('canvas')
     tile.width = tile.height = FRAME
-    tile.getContext('2d')!.drawImage(img, col * FRAME, row * FRAME, FRAME, FRAME, 0, 0, FRAME, FRAME)
+    tile.getContext('2d', { willReadFrequently: true })!.drawImage(img, col * FRAME, row * FRAME, FRAME, FRAME, 0, 0, FRAME, FRAME)
     recolor(tile, l.map)
     octx.drawImage(tile, 0, 0)
   })

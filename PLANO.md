@@ -82,7 +82,7 @@ scripts/      ferramentas de assets
 - ✅ *Mundo explorável com várias áreas*
 
 ### M3 — Criador de personagem ✅ (concluído)
-- Catálogo gerado do Universal LPC (commit fixo): 385 itens, 46 espaços em 5 abas
+- Catálogo gerado do Universal LPC (commit fixo): 388 itens, 46 espaços em 5 abas
   (Corpo, Cabelo, Roupa, Acessórios, Marcas — inclui cicatrizes, ferimentos, prótese)
 - Corpo masculino/feminino, pele (22 tons), até 3 cores por item, variantes,
   camadas na frente/atrás do corpo (capas, asas), cabeças humanas e fantásticas

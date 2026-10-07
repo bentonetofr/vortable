@@ -154,4 +154,10 @@ for (const [from, to] of COPY) {
   fs.copyFileSync(path.join(SRC, from), path.join(OUT, to))
 }
 fs.writeFileSync(path.join(OUT, 'catalog', 'objects.json'), JSON.stringify(catalog))
+
+// créditos visíveis no jogo (a licença da arte exige)
+fs.mkdirSync(path.join(OUT, 'credits'), { recursive: true })
+for (const f of ['CREDITS-terrain.txt', 'CREDITS-trees.txt']) {
+  fs.copyFileSync(path.join(SRC, 'credits', f), path.join(OUT, 'credits', f))
+}
 console.log(`${catalog.objects.length} objetos em ${catalog.sheets.length} folhas`)

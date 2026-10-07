@@ -20,10 +20,16 @@ const characters = new LocalCharacterStorage()
 
 /** Aparência do personagem em uso (o último salvo no criador). */
 async function activeAppearance(): Promise<Appearance> {
-  const data = await loadCharacterData(assetBase)
-  const [list, active] = await Promise.all([characters.list(), characters.getActive()])
-  const chosen = list.find((c) => c.id === active) ?? list[0]
-  return normalizeAppearance(data, chosen?.appearance ?? defaultAppearance())
+  try {
+    const data = await loadCharacterData(assetBase)
+    const [list, active] = await Promise.all([characters.list(), characters.getActive()])
+    const chosen = list.find((c) => c.id === active) ?? list[0]
+    return normalizeAppearance(data, chosen?.appearance ?? defaultAppearance())
+  } catch (err) {
+    // sem catálogo o jogo ainda abre; o boneco avisa que não carregou
+    console.error('[vortable] personagem em uso não carregou', err)
+    return defaultAppearance()
+  }
 }
 
 /** Editor abre a última zona salva (ou a demonstração, na primeira vez). */
