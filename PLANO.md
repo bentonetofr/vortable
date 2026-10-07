@@ -241,6 +241,21 @@ O mundo parado parece foto: tudo que é leve mexe com o vento, e o fogo vive.
 - **Água**: reflexos piscando (prateados à noite); **sombra de nuvens** passando de dia
 - ✅ *Uma clareira com vento parece viva; uma fogueira à noite crepita*
 
+### M3.7 — Tempo ✅ (concluído)
+O mestre escolhe o tempo de cada zona (aba **Clima**):
+- **Limpo, Nublado, Neblina, Garoa, Chuva, Tempestade, Neve leve, Neve, Nevasca**
+- **Nuvens no céu**: no encoberto passam translúcidas por cima do mapa, e a sombra de cada uma
+  corre pelo chão deslocada pelo sol (o mesmo desenho)
+- A luz do dia fica mais cinza/escura conforme o tempo; sombra do sol some no encoberto; neve
+  puxa pro azulado; vaga-lume não sai na chuva
+- **Chuva**: gotas inclinadas pelo vento, respingos no chão; **tempestade**: vento forte e
+  relâmpagos (dois clarões) que clareiam tudo — dentro de casa, piscam nas janelas
+- **Neve**: flocos que flutuam, balançam e pousam; **nevasca**: horizontal, com névoa branca;
+  **neblina**: névoa arrastando devagar (debaixo da escuridão: à noite só aparece perto da luz)
+- ⏳ Depois: neve acumulando no chão, poças, som da chuva/trovão (M7), o mestre mudar o tempo
+  ao vivo pra todos (M4)
+- ✅ *Uma tempestade à noite na vila assusta; uma nevasca esconde o caminho*
+
 ### M4 — Integração Vorterium + multiplayer
 - Aba **Vortable** na campanha do Vorterium; login e papéis vindos de `campaign_members`
 - Migrations `vortable_*`; zonas e aparências salvas no Supabase

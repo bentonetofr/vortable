@@ -83,6 +83,8 @@ export interface ZoneLighting {
   wind?: number
   /** Sombra de nuvens passando (ao ar livre, de dia). Padrão: ligada. */
   clouds?: boolean
+  /** Tempo: chuva, neve, neblina... (weather.ts). Ausente = limpo. */
+  weather?: string
 }
 
 export const DAY_MINUTES = 24

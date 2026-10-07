@@ -650,3 +650,13 @@
 .vt-color { width: 30px; height: 24px; padding: 0 2px; border: 1px solid var(--vt-border-dim); border-radius: 6px; background: var(--vt-bg); cursor: pointer; }
 .vt-testclock { display: inline-flex; align-items: center; gap: 4px; color: var(--vt-text-2); font-variant-numeric: tabular-nums; }
 .vt-testclock:empty { display: none; }
+.vt-weathers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.vt-weather {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 7px 2px 6px; border-radius: 7px;
+  border: 1px solid var(--vt-border-dim); background: var(--vt-bg);
+  color: var(--vt-text-2); font: inherit; font-size: 11px; cursor: pointer;
+}
+.vt-weather svg { width: 18px; height: 18px; }
+.vt-weather:hover { border-color: var(--vt-border); color: var(--vt-text); }
+.vt-weather.vt-on { border-color: var(--vt-accent); background: var(--vt-accent-glow); color: var(--vt-accent-bright); }

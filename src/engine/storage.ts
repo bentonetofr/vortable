@@ -6,6 +6,7 @@
 //   • (M4) Supabase, pela ponte no Vorterium (um mundo por campanha)
 // ────────────────────────────────────────────────────────
 
+import { WEATHERS } from './world/weather'
 import { LIGHT_RADIUS_MAX, LIGHT_RADIUS_MIN, TILE, ZONE_MAX, ZONE_MIN, Z_MAX, newId, type Portal, type WorldData, type ZoneData, type ZoneLight, type ZoneLighting } from './types'
 
 export interface ZoneSummary {
@@ -206,6 +207,7 @@ function parseLighting(l: unknown): { lighting?: ZoneLighting } {
       ...(v.particles === false ? { particles: false } : {}),
       ...(num(v.wind) ? { wind: clamp(v.wind, 0, 1) } : {}),
       ...(v.clouds === false ? { clouds: false } : {}),
+      ...(typeof v.weather === 'string' && v.weather in WEATHERS && v.weather !== 'clear' ? { weather: v.weather } : {}),
     },
   }
 }

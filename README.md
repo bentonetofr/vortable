@@ -32,7 +32,7 @@ npm run dev
 | `B` / `G` / `E` | pincel / balde / borracha |
 | `O` / `V` / `P` | colocar objeto / selecionar e mover / ponto de início |
 | `C` | cômodo (arraste; `Ctrl` apaga) |
-| `L` | luz solta: clique põe, arraste move; cor, alcance, força e tremor no painel **Luz** |
+| `L` | luz solta: clique põe, arraste move; cor, alcance, força e tremor no painel **Clima** |
 | `I` | ver iluminação no editor (hora, luzes, sombras) |
 | `X` | saída: arraste pra desenhar a área que leva a outra zona; o destino se escolhe no painel |
 | `[` `]` ou `Alt`+roda | tamanho do pincel |
@@ -73,10 +73,10 @@ Aba **Cômodos** (ou tecla `C`) — funciona em zona de interior (fundo *Vazio*)
 - Estilo = parede (252) + piso + moldura (32) + altura da parede (0 = só a borda, pra
   corredores de castelo/masmorra). Há estilos prontos (casa de fazenda, taverna, castelo...).
 
-### Luz, hora, sombras e vento
+### Luz, hora, tempo, sombras e vento
 
-Aba **Luz**:
-- **Clima**: Ciclo dia/noite, Dia, Entardecer, Noite, Interior, Taverna à noite, Caverna, Masmorra.
+Aba **Clima**:
+- **Ambientes prontos**: Ciclo dia/noite, Dia, Entardecer, Noite, Interior, Taverna à noite, Caverna, Masmorra.
 - **Onde fica**: *ar livre* (o céu muda de cor com a hora e o sol faz sombra), *interior* (mais
   escuro; de dia entra um facho de sol pelas janelas) ou *subterrâneo* (nunca vê o sol; escolha a
   cor do escuro).
@@ -87,6 +87,10 @@ Aba **Luz**:
   `L` põe luz solta (cores prontas: fogo, vela, luar, magia, veneno...).
 - As paredes dos cômodos **barram a luz** (uma tocha não clareia o cômodo vizinho; passa pela
   porta). Janelas acendem à noite vistas de fora; lava e água venenosa brilham no escuro.
+- **Tempo**: limpo, nublado, neblina, garoa, chuva, tempestade, neve leve, neve, nevasca. No
+  encoberto as nuvens passam por cima do mapa e a sombra delas corre pelo chão; a chuva cai
+  inclinada pelo vento e respinga; a tempestade relampeja (em interiores, pisca nas janelas); a
+  neve flutua e pousa; nevasca e neblina passam como névoa.
 - **Vento** (ao ar livre: parado, brisa ou ventania): árvores, arbustos, flores e plantações
   balançam (placas e lamparinas penduradas balançam presas no topo); os tufinhos da grama do
   chão balançam com as rajadas e chacoalham quando alguém passa por cima; folhas caem das copas — com a cor da própria árvore — e o

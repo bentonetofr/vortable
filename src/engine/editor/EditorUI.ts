@@ -24,6 +24,7 @@ import {
 import { LIGHT_PRESETS, UNDERGROUND_TINT, ambientAt, daylight, formatHour, lightingOf, rgbToInt } from '../world/daylight'
 import type { LightLook } from './EditorState'
 import { DEFAULT_WIND, WIND_LEVELS } from '../world/wind'
+import { WEATHERS, WEATHER_ORDER } from '../world/weather'
 import { solidTerrainRects } from '../world/ground'
 import { fenceSolids } from '../world/fences'
 
@@ -300,7 +301,7 @@ export class EditorUI {
 
   private buildPanel() {
     const tabs = h('div', { class: 'vt-tabs' })
-    for (const [id, label] of [['terrains', 'Terrenos'], ['objects', 'Objetos'], ['rooms', 'Cômodos'], ['light', 'Luz']] as const) {
+    for (const [id, label] of [['terrains', 'Terrenos'], ['objects', 'Objetos'], ['rooms', 'Cômodos'], ['light', 'Clima']] as const) {
       const b = h('button', {
         class: 'vt-tab',
         onclick: () => {
@@ -658,6 +659,16 @@ export class EditorUI {
       check('Partículas', cur.particles !== false, (v) => setLighting({ particles: v ? undefined : false }), 'Folhas caindo, chamas, faíscas e fumaça, vaga-lumes, poeira, reflexos na água'),
     )
 
+    // tempo: chuva, neve, neblina... (subterrâneo não tem céu)
+    const weatherId = cur.weather && cur.weather in WEATHERS ? cur.weather : 'clear'
+    const weathers = h('div', { class: 'vt-weathers' }, ...WEATHER_ORDER.map((id) => h('button', {
+      class: `vt-weather${weatherId === id ? ' vt-on' : ''}`, title: WEATHERS[id].label,
+      onclick: () => weatherId !== id && setLighting({ weather: id === 'clear' ? undefined : id }),
+    }, h('span', { html: id === 'clear' ? ICONS.sun : id === 'cloudy' ? ICONS.cloud : ICONS[id] }), h('span', {}, WEATHERS[id].label))))
+    const weatherNote = cur.place === 'indoor'
+      ? 'Dentro não chove nem neva: a luz das janelas fica mais fraca e os relâmpagos piscam nelas.'
+      : WEATHERS[weatherId as keyof typeof WEATHERS].minWind >= 0.9 ? 'Esse tempo sopra forte, qualquer que seja o vento escolhido.' : ''
+
     // vento: o mais próximo dos três níveis fica marcado
     const wind = cur.wind ?? DEFAULT_WIND
     const near = WIND_LEVELS.reduce((a, b) => (Math.abs(b[0] - wind) < Math.abs(a[0] - wind) ? b : a))[0]
@@ -667,8 +678,11 @@ export class EditorUI {
     }, label)))
 
     this.paneEl.append(
-      h('div', { class: 'vt-group' }, h('h4', {}, 'Clima'), presets),
+      h('div', { class: 'vt-group' }, h('h4', {}, 'Ambientes prontos'), presets),
       h('div', { class: 'vt-group' }, h('h4', {}, 'Onde fica'), place),
+      ...(cur.place !== 'underground'
+        ? [h('div', { class: 'vt-group' }, h('h4', {}, 'Tempo'), weathers, weatherNote ? h('small', { class: 'vt-note vt-modehelp' }, weatherNote) : null)]
+        : []),
       ...(cur.place === 'outdoor'
         ? [h('div', { class: 'vt-group' }, h('h4', {}, 'Vento'), windSeg,
           h('small', { class: 'vt-note vt-modehelp' }, 'Árvores, plantas e placas balançam; ondas correm pela grama; folhas caem e rolam pelo chão.'))]

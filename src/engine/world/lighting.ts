@@ -15,7 +15,8 @@
 //   brilho   (por cima, SOMA): um halo fraco nas luzes quando escurece —
 //            o fogo "acende" o ar em volta.
 //
-// Mais o vento (wind.ts: balanço das plantas e dos tufos de grama, sombra
+// Mais o tempo (weather.ts: chuva, neve, neblina, nuvens no céu e
+// relâmpagos), o vento (wind.ts: balanço das plantas e dos tufos de grama, sombra
 // de nuvens passando) e as partículas (particles.ts: chamas, folhas, reflexos).
 // As luzes, janelas, sombras e fontes saem da zona em rebuild(); o editor
 // chama de novo quando a zona muda.
@@ -29,6 +30,7 @@ import { ambientAt, darkness, daylight, hexToRgb, lightingOf, rgbToInt, sunAt, z
 import { buildOcclusion, maskedLight, type Occlusion } from './shadowcast'
 import { DOT, PUFF, Particles, type FireSource, type LeafSource } from './particles'
 import { DEFAULT_WIND, Wind, setActiveWind, swayOf, swaySpec, type SwaySpec } from './wind'
+import { CLOUD_SIZE, CLOUD_TILE, WeatherFx, cloudTextures, weatherAmbient, weatherOf } from './weather'
 
 /**
  * Canvas na CPU: são pequenos e viram textura logo em seguida — no canvas da
@@ -36,9 +38,6 @@ import { DEFAULT_WIND, Wind, setActiveWind, swayOf, swaySpec, type SwaySpec } fr
  */
 const CPU: CanvasRenderingContext2DSettings = { willReadFrequently: true }
 
-const CLOUDS = 'fx:clouds'
-/** Um ladrilho da textura de nuvens cobre isso do mundo (px). */
-const CLOUD_TILE = 1024
 const SOFT = 'light:soft'
 const BEAM = 'light:beam'
 export const BLOB = 'light:blob'
@@ -106,6 +105,7 @@ export class Lighting {
   private serial = 0
   private time = 0
   readonly wind = new Wind()
+  private weather: WeatherFx
   private trees: LeafSource[] = []
   private water: { x: number; y: number }[] = []
 
@@ -123,6 +123,7 @@ export class Lighting {
   constructor(private scene: Phaser.Scene, zone: ZoneData) {
     ensureTextures(scene)
     this.particles = new Particles(scene)
+    this.weather = new WeatherFx(scene)
     this.resize()
     scene.scale.on(Phaser.Scale.Events.RESIZE, this.resize, this)
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy())
@@ -150,6 +151,7 @@ export class Lighting {
 
   destroy() {
     setActiveWind(null)
+    this.weather.destroy()
     this.scene.scale.off(Phaser.Scale.Events.RESIZE, this.resize, this)
     this.particles.destroy()
     for (const m of this.masks.values()) if (m) this.scene.textures.remove(m.key)
@@ -161,6 +163,7 @@ export class Lighting {
   setZone(zone: ZoneData) {
     this.zone = zone
     this.particles.clear()
+    this.weather.clear()
     this.rebuild()
   }
 
@@ -314,20 +317,39 @@ export class Lighting {
     this.shade.setVisible(false)
     if (!on) {
       this.particles.clear()
+      this.weather.clear()
       setActiveWind(null)
       return
     }
     const l = lightingOf(this.zone)
     const hour = (this.hour = this.hourOverride ?? zoneHour(l, Date.now() + this.timeOffset))
-    const ambient = ambientAt(l, hour)
-    const dark = darkness(ambient)
-    const day = l.place === 'underground' ? 0 : daylight(hour)
     const v = this.view()
     const t = this.time
     const outdoor = l.place === 'outdoor'
+    const wth = weatherOf(l.weather)
+    const sun = sunAt(hour)
     // dentro de casa não venta (mas o que é pendurado ainda balança de leve)
-    this.wind.update(dt, outdoor ? l.wind ?? DEFAULT_WIND : 0)
+    this.wind.update(dt, outdoor ? Math.max(l.wind ?? DEFAULT_WIND, wth.minWind) : 0)
     setActiveWind(this.wind)
+    // nuvens: as do tempo (sempre) ou as poucas do céu limpo (se ligadas)
+    const cover = outdoor && (wth.cover >= 0.5 || l.clouds !== false) ? wth.cover : 0
+    const cloudSpeed = 10 + 45 * this.wind.strength
+    const cloudX = t * cloudSpeed * this.wind.dx, cloudY = t * cloudSpeed * this.wind.dy
+    this.weather.update(dt, {
+      view: { x: v.x - 32, y: v.y - 32, w: v.w + 64, h: v.h + 64 },
+      def: wth, wind: this.wind, outdoor, sunAngle: sun.angle, cloudX, cloudY,
+      day: l.place === 'underground' ? 0 : daylight(hour),
+    })
+    // o tempo escurece/acinzenta a luz do dia (dentro de casa, a parte que vem das janelas)
+    const flash = this.weather.flash
+    let ambient = ambientAt(l, hour)
+    if (l.place !== 'underground') ambient = weatherAmbient(ambient, wth, outdoor ? 1 : daylight(hour))
+    if (flash) {
+      const k = flash * (outdoor ? 0.85 : 0.35)
+      ambient = [ambient[0] + (0.86 - ambient[0]) * k, ambient[1] + (0.9 - ambient[1]) * k, ambient[2] + (1 - ambient[2]) * k]
+    }
+    const dark = darkness(ambient)
+    const day = l.place === 'underground' ? 0 : daylight(hour) * (1 - wth.dim)
 
     // ── escuridão + luzes ──
     const s = LIGHT_RES * v.zoom
@@ -336,15 +358,15 @@ export class Lighting {
     rt.setPosition(v.x, v.y).setScale(1 / s)
     paint(rt, rgbToInt(ambient))
     // sombra de nuvens passando com o vento (de dia, ao ar livre)
-    const clouds = outdoor && l.clouds !== false ? day : 0
+    const clouds = cover ? day : 0
     if (clouds > 0.02) {
-      const speed = 10 + 45 * this.wind.strength
-      const ox = (((t * speed * this.wind.dx) % CLOUD_TILE) + CLOUD_TILE) % CLOUD_TILE
-      const oy = (((t * speed * this.wind.dy) % CLOUD_TILE) + CLOUD_TILE) % CLOUD_TILE
+      const shadowKey = cloudTextures(this.scene, cover).shadow
+      const ox = ((cloudX % CLOUD_TILE) + CLOUD_TILE) % CLOUD_TILE
+      const oy = ((cloudY % CLOUD_TILE) + CLOUD_TILE) % CLOUD_TILE
       const scale = (CLOUD_TILE / CLOUD_SIZE) * s
       for (let wy = Math.floor((v.y - oy) / CLOUD_TILE) * CLOUD_TILE + oy; wy < v.y + v.h; wy += CLOUD_TILE) {
         for (let wx = Math.floor((v.x - ox) / CLOUD_TILE) * CLOUD_TILE + ox; wx < v.x + v.w; wx += CLOUD_TILE) {
-          rt.stamp(CLOUDS, undefined, px(wx), py(wy), {
+          rt.stamp(shadowKey, undefined, px(wx), py(wy), {
             originX: 0, originY: 0, scale, alpha: clouds * 0.9, blendMode: Phaser.BlendModes.MULTIPLY, skipBatch: true,
           })
         }
@@ -372,7 +394,6 @@ export class Lighting {
       })
     }
     // janelas: de dia, facho de sol no chão (interior); de noite, acesas (ao ar livre)
-    const sun = sunAt(hour)
     const beams: { x: number; y: number; sx: number; sy: number; tint: number }[] = []
     if (l.place === 'indoor' && day > 0.02) {
       const sky = ambientAt({ place: 'outdoor', hour: null }, hour)
@@ -388,7 +409,18 @@ export class Lighting {
         beams.push(beam)
         rt.stamp(BEAM, undefined, px(beam.x), py(beam.y), {
           originX: 0.5, originY: 0, scaleX: beam.sx * s, scaleY: beam.sy * s,
-          rotation: sun.angle * 0.3, tint, alpha: day, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
+          rotation: sun.angle * 0.3, tint, alpha: day * wth.sun * 0.6 + day * 0.4, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
+        })
+      }
+    }
+    // relâmpago lá fora: as janelas do interior piscam
+    if (flash && l.place === 'indoor') {
+      for (const win of this.windows) {
+        const len = Math.max(96, win.h * 2.6)
+        if (!visible(win.x, win.y + len / 2, len)) continue
+        rt.stamp(BEAM, undefined, px(win.x), py(win.y - win.h * 0.6), {
+          originX: 0.5, originY: 0, scaleX: (win.w * 1.25 * s) / 64, scaleY: (len * s) / 128,
+          tint: 0xdde6ff, alpha: flash, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
         })
       }
     } else if (l.place === 'outdoor' && day < 0.9) {
@@ -431,7 +463,7 @@ export class Lighting {
     }
 
     // ── sombras do sol ──
-    const sunShadow = l.place === 'outdoor' && l.sunShadows !== false ? sun.strength : 0
+    const sunShadow = l.place === 'outdoor' && l.sunShadows !== false ? sun.strength * wth.sun : 0
     if (sunShadow > 0.02) {
       const sh = this.shade, k = v.zoom
       sh.setVisible(true).setPosition(v.x, v.y).setScale(1 / k).setAlpha(SUN_SHADOW_ALPHA * sunShadow)
@@ -472,7 +504,8 @@ export class Lighting {
       trees: particles && outdoor ? this.trees : [],
       water: particles && l.place !== 'underground' ? this.water : [],
       day,
-      fireflies: particles && l.place === 'outdoor' ? Math.max(0, (dark - 0.45) / 0.4) : 0,
+      // vaga-lume não sai na chuva nem na neve
+      fireflies: particles && outdoor && !wth.rain && !wth.snow ? Math.max(0, (dark - 0.45) / 0.4) : 0,
       dust: particles && l.place !== 'outdoor' ? 1 : 0,
     })
   }
@@ -502,49 +535,6 @@ function shadowFrame(scene: Phaser.Scene, def: ObjectDef): string | null {
   if (h < 4) return null
   tex.add(key, 0, def.x, def.y, def.w, h)
   return key
-}
-
-const CLOUD_SIZE = 256
-
-/** Nuvens: ruído suave que emenda nas bordas; branco = céu limpo, cinza = sombra. */
-function cloudCanvas() {
-  const N = CLOUD_SIZE
-  const grid = (cells: number, seed: number) => {
-    const g = new Float32Array(cells * cells)
-    let a = seed
-    for (let i = 0; i < g.length; i++) {
-      a = (a * 1103515245 + 12345) >>> 0
-      g[i] = (a >>> 8) / 16777216
-    }
-    return (x: number, y: number) => {
-      const fx = (x / N) * cells, fy = (y / N) * cells
-      const x0 = Math.floor(fx), y0 = Math.floor(fy)
-      const tx = fx - x0, ty = fy - y0
-      const sx = tx * tx * (3 - 2 * tx), sy = ty * ty * (3 - 2 * ty)
-      const at = (cx: number, cy: number) => g[((cy % cells) + cells) % cells * cells + ((cx % cells) + cells) % cells]
-      const top = at(x0, y0) + (at(x0 + 1, y0) - at(x0, y0)) * sx
-      const bot = at(x0, y0 + 1) + (at(x0 + 1, y0 + 1) - at(x0, y0 + 1)) * sx
-      return top + (bot - top) * sy
-    }
-  }
-  const big = grid(4, 7), mid = grid(8, 31), small = grid(16, 97)
-  const c = document.createElement('canvas')
-  c.width = c.height = N
-  const ctx = c.getContext('2d', CPU)!
-  const img = ctx.createImageData(N, N)
-  for (let y = 0; y < N; y++) {
-    for (let x = 0; x < N; x++) {
-      const n = big(x, y) * 0.55 + mid(x, y) * 0.3 + small(x, y) * 0.15
-      // só as partes mais densas fazem sombra; borda macia
-      const t = Math.max(0, Math.min(1, (n - 0.55) / 0.18))
-      const v = 255 * (1 - 0.3 * t * t * (3 - 2 * t))
-      const i = (y * N + x) * 4
-      img.data[i] = img.data[i + 1] = img.data[i + 2] = v
-      img.data[i + 3] = 255
-    }
-  }
-  ctx.putImageData(img, 0, 0)
-  return c
 }
 
 const leafCache = new Map<string, number[]>()
@@ -600,7 +590,6 @@ function ensureTextures(scene: Phaser.Scene) {
     })
   }
   add(SOFT, softCanvas)
-  if (!tm.exists(CLOUDS)) add(CLOUDS, cloudCanvas())
   if (!tm.exists(BEAM)) {
     // facho: mais forte embaixo da janela, some no chão; bordas macias e alargando
     const c = document.createElement('canvas')
