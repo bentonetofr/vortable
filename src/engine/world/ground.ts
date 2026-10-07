@@ -162,5 +162,16 @@ export function solidTerrainRects(zone: ZoneData) {
       }
     }
   }
+  // vazio na borda de um cômodo: um bloco em volta do vértice (fecha as
+  // paredes finas entre cômodos e segura o boneco antes da moldura)
+  const E = 12
+  for (let vy = 0; vy <= zone.height; vy++) {
+    for (let vx = 0; vx <= zone.width; vx++) {
+      if (!cornerTerrain(zone, vx, vy).edgeSolid) continue
+      const touches = [[vx + 1, vy], [vx - 1, vy], [vx, vy + 1], [vx, vy - 1]].some(([x, y]) =>
+        x >= 0 && y >= 0 && x <= zone.width && y <= zone.height && !cornerTerrain(zone, x, y).edgeSolid)
+      if (touches) rects.push({ x: vx * TILE - E, y: vy * TILE - E, w: E * 2, h: E * 2 })
+    }
+  }
   return rects
 }

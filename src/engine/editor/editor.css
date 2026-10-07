@@ -542,3 +542,76 @@
   white-space: nowrap;
 }
 .vt-keyrow span { color: var(--vt-text-2); }
+
+/* ── Lista que abre e fecha (terrenos, objetos) ─── */
+.vt-searchwrap { position: relative; margin-bottom: 8px; }
+.vt-searchwrap .vt-search { margin: 0; padding-left: 30px; }
+.vt-search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--vt-muted); display: flex; pointer-events: none; }
+.vt-search-icon svg { width: 15px; height: 15px; }
+.vt-acc-list { display: flex; flex-direction: column; gap: 3px; }
+.vt-acc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: var(--vt-elevated);
+  color: var(--vt-text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.vt-acc:hover { border-color: var(--vt-border-dim); background: var(--vt-overlay); }
+.vt-acc.vt-open { color: var(--vt-accent-bright); border-color: var(--vt-border-dim); background: var(--vt-accent-glow); }
+.vt-acc-chev { display: flex; color: var(--vt-muted); transition: transform 0.15s; }
+.vt-acc-chev svg { width: 14px; height: 14px; }
+.vt-acc.vt-open .vt-acc-chev { transform: rotate(90deg); color: var(--vt-accent-bright); }
+.vt-acc-icon { display: flex; color: var(--vt-accent); }
+.vt-acc-icon svg { width: 15px; height: 15px; }
+.vt-acc-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.vt-acc-count { color: var(--vt-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.vt-acc-body { padding: 6px 2px 10px; }
+.vt-acc-body .vt-grid.vt-objects { grid-template-columns: repeat(4, 1fr); }
+.vt-subgroup + .vt-subgroup { margin-top: 10px; }
+.vt-subgroup h5 { margin: 0 0 5px; font-size: 11px; font-weight: 600; color: var(--vt-muted); text-transform: capitalize; }
+
+/* ── Cômodos ────────────────────────────────────── */
+.vt-presets { display: grid; gap: 4px; }
+.vt-preset {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 8px; border-radius: 7px;
+  border: 1px solid var(--vt-border-dim); background: var(--vt-bg);
+  color: var(--vt-text); font: inherit; font-size: 13px; text-align: left; cursor: pointer;
+}
+.vt-preset:hover { border-color: var(--vt-border); }
+.vt-preset.vt-on { border-color: var(--vt-accent); background: var(--vt-accent-glow); color: var(--vt-accent-bright); }
+.vt-preset-sw { display: flex; flex: none; }
+.vt-preset-sw canvas { width: 22px; height: 22px; border-radius: 4px; image-rendering: pixelated; border: 1px solid rgba(0, 0, 0, 0.4); }
+.vt-preset-sw canvas + canvas { margin-left: -6px; }
+.vt-styleparts { display: grid; gap: 4px; margin-bottom: 10px; }
+.vt-stylepart {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 8px; border-radius: 7px;
+  border: 1px solid var(--vt-border-dim); background: var(--vt-elevated);
+  color: var(--vt-text); font: inherit; text-align: left; cursor: pointer;
+}
+.vt-stylepart:hover { border-color: var(--vt-accent); }
+.vt-stylepart > span:nth-child(2) { flex: 1; display: grid; min-width: 0; }
+.vt-stylepart small { color: var(--vt-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vt-stylepart-chev { display: flex; color: var(--vt-muted); }
+.vt-stylepart-chev svg { width: 14px; height: 14px; }
+.vt-swatch { width: 32px; height: 32px; border-radius: 5px; image-rendering: pixelated; flex: none; border: 1px solid rgba(0, 0, 0, 0.4); }
+.vt-heightrow .vt-range { flex: 1; accent-color: var(--vt-accent); }
+.vt-heightrow label { min-width: 0; flex: none; }
+.vt-roomhelp ul { margin: 0; padding-left: 18px; color: var(--vt-text-2); font-size: 12px; line-height: 1.6; }
+.vt-roomhelp b { color: var(--vt-text); }
+.vt-picker { max-height: 60vh; overflow-y: auto; padding-right: 4px; }
+
+.vt-segmented { display: flex; gap: 2px; padding: 3px; border-radius: 8px; background: var(--vt-bg); border: 1px solid var(--vt-border-dim); }
+.vt-seg { flex: 1; padding: 6px 4px; border: 0; border-radius: 6px; background: transparent; color: var(--vt-text-2); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.vt-seg:hover { color: var(--vt-text); background: var(--vt-overlay); }
+.vt-seg.vt-on { background: var(--vt-accent); color: #2a1700; }
+.vt-modehelp { display: block; margin-top: 6px; }

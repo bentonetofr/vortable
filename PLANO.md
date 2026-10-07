@@ -169,7 +169,7 @@ Photoshop e Figma.
 - **`?` mostra todos os atalhos** numa janela
 - ✅ *Editar uma zona grande é rápido e não cansa*
 
-### M3.4 — Estruturas (cômodos estilo Stardew) e painel novo
+### M3.4 — Estruturas (cômodos estilo Stardew) e painel novo ✅ (concluído)
 **Cômodos como no Stardew Valley**: hoje dá pra chegar no visual (parede de 3 tiles em cima,
 borda escura com moldura em volta, piso dentro), mas pintando 3 camadas à mão. A ferramenta
 nova faz isso numa ação só, em qualquer forma:
@@ -195,6 +195,10 @@ nova faz isso numa ação só, em qualquer forma:
 - Categorias repetidas/confusas são unidas ("Tocos e galhos" + "Troncos e galhos"; "Interior")
 - Mesmo esquema na aba de terrenos (Natureza, Interior, Paredes, Cercas) e a aba nova de
   **cômodos**
+- Feito: modos Cômodo / Parede / Porta; paredes finas automáticas entre cômodos de estilos
+  diferentes; 6 estilos prontos; o vazio na borda de um cômodo colide (paredes finas fecham)
+- ⏳ Cômodos numa zona de exterior (fundo grama) ficam sem a parede fina sólida — por enquanto
+  são pra zonas de interior
 - ✅ *Montar o interior de uma casa como no Stardew leva um minuto*
 
 ### M3.5 — Iluminação e atmosfera

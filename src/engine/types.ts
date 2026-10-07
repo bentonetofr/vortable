@@ -29,6 +29,12 @@ export interface ZoneData {
   overlay?: string[]
   /** Cercas, uma por TILE (width × height, linha a linha); '' = nada. */
   fences?: string[]
+  /**
+   * Cômodos (ferramenta Cômodo do editor), um valor por VÉRTICE como
+   * `corners`: o estilo "piso|parede|moldura|altura" ou '' (fora). O jogo
+   * não lê isto: piso, parede e moldura já ficam gravados em corners/overlay.
+   */
+  rooms?: string[]
   objects: ZoneObject[]
   /** Saídas: áreas que levam a outra zona (porta, escada, borda do mapa). */
   portals: Portal[]

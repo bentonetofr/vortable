@@ -166,6 +166,9 @@ export function parseZone(json: unknown): ZoneData {
     ...(Array.isArray(z.overlay) && z.overlay.length === z.corners.length && z.overlay.some((c) => c)
       ? { overlay: z.overlay.map((c) => (typeof c === 'string' ? c : '')) }
       : {}),
+    ...(Array.isArray(z.rooms) && z.rooms.length === z.corners.length && z.rooms.some((c) => c)
+      ? { rooms: z.rooms.map((c) => (typeof c === 'string' ? c : '')) }
+      : {}),
     ...(Array.isArray(z.fences) && z.fences.length === width! * height! && z.fences.some((c) => c)
       ? { fences: z.fences.map((c) => (typeof c === 'string' ? c : '')) }
       : {}),

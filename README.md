@@ -31,6 +31,7 @@ npm run dev
 | `WASD` / setas | mover a tela (`Shift` = rápido) |
 | `B` / `G` / `E` | pincel / balde / borracha |
 | `O` / `V` / `P` | colocar objeto / selecionar e mover / ponto de início |
+| `C` | cômodo (arraste; `Ctrl` apaga) |
 | `X` | saída: arraste pra desenhar a área que leva a outra zona; o destino se escolhe no painel |
 | `[` `]` ou `Alt`+roda | tamanho do pincel |
 | `Shift`+clique (pincel) | linha reta desde o último ponto |
@@ -56,6 +57,19 @@ npm run dev
   ★ = onde os jogadores começam. Arraste os cartões pra organizar.
 - **Nova → Interior** cria uma zona pequena com fundo escuro; use os terrenos de *Interior*
   (pisos, tapetes, paredes).
+
+### Cômodos (interiores estilo Stardew)
+
+Aba **Cômodos** (ou tecla `C`), numa zona de interior (fundo *Vazio*):
+- **Cômodo**: arraste um retângulo e sai pronto — piso, parede com face em cima, moldura escura
+  em volta. Encostado num cômodo de outro estilo, nasce uma parede fina entre os dois; do mesmo
+  estilo, vira um cômodo maior.
+- **Parede**: risque uma linha dentro do cômodo pra dividir.
+- **Porta**: arraste sobre uma parede (ou na borda de baixo, pra entradinha) pra abrir um vão.
+- **Clique** num cômodo aplica o estilo escolhido; **Alt + clique** copia o estilo; **Ctrl +
+  arrastar** apaga.
+- Estilo = parede (252) + piso + moldura (32) + altura da parede (0 = só a borda, pra
+  corredores de castelo/masmorra). Há estilos prontos (casa de fazenda, taverna, castelo...).
 
 ### Terrenos, paredes, tapetes e cercas
 

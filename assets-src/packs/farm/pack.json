@@ -1213,7 +1213,7 @@
     },
     "farm-goods@225,448": {
       "label": "Barco a remo 1",
-      "category": "Barcos",
+      "category": "Vila",
       "kind": "floor",
       "collision": "none"
     },
@@ -1259,7 +1259,7 @@
     },
     "farm-goods@357,450": {
       "label": "Barco a remo 2",
-      "category": "Barcos",
+      "category": "Vila",
       "kind": "floor",
       "collision": "none"
     },
@@ -1325,7 +1325,7 @@
     },
     "farm-goods@225,512": {
       "label": "Barco na água 1",
-      "category": "Barcos",
+      "category": "Vila",
       "kind": "floor",
       "collision": "none"
     },
@@ -1351,7 +1351,7 @@
     },
     "farm-goods@353,514": {
       "label": "Barco na água 2",
-      "category": "Barcos",
+      "category": "Vila",
       "kind": "floor",
       "collision": "none"
     },

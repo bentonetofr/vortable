@@ -5,9 +5,10 @@
 // ────────────────────────────────────────────────────────
 
 import type { WorldData, ZoneData, ZoneObject } from '../types'
+import { ROOM_PRESETS, type RoomStyle } from './rooms'
 import type { ZoneSummary } from '../storage'
 
-export type Tool = 'brush' | 'fill' | 'erase' | 'object' | 'select' | 'portal' | 'spawn'
+export type Tool = 'brush' | 'fill' | 'erase' | 'object' | 'select' | 'room' | 'portal' | 'spawn'
 
 /**
  * zone   = a zona inteira mudou (desfazer, abrir, nova) → redesenhar tudo
@@ -31,6 +32,10 @@ export class EditorState {
   objectKind: string | null = null
   /** O objeto a carimbar sai espelhado. */
   flip = false
+  /** Estilo dos cômodos novos (ferramenta Cômodo). */
+  roomStyle: RoomStyle = { ...ROOM_PRESETS[0].style }
+  /** Ferramenta Cômodo: criar cômodo, riscar parede interna ou abrir porta. */
+  roomMode: 'room' | 'wall' | 'door' = 'room'
   snap = false
   showGrid = false
   showCollision = false
@@ -69,7 +74,7 @@ export class EditorState {
     for (const fn of this.listeners) fn(c)
   }
 
-  set(patch: Partial<Pick<EditorState, 'tool' | 'terrain' | 'brush' | 'objectKind' | 'flip' | 'snap' | 'showGrid' | 'showCollision' | 'selected' | 'selectedPortal' | 'zoom'>>) {
+  set(patch: Partial<Pick<EditorState, 'tool' | 'terrain' | 'brush' | 'objectKind' | 'flip' | 'roomStyle' | 'roomMode' | 'snap' | 'showGrid' | 'showCollision' | 'selected' | 'selectedPortal' | 'zoom'>>) {
     Object.assign(this, patch)
     if (patch.tool && patch.tool !== 'select') this.selected = []
     if (patch.tool && patch.tool !== 'portal') this.selectedPortal = null

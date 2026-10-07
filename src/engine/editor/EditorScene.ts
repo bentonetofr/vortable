@@ -9,6 +9,8 @@
 //               um retângulo de seleção, arrastar um objeto move o grupo
 //   saída: arraste pra desenhar a área que leva a outra zona; clique pra
 //          selecionar/arrastar; Del apaga (o destino se escolhe no painel)
+//   cômodo: arraste um retângulo → piso, parede e moldura prontos (Ctrl:
+//           apaga); clique num cômodo troca o estilo dele; Alt+clique copia
 //   início: onde o jogador aparece
 //   Alt+clique: conta-gotas (copia terreno ou objeto)
 // Câmera: roda dá zoom suave (no cursor); Espaço + arrastar, botão do
@@ -24,6 +26,7 @@ import { createObjectSprite, updateObjectSprite, type ObjectSprite } from '../wo
 import { isTyping } from '../world/Player'
 import { TILE, newId, type Portal, type ZoneObject } from '../types'
 import type { EditorState } from './EditorState'
+import { applyRooms, connectedRoom, decodeRoom, encodeRoom, roomRoles } from './rooms'
 
 export const ZOOM_MIN = 0.1
 export const ZOOM_MAX = 8
@@ -65,6 +68,15 @@ export class EditorScene extends Phaser.Scene {
   private marquee: { x0: number; y0: number; x1: number; y1: number; add: boolean } | null = null
   /** Carimbando objetos arrastando: onde saiu o último. */
   private stamping: { x: number; y: number; random: boolean } | null = null
+  /**
+   * Arrasto da ferramenta Cômodo: retângulo de tiles (cômodo, porta, apagar)
+   * e, pra parede, a linha de vértices (vx/vy).
+   */
+  private roomDrag: {
+    tx0: number; ty0: number; tx1: number; ty1: number
+    vx0: number; vy0: number; vx1: number; vy1: number
+    mode: 'room' | 'wall' | 'door' | 'erase'
+  } | null = null
   private drawingPortal: { x0: number; y0: number; x1: number; y1: number } | null = null
   private movingPortal: { id: string; dx: number; dy: number; moved: boolean } | null = null
   private spaceKey!: Phaser.Input.Keyboard.Key
@@ -433,6 +445,27 @@ export class EditorScene extends Phaser.Scene {
     } else if (tool === 'fill') {
       const vx = Math.round(wx / TILE), vy = Math.round(wy / TILE)
       g.fillStyle(0xffc174, 0.9).fillCircle(vx * TILE, vy * TILE, px * 4)
+    } else if (tool === 'room') {
+      const d = this.roomDrag
+      const mode = d?.mode ?? this.state.roomMode
+      if (mode === 'wall') {
+        // parede interna: linha reta sobre os vértices
+        if (d) {
+          const line = this.wallLine(d)
+          g.lineStyle(px * 4, 0xffc174, 0.9).lineBetween(line.x0 * TILE, line.y0 * TILE, line.x1 * TILE, line.y1 * TILE)
+        } else {
+          g.fillStyle(0xffc174, 0.95).fillCircle(Math.round(wx / TILE) * TILE, Math.round(wy / TILE) * TILE, px * 5)
+        }
+      } else {
+        const r = d ? this.tileRect(d) : { x0: Math.floor(wx / TILE), y0: Math.floor(wy / TILE), x1: Math.floor(wx / TILE), y1: Math.floor(wy / TILE) }
+        const color = mode === 'erase' ? 0xef4444 : mode === 'door' ? 0x9fd3ff : 0xffc174
+        const x = r.x0 * TILE, y = r.y0 * TILE, w = (r.x1 - r.x0 + 1) * TILE, h = (r.y1 - r.y0 + 1) * TILE
+        if (d) g.fillStyle(color, 0.12).fillRect(x, y, w, h)
+        g.lineStyle(px * 2, color, 0.95).strokeRect(x, y, w, h)
+        // a faixa da parede: mostra onde a face vai ficar
+        const hgt = this.state.roomStyle.height
+        if (d && mode === 'room' && hgt > 0) g.fillStyle(0xffc174, 0.18).fillRect(x, y, w, Math.min(hgt, r.y1 - r.y0 + 1) * TILE)
+      }
     } else if (tool === 'spawn') {
       g.lineStyle(px * 2, 0xffc174, 0.9).strokeEllipse(wx, wy, 26, 12)
     }
@@ -490,6 +523,12 @@ export class EditorScene extends Phaser.Scene {
       }
       const from = new Map(this.state.selected.map((i) => [i, { x: this.state.zone.objects[i].x, y: this.state.zone.objects[i].y }]))
       this.dragging = { start: { x: wx, y: wy }, from, moved: false }
+    } else if (tool === 'room') {
+      const tx = Math.floor(wx / TILE), ty = Math.floor(wy / TILE)
+      const vx = Math.round(wx / TILE), vy = Math.round(wy / TILE)
+      const mode = ev.ctrlKey || ev.metaKey ? 'erase' : this.state.roomMode
+      this.roomDrag = { tx0: tx, ty0: ty, tx1: tx, ty1: ty, vx0: vx, vy0: vy, vx1: vx, vy1: vy, mode }
+      this.drawCursor(p)
     } else if (tool === 'portal') {
       const hit = this.portalAt(wx, wy)
       if (hit) {
@@ -533,6 +572,12 @@ export class EditorScene extends Phaser.Scene {
         this.stamping.y = y
         this.placeObject(x, y, this.stamping.random || (p.event as MouseEvent).shiftKey)
       }
+    }
+    if (this.roomDrag) {
+      this.roomDrag.tx1 = tx
+      this.roomDrag.ty1 = ty
+      this.roomDrag.vx1 = Math.round(p.worldX / TILE)
+      this.roomDrag.vy1 = Math.round(p.worldY / TILE)
     }
     if (this.marquee) {
       this.marquee.x1 = p.worldX
@@ -600,6 +645,18 @@ export class EditorScene extends Phaser.Scene {
       this.stamping = null
       this.refreshOverlays()
       this.state.edited()
+    }
+    if (this.roomDrag) {
+      const d = this.roomDrag
+      this.roomDrag = null
+      const r = this.tileRect(d)
+      const single = r.x0 === r.x1 && r.y0 === r.y1
+      if (d.mode === 'wall') this.drawWall(this.wallLine(d))
+      else if (d.mode === 'door') this.openDoor(r)
+      else if (d.mode === 'erase') this.paintRooms(r, '')
+      // clique (sem arrastar) num cômodo: troca o estilo dele todo
+      else if (!(single && this.restyleRoomAt(r.x0, r.y0))) this.paintRooms(r, encodeRoom(this.state.roomStyle))
+      this.drawCursor(this.input.activePointer)
     }
     if (this.marquee) {
       const m = this.marquee
@@ -827,12 +884,131 @@ export class EditorScene extends Phaser.Scene {
     return best ? this.sprites.indexOf(best) : null
   }
 
+  // ── Cômodos ─────────────────────────────────────────────
+
+  /** Retângulo de tiles (ordenado e dentro da zona). */
+  private tileRect(d: { tx0: number; ty0: number; tx1: number; ty1: number }) {
+    const z = this.state.zone
+    const c = (v: number, max: number) => Phaser.Math.Clamp(v, 0, max - 1)
+    return {
+      x0: c(Math.min(d.tx0, d.tx1), z.width), x1: c(Math.max(d.tx0, d.tx1), z.width),
+      y0: c(Math.min(d.ty0, d.ty1), z.height), y1: c(Math.max(d.ty0, d.ty1), z.height),
+    }
+  }
+
+  /**
+   * Marca (ou apaga, value = '') os tiles do retângulo como cômodo. Encostado
+   * num cômodo de OUTRO estilo, a borda fica de fora: nasce uma parede fina
+   * entre os dois. Do mesmo estilo, os dois viram um cômodo só.
+   */
+  private paintRooms(r: { x0: number; y0: number; x1: number; y1: number }, value: string) {
+    const z = this.state.zone
+    const W = z.width + 1, H = z.height + 1
+    const rooms = z.rooms ?? new Array(z.corners.length).fill('')
+    const inRect = (x: number, y: number) => x >= r.x0 && x <= r.x1 + 1 && y >= r.y0 && y <= r.y1 + 1
+    const next: [number, string][] = []
+    // o cômodo ocupa os vértices dos tiles (um tile = 4 cantos)
+    for (let vy = r.y0; vy <= r.y1 + 1; vy++) {
+      for (let vx = r.x0; vx <= r.x1 + 1; vx++) {
+        let v = value
+        if (v) {
+          const other = [[vx + 1, vy], [vx - 1, vy], [vx, vy + 1], [vx, vy - 1]].some(([x, y]) =>
+            x >= 0 && y >= 0 && x < W && y < H && !inRect(x, y) && rooms[y * W + x] && rooms[y * W + x] !== value)
+          if (other) v = ''
+        }
+        next.push([vy * W + vx, v])
+      }
+    }
+    this.commitRooms(next)
+  }
+
+  /** Grava vértices de cômodo e refaz piso/parede/moldura onde mudou (um passo de desfazer). */
+  private commitRooms(changes: [number, string][]) {
+    const z = this.state.zone
+    const rooms = z.rooms ?? new Array(z.corners.length).fill('')
+    const real = changes.filter(([i, v]) => rooms[i] !== v)
+    if (!real.length) return
+    const before = roomRoles(z)
+    this.state.checkpoint()
+    for (const [i, v] of real) rooms[i] = v
+    z.rooms = rooms
+    applyRooms(z, before)
+    this.ground.redrawAll()
+    this.refreshOverlays()
+    this.state.edited()
+  }
+
+  /** Linha reta (horizontal ou vertical, a que andou mais) de vértices da parede interna. */
+  private wallLine(d: { vx0: number; vy0: number; vx1: number; vy1: number }) {
+    const z = this.state.zone
+    const c = (v: number, max: number) => Phaser.Math.Clamp(v, 0, max)
+    const horizontal = Math.abs(d.vx1 - d.vx0) >= Math.abs(d.vy1 - d.vy0)
+    return horizontal
+      ? { x0: c(Math.min(d.vx0, d.vx1), z.width), x1: c(Math.max(d.vx0, d.vx1), z.width), y0: c(d.vy0, z.height), y1: c(d.vy0, z.height) }
+      : { x0: c(d.vx0, z.width), x1: c(d.vx0, z.width), y0: c(Math.min(d.vy0, d.vy1), z.height), y1: c(Math.max(d.vy0, d.vy1), z.height) }
+  }
+
+  /** Parede interna: tira os vértices da linha do cômodo (a parede fina e a face aparecem sozinhas). */
+  private drawWall(l: { x0: number; y0: number; x1: number; y1: number }) {
+    const W = this.state.zone.width + 1
+    const next: [number, string][] = []
+    for (let y = l.y0; y <= l.y1; y++) for (let x = l.x0; x <= l.x1; x++) next.push([y * W + x, ''])
+    this.commitRooms(next)
+  }
+
+  /** Porta: preenche o vão da parede com o estilo do cômodo vizinho. */
+  private openDoor(r: { x0: number; y0: number; x1: number; y1: number }) {
+    const z = this.state.zone
+    const W = z.width + 1, H = z.height + 1
+    const rooms = z.rooms
+    if (!rooms) return
+    const next: [number, string][] = []
+    for (let vy = r.y0; vy <= r.y1 + 1; vy++) {
+      for (let vx = r.x0; vx <= r.x1 + 1; vx++) {
+        if (rooms[vy * W + vx]) continue
+        // estilo do vizinho (prefere o de cima: a porta continua o cômodo de onde se vem)
+        const near = [[vx, vy - 1], [vx - 1, vy], [vx + 1, vy], [vx, vy + 1]]
+          .map(([x, y]) => (x >= 0 && y >= 0 && x < W && y < H ? rooms[y * W + x] : ''))
+          .find(Boolean)
+        if (near) next.push([vy * W + vx, near])
+      }
+    }
+    this.commitRooms(next)
+  }
+
+  /** Troca o estilo do cômodo sob o tile pelo estilo escolhido. */
+  private restyleRoomAt(tx: number, ty: number) {
+    const z = this.state.zone
+    const W = z.width + 1
+    const corner = [[tx, ty], [tx + 1, ty], [tx, ty + 1], [tx + 1, ty + 1]].find(([x, y]) => z.rooms?.[y * W + x])
+    if (!corner) return false
+    const value = encodeRoom(this.state.roomStyle)
+    const cells = connectedRoom(z, corner[0], corner[1])
+    if (cells.every((i) => z.rooms![i] === value)) return true
+    const before = roomRoles(z)
+    this.state.checkpoint()
+    for (const i of cells) z.rooms![i] = value
+    applyRooms(z, before)
+    this.ground.redrawAll()
+    this.refreshOverlays()
+    this.state.edited()
+    return true
+  }
+
   /**
    * Conta-gotas (Alt+clique): com ferramenta de objeto/seleção copia o
    * objeto sob o mouse; senão copia o terreno do vértice mais próximo.
    */
   private eyedropper(p: Phaser.Input.Pointer) {
     const { tool } = this.state
+    if (tool === 'room') {
+      const z = this.state.zone
+      const vx = Phaser.Math.Clamp(Math.round(p.worldX / TILE), 0, z.width)
+      const vy = Phaser.Math.Clamp(Math.round(p.worldY / TILE), 0, z.height)
+      const style = decodeRoom(z.rooms?.[vy * (z.width + 1) + vx] ?? '')
+      if (style) this.state.set({ roomStyle: style })
+      return
+    }
     if (tool === 'object' || tool === 'select') {
       const i = this.objectAt(p)
       if (i !== null) {

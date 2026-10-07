@@ -10,6 +10,8 @@ import { creditsBody } from '../ui/credits'
 import { ICONS } from './icons'
 import type { EditorState, Tool } from './EditorState'
 import { ZOOM_MAX, ZOOM_MIN, type EditorScene } from './EditorScene'
+import { ROOM_HEIGHT_MAX, ROOM_PRESETS, encodeRoom, type RoomStyle } from './rooms'
+import type { TerrainDef } from '../assets/terrains'
 import { TERRAINS, canBeBase, isFence, isOverlay, terrainById, terrainTexture, terrainThumb } from '../assets/terrains'
 import { KIND_LABELS, objectCatalog, objectDef, objectSolids, paletteObjects, sheetTexture, variantsOf, type ObjectDef } from '../assets/objects'
 import { curateForm, type CurateOverride } from './curate'
@@ -42,6 +44,7 @@ const TOOLS: { id: Tool; label: string; key: string }[] = [
   { id: 'erase', label: 'Borracha (volta ao terreno base)', key: 'E' },
   { id: 'object', label: 'Colocar objeto', key: 'O' },
   { id: 'select', label: 'Selecionar / mover objeto', key: 'V' },
+  { id: 'room', label: 'Cômodo: arraste um retângulo (piso, parede e moldura prontos)', key: 'C' },
   { id: 'portal', label: 'Saída para outra zona (porta, borda, escada)', key: 'X' },
   { id: 'spawn', label: 'Ponto de início do jogador', key: 'P' },
 ]
@@ -50,8 +53,8 @@ const BRUSH_MAX = 8
 const FAV_KEY = 'vortable:objects:favorites'
 const RECENT_KEY = 'vortable:objects:recent'
 const RECENT_MAX = 24
-/** Filtros especiais da paleta (além das categorias). */
-const ALL = 'Todas', FAV = '★', RECENT = '⟲'
+/** Seções especiais da lista de objetos. */
+const FAV = '★', RECENT = '⟲'
 
 export class EditorUI {
   readonly root: HTMLDivElement
@@ -63,7 +66,9 @@ export class EditorUI {
   private undoBtn!: HTMLButtonElement
   private redoBtn!: HTMLButtonElement
   private statusEl!: HTMLElement
-  private tab: 'terrains' | 'objects' = 'terrains'
+  private tab: 'terrains' | 'objects' | 'rooms' = 'terrains'
+  /** Seção aberta de cada lista (só uma por vez). */
+  private openSection = { terrains: 'Grama', objects: 'Árvores' }
   private tabButtons = new Map<string, HTMLButtonElement>()
   private paneEl!: HTMLDivElement
   private zonePropsEl!: HTMLDivElement
@@ -73,7 +78,6 @@ export class EditorUI {
   private shownPortal: string | null = null
   private objectFilter = ''
   private terrainFilter = ''
-  private objectCategory = ALL
   private objectEl!: HTMLDivElement
   /** O que o painel da peça está mostrando (só redesenha quando muda). */
   private shownObject = ''
@@ -269,8 +273,16 @@ export class EditorUI {
 
   private buildPanel() {
     const tabs = h('div', { class: 'vt-tabs' })
-    for (const [id, label] of [['terrains', 'Terrenos'], ['objects', 'Objetos']] as const) {
-      const b = h('button', { class: 'vt-tab', onclick: () => { this.tab = id; this.renderPane(); this.refresh() } }, label)
+    for (const [id, label] of [['terrains', 'Terrenos'], ['objects', 'Objetos'], ['rooms', 'Cômodos']] as const) {
+      const b = h('button', {
+        class: 'vt-tab',
+        onclick: () => {
+          this.tab = id
+          if (id === 'rooms') this.state.set({ tool: 'room' })
+          this.renderPane()
+          this.refresh()
+        },
+      }, label)
       this.tabButtons.set(id, b)
       tabs.append(b)
     }
@@ -293,98 +305,252 @@ export class EditorUI {
     this.terrainCells.clear()
     this.objectCells.clear()
     if (this.tab === 'terrains') this.renderTerrains()
-    else this.renderObjects()
+    else if (this.tab === 'objects') this.renderObjects()
+    else this.renderRooms()
+  }
+
+  /**
+   * Lista que abre e fecha: uma seção aberta por vez (clicar no título abre
+   * e fecha as outras). Buscando, todas as seções com resultado ficam abertas.
+   */
+  private accordion(
+    kind: 'terrains' | 'objects',
+    sections: { id: string; title: string; count: number; icon?: string; content: () => Node[] }[],
+    searching: boolean,
+  ) {
+    const list = h('div', { class: 'vt-acc-list' })
+    if (!sections.length) list.append(h('div', { class: 'vt-empty' }, 'Nada encontrado.'))
+    for (const sec of sections) {
+      const open = searching || this.openSection[kind] === sec.id
+      const head = h('button', {
+        class: `vt-acc${open ? ' vt-open' : ''}`,
+        'aria-expanded': open ? 'true' : 'false',
+        onclick: () => {
+          this.openSection[kind] = this.openSection[kind] === sec.id ? '' : sec.id
+          const y = this.paneEl.scrollTop
+          this.renderPane()
+          this.refresh()
+          // a seção clicada fica onde estava (não pula pro topo) e, aberta, aparece inteira se couber
+          this.paneEl.scrollTop = y
+          this.paneEl.querySelector('.vt-acc.vt-open')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+        },
+      },
+        h('span', { class: 'vt-acc-chev', html: ICONS.chevron }),
+        sec.icon ? h('span', { class: 'vt-acc-icon', html: sec.icon }) : null,
+        h('span', { class: 'vt-acc-title' }, sec.title),
+        h('span', { class: 'vt-acc-count' }, String(sec.count)),
+      )
+      list.append(head)
+      if (open) list.append(h('div', { class: 'vt-acc-body' }, ...sec.content()))
+    }
+    return list
+  }
+
+  private searchBox(value: string, placeholder: string, onInput: (v: string) => void) {
+    const input = h('input', { class: 'vt-search', placeholder, value, type: 'search' }) as HTMLInputElement
+    input.addEventListener('input', () => onInput(input.value))
+    return h('div', { class: 'vt-searchwrap' }, h('span', { class: 'vt-search-icon', html: ICONS.search }), input)
+  }
+
+  private terrainCell(t: TerrainDef, onPick: () => void, on = false) {
+    const c = h('canvas', { width: 32, height: 32 }) as HTMLCanvasElement
+    const r = terrainThumb(t)
+    c.getContext('2d')!.drawImage(this.hooks.textureImage(terrainTexture(t)), r.x, r.y, 32, 32, 0, 0, 32, 32)
+    return h('button', {
+      class: `vt-cell${on ? ' vt-on' : ''}`,
+      title: t.label + (t.solid ? ' (não dá pra andar)' : '') + (isOverlay(t) ? ' (camada de cima: pinta por cima do chão)' : '') + (isFence(t) ? ' (cerca: pinta tiles e liga sozinha)' : ''),
+      onclick: onPick,
+    }, c, h('span', {}, t.label))
+  }
+
+  /** Terrenos agrupados nas seções da lista (paredes juntas, com subtítulos por família). */
+  private terrainSections(list: TerrainDef[], pick: (t: TerrainDef) => void, cells: Map<string, HTMLElement> | null) {
+    const groups = new Map<string, TerrainDef[]>()
+    for (const t of list) {
+      const sec = t.category.startsWith('Paredes:') ? 'Paredes' : t.category
+      groups.set(sec, [...(groups.get(sec) ?? []), t])
+    }
+    const order = ['Grama', 'Terra', 'Areia e neve', 'Pedra', 'Água', 'Buracos', 'Fazenda', 'Interior', 'Pisos de madeira', 'Ladrilhos', 'Pisos de pedra', 'Tapetes', 'Paredes', 'Molduras de teto', 'Cercas']
+    const ids = [...groups.keys()].sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99) || a.localeCompare(b, 'pt'))
+    return ids.map((id) => {
+      const items = groups.get(id)!
+      return {
+        id,
+        title: id,
+        count: items.length,
+        content: () => {
+          // paredes: uma grade por família, com subtítulo
+          const fams = new Map<string, TerrainDef[]>()
+          for (const t of items) fams.set(t.category, [...(fams.get(t.category) ?? []), t])
+          return [...fams].map(([fam, ts]) => {
+            const grid = h('div', { class: 'vt-grid vt-terrains' })
+            for (const t of ts) {
+              const cell = this.terrainCell(t, () => pick(t))
+              cells?.set(t.id, cell)
+              grid.append(cell)
+            }
+            return fams.size > 1 ? h('div', { class: 'vt-subgroup' }, h('h5', {}, fam.replace('Paredes: ', '')), grid) : grid
+          })
+        },
+      }
+    })
   }
 
   private renderTerrains() {
-    const search = h('input', {
-      class: 'vt-search',
-      placeholder: `Buscar entre ${TERRAINS.length} terrenos (parede, tapete, piso...)`,
-      value: this.terrainFilter,
-      oninput: () => { this.terrainFilter = search.value; fill() },
-    })
-    const list = h('div')
-    const fill = () => {
-      list.replaceChildren()
-      this.terrainCells.clear()
-      const q = fold(this.terrainFilter.trim())
-      const groups = new Map<string, typeof TERRAINS>()
-      for (const t of TERRAINS) {
-        if (q && !fold(`${t.label} ${t.category}`).includes(q)) continue
-        groups.set(t.category, [...(groups.get(t.category) ?? []), t])
-      }
-      if (!groups.size) list.append(h('div', { class: 'vt-empty' }, 'Nada encontrado.'))
-      for (const [cat, items] of groups) {
-        const grid = h('div', { class: 'vt-grid vt-terrains' })
-        for (const t of items) {
-          const c = h('canvas', { width: 32, height: 32 }) as HTMLCanvasElement
-          const r = terrainThumb(t)
-          c.getContext('2d')!.drawImage(this.hooks.textureImage(terrainTexture(t)), r.x, r.y, 32, 32, 0, 0, 32, 32)
-          const cell = h('button', {
-            class: 'vt-cell',
-            title: t.label + (t.solid ? ' (não dá pra andar)' : '') + (isOverlay(t) ? ' (camada de cima: pinta por cima do chão)' : '') + (isFence(t) ? ' (cerca: pinta tiles e liga sozinha)' : ''),
-            onclick: () => {
-              this.state.set({ terrain: t.id, tool: this.state.tool === 'fill' ? 'fill' : 'brush' })
-            },
-          }, c, h('span', {}, t.label))
-          this.terrainCells.set(t.id, cell)
-          grid.append(cell)
-        }
-        list.append(h('div', { class: 'vt-group' }, h('h4', {}, cat), grid))
-      }
+    const q = fold(this.terrainFilter.trim())
+    const list = TERRAINS.filter((t) => !q || fold(`${t.label} ${t.category}`).includes(q))
+    const box = this.searchBox(this.terrainFilter, `Buscar entre ${TERRAINS.length} terrenos`, (v) => {
+      this.terrainFilter = v
+      this.renderPane()
       this.refresh()
-    }
-    this.paneEl.append(search, list)
-    fill()
+      const input = this.paneEl.querySelector('input')!
+      input.focus()
+      input.setSelectionRange(v.length, v.length)
+    })
+    const sections = this.terrainSections(list, (t) => this.state.set({ terrain: t.id, tool: this.state.tool === 'fill' ? 'fill' : 'brush' }), this.terrainCells)
+    this.paneEl.append(box, this.accordion('terrains', sections, !!q))
+  }
+
+  private objectCell(o: ObjectDef) {
+    const n = variantsOf(o).length
+    const cell = h('button', {
+      class: 'vt-cell',
+      title: `${o.label} — ${KIND_LABELS[o.kind]}, ${o.w}×${o.h}px${o.solids.length ? '' : ', atravessável'}${n > 1 ? `, ${n} variantes` : ''}${o.anim ? ', animado' : ''}`,
+      onclick: () => this.pick(o.id),
+    }, this.thumb(o, 64), n > 1 ? h('i', { class: 'vt-badge' }, `${n}`) : null, o.anim ? h('i', { class: 'vt-badge vt-badge-anim' }, '▶') : null)
+    this.objectCells.set(o.id, cell)
+    return cell
   }
 
   private renderObjects() {
     const objects = paletteObjects()
-    const cats = [...new Set(objects.map((o) => o.category))].sort((a, b) => a.localeCompare(b, 'pt'))
-    const search = h('input', {
-      class: 'vt-search',
-      placeholder: `Buscar entre ${objects.length} peças (nome, tag, tipo)...`,
-      value: this.objectFilter,
-      oninput: () => { this.objectFilter = search.value; fill() },
-    })
-    const chips = h('div', { class: 'vt-chips' })
-    const chip = (id: string, label: string) => chips.append(h('button', {
-      class: `vt-chip${id === this.objectCategory ? ' vt-on' : ''}`,
-      onclick: () => { this.objectCategory = id; this.renderPane(); this.refresh() },
-    }, label))
-    chip(ALL, 'Todas')
-    chip(FAV, '★ Favoritos')
-    chip(RECENT, 'Recentes')
-    for (const c of cats) chip(c, c)
-    const grid = h('div', { class: 'vt-grid vt-objects' })
-    const ids = (list: string[]) => list.map((id) => objectDef(id)).filter((d): d is ObjectDef => !!d)
-    const fill = () => {
-      grid.replaceChildren()
-      this.objectCells.clear()
-      const cat = this.objectCategory
-      let list = cat === FAV ? ids(this.favorites) : cat === RECENT ? ids(this.recents) : objects.filter((o) => cat === ALL || o.category === cat)
-      const q = fold(this.objectFilter.trim())
-      if (q) list = list.filter((o) => fold(searchText(o)).includes(q))
-      if (!list.length) {
-        const msg = q ? 'Nada encontrado.'
-          : cat === FAV ? 'Nenhum favorito ainda. Escolha uma peça e clique na estrela.'
-          : cat === RECENT ? 'As peças que você usar aparecem aqui.' : 'Nada encontrado.'
-        grid.append(h('div', { class: 'vt-empty', style: 'grid-column: 1 / -1' }, msg))
-      }
-      for (const o of list) {
-        const n = variantsOf(o).length
-        const cell = h('button', {
-          class: 'vt-cell',
-          title: `${o.label} — ${KIND_LABELS[o.kind]}, ${o.w}×${o.h}px${o.solids.length ? '' : ', atravessável'}${n > 1 ? `, ${n} variantes` : ''}${o.anim ? ', animado' : ''}`,
-          onclick: () => this.pick(o.id),
-        }, this.thumb(o, 64), n > 1 ? h('i', { class: 'vt-badge' }, `${n}`) : null, o.anim ? h('i', { class: 'vt-badge vt-badge-anim' }, '▶') : null)
-        this.objectCells.set(o.id, cell)
-        grid.append(cell)
-      }
+    const q = fold(this.objectFilter.trim())
+    const match = (o: ObjectDef) => !q || fold(searchText(o)).includes(q)
+    const box = this.searchBox(this.objectFilter, `Buscar entre ${objects.length} peças (nome, tag, tipo)`, (v) => {
+      this.objectFilter = v
+      this.renderPane()
       this.refresh()
+      const input = this.paneEl.querySelector('input')!
+      input.focus()
+      input.setSelectionRange(v.length, v.length)
+    })
+    const ids = (list: string[]) => list.map((id) => objectDef(id)).filter((d): d is ObjectDef => !!d).filter(match)
+    const grid = (list: ObjectDef[], empty: string) => {
+      const g = h('div', { class: 'vt-grid vt-objects' })
+      if (!list.length) g.append(h('div', { class: 'vt-empty', style: 'grid-column: 1 / -1' }, empty))
+      for (const o of list) g.append(this.objectCell(o))
+      return [g]
     }
-    this.paneEl.append(search, chips, grid)
-    fill()
+    const byCat = new Map<string, ObjectDef[]>()
+    for (const o of objects) if (match(o)) byCat.set(o.category, [...(byCat.get(o.category) ?? []), o])
+    const order = ['Árvores', 'Arbustos', 'Flores', 'Plantas', 'Plantas aquáticas', 'Cogumelos', 'Troncos e galhos', 'Pedras',
+      'Plantações', 'Fazenda', 'Comida', 'Vila', 'Feira', 'Ferramentas', 'Acampamento', 'Cemitério', 'Estátuas e fontes',
+      'Móveis', 'Móveis estofados', 'Casa e cozinha', 'Portas e janelas', 'Luzes', 'Masmorra']
+    const cats = [...byCat.keys()].sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99) || a.localeCompare(b, 'pt'))
+    const fav = ids(this.favorites), rec = ids(this.recents)
+    const sections = [
+      ...(!q || fav.length ? [{ id: FAV, title: 'Favoritos', icon: ICONS.star, count: fav.length, content: () => grid(fav, 'Nenhum favorito ainda. Escolha uma peça e clique na estrela.') }] : []),
+      ...(!q || rec.length ? [{ id: RECENT, title: 'Recentes', icon: ICONS.clock, count: rec.length, content: () => grid(rec, 'As peças que você usar aparecem aqui.') }] : []),
+      ...cats.map((c) => ({ id: c, title: c, count: byCat.get(c)!.length, content: () => grid(byCat.get(c)!, '') })),
+    ]
+    this.paneEl.append(box, this.accordion('objects', sections, !!q))
+  }
+
+  // ── Painel: cômodos ────────────────────────────────────
+
+  /** Miniatura pequena de um terreno (estilo de cômodo). */
+  private swatch(id: string) {
+    const c = h('canvas', { class: 'vt-swatch', width: 32, height: 32 }) as HTMLCanvasElement
+    const t = terrainById.get(id)
+    if (t) {
+      const r = terrainThumb(t)
+      c.getContext('2d')!.drawImage(this.hooks.textureImage(terrainTexture(t)), r.x, r.y, 32, 32, 0, 0, 32, 32)
+    }
+    return c
+  }
+
+  private renderRooms() {
+    const s = this.state
+    const style = s.roomStyle
+    const setStyle = (patch: Partial<RoomStyle>) => {
+      s.set({ roomStyle: { ...s.roomStyle, ...patch }, tool: 'room' })
+      this.renderPane()
+    }
+    const current = encodeRoom(style)
+    const presets = h('div', { class: 'vt-presets' }, ...ROOM_PRESETS.map((p) => h('button', {
+      class: `vt-preset${encodeRoom(p.style) === current ? ' vt-on' : ''}`,
+      onclick: () => setStyle(p.style),
+    }, h('span', { class: 'vt-preset-sw' }, this.swatch(p.style.wall), this.swatch(p.style.floor), this.swatch(p.style.trim)), h('span', {}, p.name))))
+
+    const part = (label: string, id: string, which: 'floor' | 'wall' | 'trim') => h('button', {
+      class: 'vt-stylepart',
+      title: `Trocar ${label.toLowerCase()}`,
+      onclick: () => this.openTerrainPicker(which, (t) => setStyle({ [which]: t.id } as Partial<RoomStyle>)),
+    }, this.swatch(id), h('span', {}, h('b', {}, label), h('small', {}, terrainById.get(id)?.label ?? '(não encontrado)')), h('span', { class: 'vt-stylepart-chev', html: ICONS.chevron }))
+
+    const height = h('input', { type: 'range', min: 0, max: ROOM_HEIGHT_MAX, step: 1, value: style.height, class: 'vt-range' }) as HTMLInputElement
+    const heightOut = h('b', {}, String(style.height))
+    height.addEventListener('input', () => { heightOut.textContent = height.value })
+    height.addEventListener('change', () => setStyle({ height: Number(height.value) }))
+
+    const modes = h('div', { class: 'vt-segmented' }, ...([
+      ['room', 'Cômodo', 'Arraste um retângulo: piso, parede e moldura prontos'],
+      ['wall', 'Parede', 'Risque uma linha pra dividir um cômodo em dois'],
+      ['door', 'Porta', 'Arraste sobre uma parede entre cômodos pra abrir um vão'],
+    ] as const).map(([id, label, title]) => h('button', {
+      class: `vt-seg${s.roomMode === id ? ' vt-on' : ''}`,
+      title,
+      onclick: () => { s.set({ roomMode: id, tool: 'room' }); this.renderPane() },
+    }, label)))
+    const modeHelp = {
+      room: 'Arraste no mapa pra criar. Encostado num cômodo de outro estilo, nasce uma parede fina entre os dois; do mesmo estilo, vira um cômodo maior.',
+      wall: 'Risque uma linha dentro de um cômodo: vira uma parede interna (com a face, se a parede tiver altura).',
+      door: 'Arraste sobre a parede entre dois cômodos (ou na borda, pra fazer a entradinha da porta) pra abrir um vão.',
+    }[s.roomMode]
+
+    this.paneEl.append(
+      h('div', { class: 'vt-group' }, modes, h('small', { class: 'vt-note vt-modehelp' }, modeHelp)),
+      h('div', { class: 'vt-group' }, h('h4', {}, 'Estilos prontos'), presets),
+      h('div', { class: 'vt-group' }, h('h4', {}, 'Estilo do cômodo'),
+        h('div', { class: 'vt-styleparts' }, part('Parede', style.wall, 'wall'), part('Piso', style.floor, 'floor'), part('Moldura', style.trim, 'trim')),
+        h('div', { class: 'vt-row vt-heightrow' }, h('label', {}, 'Altura da parede'), height, heightOut),
+        h('small', { class: 'vt-note' }, style.height ? `A face da parede ocupa ${style.height} tile${style.height > 1 ? 's' : ''} abaixo de cada borda de cima.` : 'Sem face: só a borda em volta (corredores vistos de cima).'),
+      ),
+      h('div', { class: 'vt-group vt-roomhelp' }, h('h4', {}, 'Como usar'),
+        h('ul', {},
+          h('li', {}, h('b', {}, 'Clique'), ' num cômodo (modo Cômodo) aplica este estilo nele.'),
+          h('li', {}, h('b', {}, 'Alt + clique'), ' copia o estilo de um cômodo.'),
+          h('li', {}, h('b', {}, 'Ctrl + arrastar'), ' apaga um pedaço (a parede em volta se refaz).'),
+          h('li', {}, 'Depois, decore com ', h('b', {}, 'Objetos'), ': janelas e quadros na parede, móveis no piso.'),
+        ),
+      ),
+    )
+  }
+
+  /** Janela pra escolher o piso, a parede ou a moldura de um cômodo. */
+  private openTerrainPicker(which: 'floor' | 'wall' | 'trim', pick: (t: TerrainDef) => void) {
+    const floorCats = ['Interior', 'Pisos de madeira', 'Ladrilhos', 'Pisos de pedra', 'Terra', 'Pedra', 'Grama', 'Areia e neve']
+    const list = TERRAINS.filter((t) =>
+      which === 'wall' ? t.category.startsWith('Paredes:')
+        : which === 'trim' ? t.category === 'Molduras de teto'
+          : floorCats.includes(t.category) && !t.solid && !isOverlay(t))
+    const title = { floor: 'Escolher o piso', wall: 'Escolher a parede', trim: 'Escolher a moldura' }[which]
+    const body = h('div', { class: 'vt-picker' })
+    let open = ''
+    const render = () => {
+      const sections = this.terrainSections(list, (t) => { close(); pick(t) }, null)
+      // seções que abrem e fecham dentro da janela (estado local)
+      const acc = h('div', { class: 'vt-acc-list' })
+      for (const sec of sections) {
+        const isOpen = sections.length === 1 || open === sec.id || (!open && sec === sections[0])
+        acc.append(h('button', { class: `vt-acc${isOpen ? ' vt-open' : ''}`, onclick: () => { open = isOpen ? '-' : sec.id; render() } },
+          h('span', { class: 'vt-acc-chev', html: ICONS.chevron }), h('span', { class: 'vt-acc-title' }, sec.title), h('span', { class: 'vt-acc-count' }, String(sec.count))))
+        if (isOpen) acc.append(h('div', { class: 'vt-acc-body' }, ...sec.content()))
+      }
+      body.replaceChildren(acc)
+    }
+    const close = this.modal(title, [body], [h('button', { class: 'vt-btn', onclick: () => close() }, 'Fechar')], undefined, true)
+    render()
   }
 
   /** Miniatura de uma peça, encostada embaixo (como fica no chão). */
@@ -417,7 +583,11 @@ export class EditorUI {
     const id = this.primary(def).id
     this.favorites = this.favorites.includes(id) ? this.favorites.filter((f) => f !== id) : [id, ...this.favorites]
     writeList(FAV_KEY, this.favorites)
-    if (this.objectCategory === FAV && this.tab === 'objects') this.renderPane()
+    if (this.tab === 'objects') {
+      const y = this.paneEl.scrollTop
+      this.renderPane()
+      this.paneEl.scrollTop = y
+    }
     this.refresh()
   }
 
@@ -730,6 +900,7 @@ export class EditorUI {
       select: s.selected.length ? 'Arraste pra mover · setas empurram · F espelha · Ctrl D duplica · Del apaga' : 'Clique num objeto (Shift soma) ou arraste um retângulo pra selecionar',
       portal: s.selectedPortal ? 'Escolha o destino no painel · arraste pra mover · Del apaga' : 'Arraste pra desenhar uma saída · clique numa saída pra editar',
       spawn: 'Clique onde o jogador deve aparecer',
+      room: { room: 'Cômodo: arraste pra criar · clique aplica o estilo · Alt + clique copia · Ctrl + arrastar apaga', wall: 'Parede interna: risque uma linha dentro do cômodo', door: 'Porta: arraste sobre uma parede pra abrir um vão' }[s.roomMode],
     }[s.tool]
     parts.push(h('span', { class: 'vt-hint' }, `${hint} · Espaço + arrastar move a tela · roda dá zoom`))
     parts.push(h('button', { class: 'vt-link', title: 'Todos os atalhos (?)', onclick: () => this.openShortcuts() }, 'Atalhos'))
@@ -746,6 +917,10 @@ export class EditorUI {
     }
     if ((tool === 'brush' || tool === 'fill') && this.tab !== 'terrains') {
       this.tab = 'terrains'
+      this.renderPane()
+    }
+    if (tool === 'room' && this.tab !== 'rooms') {
+      this.tab = 'rooms'
       this.renderPane()
     }
     this.state.set({ tool })
@@ -864,6 +1039,7 @@ export class EditorUI {
       height,
       corners,
       ...(z.overlay ? { overlay: regrid(z.overlay) } : {}),
+      ...(z.rooms ? { rooms: regrid(z.rooms) } : {}),
       ...(z.fences ? { fences: regridTiles(z.fences) } : {}),
       objects: z.objects.filter((o) => o.x <= W && o.y <= H),
       portals: z.portals.filter((p) => p.x < W && p.y < H).map((p) => ({ ...p, w: Math.min(p.w, W - p.x), h: Math.min(p.h, H - p.y) })),
@@ -889,6 +1065,7 @@ export class EditorUI {
       [
         ['B · G · E', 'Pincel · balde · borracha'],
         ['O · V', 'Colocar objeto · selecionar'],
+        ['C', 'Cômodo (arraste; Ctrl apaga)'],
         ['X · P', 'Saída · ponto de início'],
         ['[ · ] ou Alt + roda', 'Tamanho do pincel'],
         ['Shift + clique', 'Pincel: linha reta desde o último ponto'],

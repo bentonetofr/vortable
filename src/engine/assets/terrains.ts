@@ -25,6 +25,12 @@ export interface TerrainDef {
   rank: number
   /** Não dá pra andar por cima (água, lava, buraco, parede). */
   solid?: boolean
+  /**
+   * Bloqueia também em volta de cada vértice que encosta em outro terreno
+   * (o vazio dos interiores: sem isso, a parede fina entre dois cômodos —
+   * uma linha de vértices vazios — seria só desenho).
+   */
+  edgeSolid?: boolean
   /** Pode ser o fundo da zona (padrão: só os que não são sólidos). */
   canBeBase?: boolean
   /** Quadros de variação do miolo que existem na folha (padrão 15, 16, 17). */
@@ -102,7 +108,7 @@ export const TERRAINS: TerrainDef[] = [
   { id: 'hole',         label: 'Buraco',           category: 'Buracos', block: [0, 7], rank: 80, solid: true, fills: [] },
   { id: 'pit',          label: 'Abismo',           category: 'Buracos', block: [0, 8], rank: 81, solid: true, fills: [] },
   // Interiores (gerados): o vazio é o fundo; pisos e paredes por cima
-  { id: 'void',         label: 'Vazio',            category: 'Interior', block: [0, 0], rank: 1, solid: true, canBeBase: true, gen: { color: '#07080c' } },
+  { id: 'void',         label: 'Vazio',            category: 'Interior', block: [0, 0], rank: 1, solid: true, edgeSolid: true, canBeBase: true, gen: { color: '#07080c' } },
   { id: 'floor-wood',   label: 'Piso de madeira',  category: 'Interior', block: [0, 0], rank: 90, gen: { url: INSIDE, x: 0, y: 128 } },
   { id: 'floor-stone',  label: 'Piso de pedra',    category: 'Interior', block: [0, 0], rank: 91, gen: { url: CASTLE, x: 192, y: 192 } },
   { id: 'rug-purple',   label: 'Tapete roxo',      category: 'Interior', block: [0, 0], rank: 92, gen: { url: CASTLE, x: 64, y: 64 } },
