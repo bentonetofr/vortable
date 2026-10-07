@@ -1,0 +1,1429 @@
+{
+  "name": "[LPC] Farming tilesets",
+  "license": "CC-BY-SA 3.0 / GPL 3.0",
+  "source": "https://opengameart.org/content/lpc-farming-tilesets-magic-animations-and-ui-elements",
+  "sheets": [
+    {
+      "id": "farm-crops",
+      "file": "crops.png",
+      "mode": "pieces",
+      "category": "Plantações",
+      "label": "Plantação",
+      "tags": [
+        "fazenda",
+        "plantação"
+      ],
+      "collision": "none",
+      "pieces": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de tomate",
+          "group": "crop-0",
+          "variant": "Broto",
+          "trim": false
+        },
+        {
+          "x": 0,
+          "y": 64,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de tomate",
+          "group": "crop-0",
+          "variant": "Crescendo",
+          "trim": false
+        },
+        {
+          "x": 0,
+          "y": 128,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de tomate",
+          "group": "crop-0",
+          "variant": "Quase pronta",
+          "trim": false
+        },
+        {
+          "x": 0,
+          "y": 192,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de tomate",
+          "group": "crop-0",
+          "variant": "Madura",
+          "trim": false
+        },
+        {
+          "x": 0,
+          "y": 256,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de tomate",
+          "group": "crop-0",
+          "variant": "Colhida",
+          "trim": false
+        },
+        {
+          "x": 0,
+          "y": 320,
+          "w": 32,
+          "h": 64,
+          "label": "Tomates colhidos",
+          "category": "Comida",
+          "tags": [
+            "comida",
+            "fazenda"
+          ],
+          "kind": "floor"
+        },
+        {
+          "x": 32,
+          "y": 0,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de batata",
+          "group": "crop-1",
+          "variant": "Broto",
+          "trim": false
+        },
+        {
+          "x": 32,
+          "y": 64,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de batata",
+          "group": "crop-1",
+          "variant": "Crescendo",
+          "trim": false
+        },
+        {
+          "x": 32,
+          "y": 128,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de batata",
+          "group": "crop-1",
+          "variant": "Quase pronta",
+          "trim": false
+        },
+        {
+          "x": 32,
+          "y": 192,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de batata",
+          "group": "crop-1",
+          "variant": "Madura",
+          "trim": false
+        },
+        {
+          "x": 32,
+          "y": 256,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de batata",
+          "group": "crop-1",
+          "variant": "Colhida",
+          "trim": false
+        },
+        {
+          "x": 32,
+          "y": 320,
+          "w": 32,
+          "h": 64,
+          "label": "Batatas colhidas",
+          "category": "Comida",
+          "tags": [
+            "comida",
+            "fazenda"
+          ],
+          "kind": "floor"
+        },
+        {
+          "x": 64,
+          "y": 0,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de cenoura",
+          "group": "crop-2",
+          "variant": "Broto",
+          "trim": false
+        },
+        {
+          "x": 64,
+          "y": 64,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de cenoura",
+          "group": "crop-2",
+          "variant": "Crescendo",
+          "trim": false
+        },
+        {
+          "x": 64,
+          "y": 128,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de cenoura",
+          "group": "crop-2",
+          "variant": "Quase pronta",
+          "trim": false
+        },
+        {
+          "x": 64,
+          "y": 192,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de cenoura",
+          "group": "crop-2",
+          "variant": "Madura",
+          "trim": false
+        },
+        {
+          "x": 64,
+          "y": 256,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de cenoura",
+          "group": "crop-2",
+          "variant": "Colhida",
+          "trim": false
+        },
+        {
+          "x": 64,
+          "y": 320,
+          "w": 32,
+          "h": 64,
+          "label": "Cenouras colhidas",
+          "category": "Comida",
+          "tags": [
+            "comida",
+            "fazenda"
+          ],
+          "kind": "floor"
+        },
+        {
+          "x": 96,
+          "y": 0,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de alcachofra",
+          "group": "crop-3",
+          "variant": "Broto",
+          "trim": false
+        },
+        {
+          "x": 96,
+          "y": 64,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de alcachofra",
+          "group": "crop-3",
+          "variant": "Crescendo",
+          "trim": false
+        },
+        {
+          "x": 96,
+          "y": 128,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de alcachofra",
+          "group": "crop-3",
+          "variant": "Quase pronta",
+          "trim": false
+        },
+        {
+          "x": 96,
+          "y": 192,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de alcachofra",
+          "group": "crop-3",
+          "variant": "Madura",
+          "trim": false
+        },
+        {
+          "x": 96,
+          "y": 256,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de alcachofra",
+          "group": "crop-3",
+          "variant": "Colhida",
+          "trim": false
+        },
+        {
+          "x": 96,
+          "y": 320,
+          "w": 32,
+          "h": 64,
+          "label": "Alcachofras colhidas",
+          "category": "Comida",
+          "tags": [
+            "comida",
+            "fazenda"
+          ],
+          "kind": "floor"
+        },
+        {
+          "x": 128,
+          "y": 0,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de pimentão",
+          "group": "crop-4",
+          "variant": "Broto",
+          "trim": false
+        },
+        {
+          "x": 128,
+          "y": 64,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de pimentão",
+          "group": "crop-4",
+          "variant": "Crescendo",
+          "trim": false
+        },
+        {
+          "x": 128,
+          "y": 128,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de pimentão",
+          "group": "crop-4",
+          "variant": "Quase pronta",
+          "trim": false
+        },
+        {
+          "x": 128,
+          "y": 192,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de pimentão",
+          "group": "crop-4",
+          "variant": "Madura",
+          "trim": false
+        },
+        {
+          "x": 128,
+          "y": 256,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de pimentão",
+          "group": "crop-4",
+          "variant": "Colhida",
+          "trim": false
+        },
+        {
+          "x": 128,
+          "y": 320,
+          "w": 32,
+          "h": 64,
+          "label": "Pimentões colhidos",
+          "category": "Comida",
+          "tags": [
+            "comida",
+            "fazenda"
+          ],
+          "kind": "floor"
+        },
+        {
+          "x": 160,
+          "y": 0,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de pepino",
+          "group": "crop-5",
+          "variant": "Broto",
+          "trim": false
+        },
+        {
+          "x": 160,
+          "y": 64,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de pepino",
+          "group": "crop-5",
+          "variant": "Crescendo",
+          "trim": false
+        },
+        {
+          "x": 160,
+          "y": 128,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de pepino",
+          "group": "crop-5",
+          "variant": "Quase pronta",
+          "trim": false
+        },
+        {
+          "x": 160,
+          "y": 192,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de pepino",
+          "group": "crop-5",
+          "variant": "Madura",
+          "trim": false
+        },
+        {
+          "x": 160,
+          "y": 256,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de pepino",
+          "group": "crop-5",
+          "variant": "Colhida",
+          "trim": false
+        },
+        {
+          "x": 160,
+          "y": 320,
+          "w": 32,
+          "h": 64,
+          "label": "Pepinos colhidos",
+          "category": "Comida",
+          "tags": [
+            "comida",
+            "fazenda"
+          ],
+          "kind": "floor"
+        },
+        {
+          "x": 192,
+          "y": 0,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de milho",
+          "group": "crop-6",
+          "variant": "Broto",
+          "trim": false
+        },
+        {
+          "x": 192,
+          "y": 64,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de milho",
+          "group": "crop-6",
+          "variant": "Crescendo",
+          "trim": false
+        },
+        {
+          "x": 192,
+          "y": 128,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de milho",
+          "group": "crop-6",
+          "variant": "Quase pronta",
+          "trim": false
+        },
+        {
+          "x": 192,
+          "y": 192,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de milho",
+          "group": "crop-6",
+          "variant": "Madura",
+          "trim": false
+        },
+        {
+          "x": 192,
+          "y": 256,
+          "w": 32,
+          "h": 64,
+          "label": "Plantação de milho",
+          "group": "crop-6",
+          "variant": "Colhida",
+          "trim": false
+        },
+        {
+          "x": 192,
+          "y": 320,
+          "w": 32,
+          "h": 64,
+          "label": "Espigas de milho",
+          "category": "Comida",
+          "tags": [
+            "comida",
+            "fazenda"
+          ],
+          "kind": "floor"
+        }
+      ]
+    },
+    {
+      "id": "farm-goods",
+      "file": "farming_fishing.png",
+      "category": "Feira",
+      "label": "Mercadoria",
+      "tags": [
+        "feira",
+        "comida"
+      ],
+      "collision": "base"
+    }
+  ],
+  "objects": {
+    "farm-goods@2,16": {
+      "label": "Feixe de lenha 1",
+      "category": "Feira"
+    },
+    "farm-goods@50,0": {
+      "label": "Feixe de lenha 2",
+      "category": "Feira"
+    },
+    "farm-goods@103,5": {
+      "label": "Pilha de lenha alta",
+      "category": "Feira"
+    },
+    "farm-goods@168,3": {
+      "label": "Tora em pé",
+      "category": "Feira"
+    },
+    "farm-goods@194,0": {
+      "label": "Bigorna no barril",
+      "category": "Ferramentas"
+    },
+    "farm-goods@228,3": {
+      "label": "Ferramenta de ferreiro 1",
+      "category": "Ferramentas",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "farm-goods@34,32": {
+      "label": "Feixe de lenha 3",
+      "category": "Feira"
+    },
+    "farm-goods@165,32": {
+      "label": "Toras",
+      "category": "Feira"
+    },
+    "farm-goods@195,32": {
+      "label": "Barril de ferreiro",
+      "category": "Ferramentas"
+    },
+    "farm-goods@229,33": {
+      "label": "Ferramenta de ferreiro 2",
+      "category": "Ferramentas",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "farm-goods@241,10": {
+      "label": "Ferramenta de ferreiro 3",
+      "category": "Ferramentas",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "farm-goods@254,19": {
+      "label": "Ferramenta de ferreiro 4",
+      "category": "Ferramentas",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "farm-goods@448,9": {
+      "label": "Engradado",
+      "category": "Feira"
+    },
+    "farm-goods@0,81": {
+      "label": "Saco de farinha 1",
+      "category": "Feira"
+    },
+    "farm-goods@48,65": {
+      "label": "Saco de farinha 2",
+      "category": "Feira"
+    },
+    "farm-goods@96,65": {
+      "label": "Pilha de sacos",
+      "category": "Feira"
+    },
+    "farm-goods@160,74": {
+      "label": "Barraca de feira listrada",
+      "category": "Feira"
+    },
+    "farm-goods@193,65": {
+      "label": "Tenaz 1",
+      "category": "Ferramentas",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "farm-goods@257,42": {
+      "label": "Ferramenta de ferreiro 5",
+      "category": "Ferramentas",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "farm-goods@226,67": {
+      "label": "Martelo",
+      "category": "Ferramentas",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "farm-goods@257,67": {
+      "label": "Tenaz 2",
+      "category": "Ferramentas",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "farm-goods@270,67": {
+      "label": "Alicate",
+      "category": "Ferramentas",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "farm-goods@32,97": {
+      "label": "Saco",
+      "category": "Feira"
+    },
+    "farm-goods@461,106": {
+      "label": "Caixotes empilhados",
+      "category": "Feira"
+    },
+    "farm-goods@576,104": {
+      "label": "Peixe 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@0,151": {
+      "label": "Saco de grãos 1",
+      "category": "Feira"
+    },
+    "farm-goods@48,135": {
+      "label": "Saco de grãos 2",
+      "category": "Feira"
+    },
+    "farm-goods@96,135": {
+      "label": "Sacos de grãos",
+      "category": "Feira"
+    },
+    "farm-goods@586,161": {
+      "label": "Atum 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@593,137": {
+      "label": "Peixe listrado",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@32,167": {
+      "label": "Saco de milho",
+      "category": "Feira"
+    },
+    "farm-goods@0,215": {
+      "label": "Saco de ervilhas 1",
+      "category": "Feira"
+    },
+    "farm-goods@48,199": {
+      "label": "Saco de ervilhas 2",
+      "category": "Feira"
+    },
+    "farm-goods@96,199": {
+      "label": "Sacos de ervilhas",
+      "category": "Feira"
+    },
+    "farm-goods@32,231": {
+      "label": "Saco de ervilhas 3",
+      "category": "Feira"
+    },
+    "farm-goods@290,224": {
+      "label": "Cenouras",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@487,220": {
+      "label": "Peixinhos 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@535,204": {
+      "label": "Peixinhos 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@329,234": {
+      "label": "Alcachofra 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@360,236": {
+      "label": "Pepino 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@389,231": {
+      "label": "Batatas 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@453,238": {
+      "label": "Alface 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@519,236": {
+      "label": "Peixinhos 3",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@582,215": {
+      "label": "Peixinhos 4",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@604,200": {
+      "label": "Peixinhos 5",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@265,233": {
+      "label": "Pimentão 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@424,235": {
+      "label": "Tomates 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@585,231": {
+      "label": "Peixinhos 6",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@2,283": {
+      "label": "Carne crua 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@50,267": {
+      "label": "Carne crua 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@108,279": {
+      "label": "Carnes",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@160,262": {
+      "label": "Prateleira de feira",
+      "category": "Feira"
+    },
+    "farm-goods@265,265": {
+      "label": "Pimentão 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@329,266": {
+      "label": "Alcachofra 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@389,263": {
+      "label": "Batatas 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@530,264": {
+      "label": "Peixinhos 7",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@579,266": {
+      "label": "Peixinhos 8",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@323,292": {
+      "label": "Repolho",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@360,268": {
+      "label": "Pepino 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@424,267": {
+      "label": "Tomates 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@34,299": {
+      "label": "Bife",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@259,294": {
+      "label": "Pimentões 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@290,294": {
+      "label": "Pimentões 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@354,295": {
+      "label": "Pepinos",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@386,295": {
+      "label": "Batatas 3",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@419,292": {
+      "label": "Monte de tomates",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@449,293": {
+      "label": "Milho",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@453,270": {
+      "label": "Alface 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@482,280": {
+      "label": "Sardinhas 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@603,258": {
+      "label": "Sardinhas 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@256,320": {
+      "label": "Sardinhas 3",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@514,296": {
+      "label": "Sardinhas 4",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@591,287": {
+      "label": "Sardinhas 5",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@606,274": {
+      "label": "Sardinhas 6",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@2,350": {
+      "label": "Pernil 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@582,327": {
+      "label": "Peixes 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@587,303": {
+      "label": "Sardinhas 7",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@615,293": {
+      "label": "Sardinhas 8",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@50,334": {
+      "label": "Pernil 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@109,330": {
+      "label": "Pernis",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@528,329": {
+      "label": "Peixe 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@34,366": {
+      "label": "Pernil 3",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@109,360": {
+      "label": "Pernil 4",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@512,361": {
+      "label": "Peixe 3",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@576,352": {
+      "label": "Peixes 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@3,409": {
+      "label": "Coxa de frango 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@51,393": {
+      "label": "Coxa de frango 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@35,425": {
+      "label": "Coxa de frango 3",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@112,407": {
+      "label": "Coxa de frango 4",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@480,408": {
+      "label": "Peixe 4",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@528,392": {
+      "label": "Peixe 5",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@576,390": {
+      "label": "Pilha de peixes",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@225,448": {
+      "label": "Barco a remo 1",
+      "category": "Barcos",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "farm-goods@512,424": {
+      "label": "Peixe 6",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@1,473": {
+      "label": "Frango assado 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@49,457": {
+      "label": "Frango assado 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@98,458": {
+      "label": "Frango assado 3",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@357,450": {
+      "label": "Barco a remo 2",
+      "category": "Barcos",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "farm-goods@497,457": {
+      "label": "Lúcio 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@582,455": {
+      "label": "Pilha de lúcios",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@33,489": {
+      "label": "Frango assado 4",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@128,484": {
+      "label": "Frango assado 5",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@3,531": {
+      "label": "Presunto 1",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@107,526": {
+      "label": "Presuntos",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@225,512": {
+      "label": "Barco na água 1",
+      "category": "Barcos",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "farm-goods@480,489": {
+      "label": "Lúcio 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@51,515": {
+      "label": "Presunto 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@353,514": {
+      "label": "Barco na água 2",
+      "category": "Barcos",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "farm-goods@490,513": {
+      "label": "Atum 2",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@576,513": {
+      "label": "Pilha de atuns",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@35,547": {
+      "label": "Presunto 3",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    },
+    "farm-goods@480,545": {
+      "label": "Atum 3",
+      "category": "Comida",
+      "collision": "none",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ]
+    }
+  },
+  "terrains": [
+    {
+      "type": "block",
+      "file": "plowed_soil.png",
+      "id": "farm-plowed",
+      "label": "Terra arada (na grama)",
+      "category": "Fazenda"
+    },
+    {
+      "type": "block",
+      "file": "youngwheat.png",
+      "id": "farm-youngwheat",
+      "label": "Trigo verde",
+      "category": "Fazenda"
+    },
+    {
+      "type": "block",
+      "file": "wheat.png",
+      "id": "farm-wheat",
+      "label": "Trigo maduro",
+      "category": "Fazenda"
+    },
+    {
+      "type": "block",
+      "file": "tallgrass.png",
+      "id": "farm-tallgrass",
+      "label": "Capim alto",
+      "category": "Fazenda"
+    }
+  ]
+}

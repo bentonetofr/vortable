@@ -8,6 +8,7 @@ import Phaser from 'phaser'
 import { buildCharacter } from '../character/compose'
 import { Ground, solidTerrainRects } from '../world/ground'
 import { Occluders, addObjectSolids, createObjectSprite } from '../world/objects'
+import { FenceLayer, fenceSolids } from '../world/fences'
 import { Player, isTyping } from '../world/Player'
 import { TILE, type Appearance, type Dir, type Portal, type ZoneData } from '../types'
 
@@ -55,9 +56,10 @@ export class WorldScene extends Phaser.Scene {
 
     new Ground(this, zone)
     for (const o of zone.objects) this.occluders.add(createObjectSprite(this, o), o)
+    new FenceLayer(this, zone)
 
     const solids = this.physics.add.staticGroup()
-    for (const r of solidTerrainRects(zone)) solids.add(this.add.zone(r.x + r.w / 2, r.y + r.h / 2, r.w, r.h))
+    for (const r of [...solidTerrainRects(zone), ...fenceSolids(zone)]) solids.add(this.add.zone(r.x + r.w / 2, r.y + r.h / 2, r.w, r.h))
     addObjectSolids(this, zone.objects, solids)
 
     this.physics.world.setBounds(0, 0, W, H)

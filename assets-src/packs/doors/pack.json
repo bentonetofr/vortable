@@ -1,0 +1,1256 @@
+{
+  "name": "[LPC] Windows & Doors",
+  "license": "CC-BY-SA 3.0 / GPL 3.0",
+  "source": "https://opengameart.org/content/lpc-windows-doors",
+  "sheets": [
+    {
+      "id": "wd",
+      "file": "windows-doors.png",
+      "category": "Portas e janelas",
+      "label": "Peça",
+      "kind": "wall",
+      "tags": [
+        "construção"
+      ],
+      "collision": "none",
+      "regions": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 760,
+          "h": 512,
+          "label": "Janela",
+          "tags": [
+            "janela",
+            "construção"
+          ]
+        },
+        {
+          "x": 640,
+          "y": 512,
+          "w": 384,
+          "h": 512,
+          "label": "Arco e batente",
+          "tags": [
+            "porta",
+            "construção"
+          ]
+        },
+        {
+          "x": 760,
+          "y": 0,
+          "w": 264,
+          "h": 512,
+          "label": "Batente e degrau",
+          "tags": [
+            "porta",
+            "construção"
+          ]
+        }
+      ],
+      "pieces": [
+        {
+          "x": 0,
+          "y": 512,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de madeira",
+          "group": "door-512-0",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 0,
+          "y": 576,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de madeira",
+          "group": "door-512-0",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 0,
+          "y": 640,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de madeira",
+          "group": "door-512-0",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 0,
+          "y": 704,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de madeira",
+          "group": "door-512-0",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 64,
+          "y": 512,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta com postigo",
+          "group": "door-512-1",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 64,
+          "y": 576,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta com postigo",
+          "group": "door-512-1",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 64,
+          "y": 640,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta com postigo",
+          "group": "door-512-1",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 64,
+          "y": 704,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta com postigo",
+          "group": "door-512-1",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 128,
+          "y": 512,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta com janelas",
+          "group": "door-512-2",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 128,
+          "y": 576,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta com janelas",
+          "group": "door-512-2",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 128,
+          "y": 640,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta com janelas",
+          "group": "door-512-2",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 128,
+          "y": 704,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta com janelas",
+          "group": "door-512-2",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 192,
+          "y": 512,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de tábuas",
+          "group": "door-512-3",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 192,
+          "y": 576,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de tábuas",
+          "group": "door-512-3",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 192,
+          "y": 640,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de tábuas",
+          "group": "door-512-3",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 192,
+          "y": 704,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de tábuas",
+          "group": "door-512-3",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 256,
+          "y": 512,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta entalhada",
+          "group": "door-512-4",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 256,
+          "y": 576,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta entalhada",
+          "group": "door-512-4",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 256,
+          "y": 640,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta entalhada",
+          "group": "door-512-4",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 256,
+          "y": 704,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta entalhada",
+          "group": "door-512-4",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 320,
+          "y": 512,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de madeira clara",
+          "group": "door-512-5",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 320,
+          "y": 576,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de madeira clara",
+          "group": "door-512-5",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 320,
+          "y": 640,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de madeira clara",
+          "group": "door-512-5",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 320,
+          "y": 704,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de madeira clara",
+          "group": "door-512-5",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 384,
+          "y": 512,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de ferro",
+          "group": "door-512-6",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 384,
+          "y": 576,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de ferro",
+          "group": "door-512-6",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 384,
+          "y": 640,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de ferro",
+          "group": "door-512-6",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 384,
+          "y": 704,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de ferro",
+          "group": "door-512-6",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 448,
+          "y": 512,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de ferro velha",
+          "group": "door-512-7",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 448,
+          "y": 576,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de ferro velha",
+          "group": "door-512-7",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 448,
+          "y": 640,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de ferro velha",
+          "group": "door-512-7",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 448,
+          "y": 704,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de ferro velha",
+          "group": "door-512-7",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 512,
+          "y": 512,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de casa",
+          "group": "door-512-8",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 512,
+          "y": 576,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de casa",
+          "group": "door-512-8",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 512,
+          "y": 640,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de casa",
+          "group": "door-512-8",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 512,
+          "y": 704,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de casa",
+          "group": "door-512-8",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 576,
+          "y": 512,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta branca",
+          "group": "door-512-9",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 576,
+          "y": 576,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta branca",
+          "group": "door-512-9",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 576,
+          "y": 640,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta branca",
+          "group": "door-512-9",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 576,
+          "y": 704,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta branca",
+          "group": "door-512-9",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 0,
+          "y": 768,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta reforçada",
+          "group": "door-768-0",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 0,
+          "y": 832,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta reforçada",
+          "group": "door-768-0",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 0,
+          "y": 896,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta reforçada",
+          "group": "door-768-0",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 0,
+          "y": 960,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta reforçada",
+          "group": "door-768-0",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 64,
+          "y": 768,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta vermelha",
+          "group": "door-768-1",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 64,
+          "y": 832,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta vermelha",
+          "group": "door-768-1",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 64,
+          "y": 896,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta vermelha",
+          "group": "door-768-1",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 64,
+          "y": 960,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta vermelha",
+          "group": "door-768-1",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 128,
+          "y": 768,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de celeiro",
+          "group": "door-768-2",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 128,
+          "y": 832,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de celeiro",
+          "group": "door-768-2",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 128,
+          "y": 896,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de celeiro",
+          "group": "door-768-2",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 128,
+          "y": 960,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de celeiro",
+          "group": "door-768-2",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 192,
+          "y": 768,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta arredondada",
+          "group": "door-768-3",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 192,
+          "y": 832,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta arredondada",
+          "group": "door-768-3",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 192,
+          "y": 896,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta arredondada",
+          "group": "door-768-3",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 192,
+          "y": 960,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta arredondada",
+          "group": "door-768-3",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 256,
+          "y": 768,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta cravejada",
+          "group": "door-768-4",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 256,
+          "y": 832,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta cravejada",
+          "group": "door-768-4",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 256,
+          "y": 896,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta cravejada",
+          "group": "door-768-4",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 256,
+          "y": 960,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta cravejada",
+          "group": "door-768-4",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 320,
+          "y": 768,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta cravejada escura",
+          "group": "door-768-5",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 320,
+          "y": 832,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta cravejada escura",
+          "group": "door-768-5",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 320,
+          "y": 896,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta cravejada escura",
+          "group": "door-768-5",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 320,
+          "y": 960,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta cravejada escura",
+          "group": "door-768-5",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 384,
+          "y": 768,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de estábulo",
+          "group": "door-768-6",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 384,
+          "y": 832,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de estábulo",
+          "group": "door-768-6",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 384,
+          "y": 896,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de estábulo",
+          "group": "door-768-6",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 384,
+          "y": 960,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de estábulo",
+          "group": "door-768-6",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 448,
+          "y": 768,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de estábulo 2",
+          "group": "door-768-7",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 448,
+          "y": 832,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de estábulo 2",
+          "group": "door-768-7",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 448,
+          "y": 896,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de estábulo 2",
+          "group": "door-768-7",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 448,
+          "y": 960,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de estábulo 2",
+          "group": "door-768-7",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 512,
+          "y": 768,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de tábuas brancas",
+          "group": "door-768-8",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 512,
+          "y": 832,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de tábuas brancas",
+          "group": "door-768-8",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 512,
+          "y": 896,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de tábuas brancas",
+          "group": "door-768-8",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 512,
+          "y": 960,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de tábuas brancas",
+          "group": "door-768-8",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 576,
+          "y": 768,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de vidro",
+          "group": "door-768-9",
+          "variant": "Fechada",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 576,
+          "y": 832,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de vidro",
+          "group": "door-768-9",
+          "variant": "Aberta",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 576,
+          "y": 896,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de vidro",
+          "group": "door-768-9",
+          "variant": "Fechada 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        },
+        {
+          "x": 576,
+          "y": 960,
+          "w": 64,
+          "h": 64,
+          "trim": false,
+          "label": "Porta de vidro",
+          "group": "door-768-9",
+          "variant": "Aberta 2",
+          "tags": [
+            "porta",
+            "construção"
+          ],
+          "category": "Portas e janelas"
+        }
+      ]
+    }
+  ],
+  "objects": {}
+}

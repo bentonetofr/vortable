@@ -1,0 +1,1639 @@
+{
+  "name": "[LPC] Medieval Village Decorations",
+  "license": "CC-BY-SA 3.0 / CC-BY-SA 4.0 / GPL 3.0",
+  "source": "https://opengameart.org/content/lpc-medieval-village-decorations",
+  "sheets": [
+    {
+      "id": "med-deco",
+      "file": "decorations-medieval.png",
+      "category": "Vila",
+      "label": "Enfeite de vila",
+      "tags": [
+        "vila",
+        "medieval"
+      ],
+      "collision": "base",
+      "ignoreColor": "#81a100",
+      "anims": [
+        {
+          "x": 416,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "frames": 3,
+          "fps": 6,
+          "label": "Lampião",
+          "kind": "wall",
+          "light": {
+            "x": 0,
+            "y": -14,
+            "radius": 80,
+            "color": "#ffcf70",
+            "intensity": 0.9,
+            "flicker": 0.1
+          }
+        },
+        {
+          "x": 416,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "frames": 3,
+          "fps": 6,
+          "label": "Lampião",
+          "kind": "wall",
+          "light": {
+            "x": 0,
+            "y": -14,
+            "radius": 80,
+            "color": "#ffcf70",
+            "intensity": 0.9,
+            "flicker": 0.1
+          }
+        },
+        {
+          "x": 416,
+          "y": 64,
+          "w": 32,
+          "h": 32,
+          "frames": 3,
+          "fps": 6,
+          "label": "Lampião",
+          "kind": "wall",
+          "light": {
+            "x": 0,
+            "y": -14,
+            "radius": 80,
+            "color": "#ffcf70",
+            "intensity": 0.9,
+            "flicker": 0.1
+          }
+        },
+        {
+          "x": 416,
+          "y": 96,
+          "w": 32,
+          "h": 32,
+          "frames": 3,
+          "fps": 6,
+          "label": "Lampião",
+          "kind": "wall",
+          "light": {
+            "x": 0,
+            "y": -14,
+            "radius": 80,
+            "color": "#ffcf70",
+            "intensity": 0.9,
+            "flicker": 0.1
+          }
+        },
+        {
+          "x": 416,
+          "y": 128,
+          "w": 32,
+          "h": 32,
+          "frames": 3,
+          "fps": 6,
+          "label": "Lampião",
+          "kind": "wall",
+          "light": {
+            "x": 0,
+            "y": -14,
+            "radius": 80,
+            "color": "#ffcf70",
+            "intensity": 0.9,
+            "flicker": 0.1
+          }
+        },
+        {
+          "x": 416,
+          "y": 160,
+          "w": 32,
+          "h": 32,
+          "frames": 3,
+          "fps": 10,
+          "label": "Tocha",
+          "kind": "wall",
+          "light": {
+            "x": 0,
+            "y": -18,
+            "radius": 96,
+            "color": "#ffa050",
+            "intensity": 1,
+            "flicker": 0.25
+          }
+        },
+        {
+          "x": 416,
+          "y": 192,
+          "w": 32,
+          "h": 32,
+          "frames": 3,
+          "fps": 10,
+          "label": "Tocha",
+          "kind": "wall",
+          "light": {
+            "x": 0,
+            "y": -18,
+            "radius": 96,
+            "color": "#ffa050",
+            "intensity": 1,
+            "flicker": 0.25
+          }
+        },
+        {
+          "x": 416,
+          "y": 224,
+          "w": 32,
+          "h": 32,
+          "frames": 3,
+          "fps": 10,
+          "label": "Tocha",
+          "kind": "wall",
+          "light": {
+            "x": 0,
+            "y": -18,
+            "radius": 96,
+            "color": "#ffa050",
+            "intensity": 1,
+            "flicker": 0.25
+          }
+        },
+        {
+          "x": 416,
+          "y": 256,
+          "w": 32,
+          "h": 32,
+          "frames": 3,
+          "fps": 10,
+          "label": "Tocha",
+          "kind": "wall",
+          "light": {
+            "x": 0,
+            "y": -18,
+            "radius": 96,
+            "color": "#ffa050",
+            "intensity": 1,
+            "flicker": 0.25
+          }
+        },
+        {
+          "x": 0,
+          "y": 512,
+          "w": 64,
+          "h": 64,
+          "frames": 3,
+          "dx": 64,
+          "fps": 8,
+          "label": "Chafariz",
+          "collision": "base"
+        },
+        {
+          "x": 0,
+          "y": 576,
+          "w": 64,
+          "h": 64,
+          "frames": 3,
+          "dx": 64,
+          "fps": 8,
+          "label": "Chafariz de pedra",
+          "collision": "base"
+        },
+        {
+          "x": 256,
+          "y": 1504,
+          "w": 32,
+          "h": 32,
+          "frames": 5,
+          "fps": 10,
+          "label": "Fogueira",
+          "light": {
+            "x": 0,
+            "y": -10,
+            "radius": 128,
+            "color": "#ff9a40",
+            "intensity": 1,
+            "flicker": 0.35
+          },
+          "collision": "base"
+        },
+        {
+          "x": 256,
+          "y": 1536,
+          "w": 32,
+          "h": 32,
+          "frames": 5,
+          "fps": 10,
+          "label": "Fogueira pequena",
+          "light": {
+            "x": 0,
+            "y": -8,
+            "radius": 96,
+            "color": "#ff9a40",
+            "intensity": 0.9,
+            "flicker": 0.35
+          },
+          "collision": "base"
+        }
+      ],
+      "pieces": [
+        {
+          "x": 192,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Placa pendurada"
+        },
+        {
+          "x": 192,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Placa pendurada"
+        },
+        {
+          "x": 224,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Placa pendurada"
+        },
+        {
+          "x": 224,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Placa pendurada"
+        },
+        {
+          "x": 256,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Placa pendurada"
+        },
+        {
+          "x": 256,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Placa pendurada"
+        },
+        {
+          "x": 288,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Placa pendurada"
+        },
+        {
+          "x": 288,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Placa pendurada"
+        },
+        {
+          "x": 320,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Placa pendurada"
+        },
+        {
+          "x": 320,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Placa pendurada"
+        },
+        {
+          "x": 352,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Placa pendurada"
+        },
+        {
+          "x": 352,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Placa pendurada"
+        },
+        {
+          "x": 0,
+          "y": 800,
+          "w": 96,
+          "h": 160,
+          "label": "Barraca de feira branca"
+        },
+        {
+          "x": 96,
+          "y": 800,
+          "w": 64,
+          "h": 160,
+          "label": "Barraca de feira azul"
+        },
+        {
+          "x": 160,
+          "y": 800,
+          "w": 96,
+          "h": 160,
+          "label": "Barraca de feira marrom"
+        },
+        {
+          "x": 256,
+          "y": 800,
+          "w": 64,
+          "h": 160,
+          "label": "Barraca de feira laranja"
+        },
+        {
+          "x": 320,
+          "y": 800,
+          "w": 96,
+          "h": 160,
+          "label": "Barraca de feira verde"
+        },
+        {
+          "x": 416,
+          "y": 800,
+          "w": 64,
+          "h": 160,
+          "label": "Barraca de feira verde pequena"
+        },
+        {
+          "x": 0,
+          "y": 960,
+          "w": 128,
+          "h": 96,
+          "label": "Lona clara",
+          "kind": "over"
+        },
+        {
+          "x": 0,
+          "y": 1088,
+          "w": 128,
+          "h": 96,
+          "label": "Painel de tábuas"
+        },
+        {
+          "x": 320,
+          "y": 1024,
+          "w": 64,
+          "h": 128,
+          "label": "Toldo ondulado marrom",
+          "kind": "over"
+        },
+        {
+          "x": 384,
+          "y": 1024,
+          "w": 96,
+          "h": 96,
+          "label": "Toldo largo marrom",
+          "kind": "over"
+        },
+        {
+          "x": 320,
+          "y": 1152,
+          "w": 64,
+          "h": 128,
+          "label": "Toldo ondulado azul",
+          "kind": "over"
+        },
+        {
+          "x": 384,
+          "y": 1120,
+          "w": 96,
+          "h": 96,
+          "label": "Toldo largo azul",
+          "kind": "over"
+        },
+        {
+          "x": 384,
+          "y": 1216,
+          "w": 96,
+          "h": 96,
+          "label": "Toldo largo verde",
+          "kind": "over"
+        },
+        {
+          "x": 320,
+          "y": 1280,
+          "w": 64,
+          "h": 128,
+          "label": "Toldo ondulado verde",
+          "kind": "over"
+        },
+        {
+          "x": 0,
+          "y": 1216,
+          "w": 32,
+          "h": 80,
+          "label": "Estandarte branco",
+          "kind": "wall"
+        },
+        {
+          "x": 32,
+          "y": 1216,
+          "w": 32,
+          "h": 80,
+          "label": "Estandarte azul",
+          "kind": "wall"
+        },
+        {
+          "x": 64,
+          "y": 1216,
+          "w": 32,
+          "h": 80,
+          "label": "Estandarte verde",
+          "kind": "wall"
+        },
+        {
+          "x": 96,
+          "y": 1216,
+          "w": 32,
+          "h": 80,
+          "label": "Estandarte vermelho",
+          "kind": "wall"
+        },
+        {
+          "x": 128,
+          "y": 1216,
+          "w": 32,
+          "h": 80,
+          "label": "Estandarte dourado",
+          "kind": "wall"
+        },
+        {
+          "x": 160,
+          "y": 1216,
+          "w": 32,
+          "h": 80,
+          "label": "Estandarte preto",
+          "kind": "wall"
+        },
+        {
+          "x": 200,
+          "y": 1184,
+          "w": 112,
+          "h": 32,
+          "label": "Tapete enrolado azul"
+        },
+        {
+          "x": 200,
+          "y": 1216,
+          "w": 112,
+          "h": 32,
+          "label": "Tapete enrolado vermelho"
+        },
+        {
+          "x": 200,
+          "y": 1248,
+          "w": 112,
+          "h": 32,
+          "label": "Tapete enrolado verde"
+        },
+        {
+          "x": 200,
+          "y": 1280,
+          "w": 112,
+          "h": 32,
+          "label": "Tapete enrolado marrom"
+        },
+        {
+          "x": 192,
+          "y": 1312,
+          "w": 128,
+          "h": 80,
+          "label": "Carroça coberta"
+        },
+        {
+          "x": 288,
+          "y": 960,
+          "w": 64,
+          "h": 64,
+          "label": "Balcão de feira"
+        },
+        {
+          "x": 352,
+          "y": 960,
+          "w": 64,
+          "h": 64,
+          "label": "Balcão de feira duplo"
+        },
+        {
+          "x": 416,
+          "y": 960,
+          "w": 64,
+          "h": 64,
+          "label": "Sombra de toldo",
+          "kind": "floor"
+        },
+        {
+          "x": 480,
+          "y": 928,
+          "w": 32,
+          "h": 128,
+          "label": "Poste de feira"
+        },
+        {
+          "x": 224,
+          "y": 960,
+          "w": 64,
+          "h": 64,
+          "label": "Arca de madeira"
+        },
+        {
+          "x": 224,
+          "y": 1024,
+          "w": 64,
+          "h": 64,
+          "label": "Arca de madeira (tampa)"
+        }
+      ]
+    },
+    {
+      "id": "med-signs",
+      "file": "signposts.png",
+      "category": "Vila",
+      "label": "Placa",
+      "tags": [
+        "vila",
+        "placa"
+      ],
+      "collision": "foot"
+    }
+  ],
+  "objects": {
+    "med-deco@0,0": {
+      "label": "Lápide em cruz",
+      "category": "Cemitério"
+    },
+    "med-deco@32,20": {
+      "label": "Jazigo duplo",
+      "category": "Cemitério"
+    },
+    "med-deco@98,1": {
+      "label": "Cova aberta",
+      "category": "Cemitério"
+    },
+    "med-deco@165,0": {
+      "label": "Cruz enfeitada",
+      "category": "Cemitério"
+    },
+    "med-deco@384,2": {
+      "label": "Lampião de gancho",
+      "category": "Luzes",
+      "kind": "wall"
+    },
+    "med-deco@394,34": {
+      "label": "Lampião de gancho 2",
+      "category": "Luzes",
+      "kind": "wall"
+    },
+    "med-deco@166,66": {
+      "label": "Cruz de madeira",
+      "category": "Cemitério"
+    },
+    "med-deco@394,66": {
+      "label": "Lamparina",
+      "category": "Luzes"
+    },
+    "med-deco@3,104": {
+      "label": "Lápide baixa",
+      "category": "Cemitério"
+    },
+    "med-deco@36,103": {
+      "label": "Lápide baixa 2",
+      "category": "Cemitério"
+    },
+    "med-deco@66,98": {
+      "label": "Lápide redonda",
+      "category": "Cemitério"
+    },
+    "med-deco@98,98": {
+      "label": "Lápide redonda 2",
+      "category": "Cemitério"
+    },
+    "med-deco@130,98": {
+      "label": "Lápide com brasão",
+      "category": "Cemitério"
+    },
+    "med-deco@166,98": {
+      "label": "Cruz de madeira 2",
+      "category": "Cemitério"
+    },
+    "med-deco@394,98": {
+      "label": "Lamparina 2",
+      "category": "Luzes"
+    },
+    "med-deco@2,135": {
+      "label": "Lápide quebrada",
+      "category": "Cemitério"
+    },
+    "med-deco@15,137": {
+      "label": "Lápide quebrada 2",
+      "category": "Cemitério"
+    },
+    "med-deco@36,135": {
+      "label": "Lápide caída",
+      "category": "Cemitério"
+    },
+    "med-deco@66,130": {
+      "label": "Lápide gasta",
+      "category": "Cemitério"
+    },
+    "med-deco@98,130": {
+      "label": "Lápide gasta 2",
+      "category": "Cemitério"
+    },
+    "med-deco@128,128": {
+      "label": "Bebedouro de pedra",
+      "category": "Estátuas e fontes"
+    },
+    "med-deco@130,130": {
+      "label": "Lápide partida",
+      "category": "Cemitério"
+    },
+    "med-deco@193,128": {
+      "label": "Placa de direção",
+      "category": "Vila"
+    },
+    "med-deco@225,128": {
+      "label": "Placa de aviso",
+      "category": "Vila"
+    },
+    "med-deco@8,164": {
+      "label": "Marco de pedra",
+      "category": "Cemitério"
+    },
+    "med-deco@35,171": {
+      "label": "Túmulo de pedra",
+      "category": "Cemitério"
+    },
+    "med-deco@100,170": {
+      "label": "Pia de pedra pequena",
+      "category": "Estátuas e fontes"
+    },
+    "med-deco@193,160": {
+      "label": "Quadro de avisos pequeno",
+      "category": "Vila"
+    },
+    "med-deco@225,160": {
+      "label": "Quadro de avisos",
+      "category": "Vila"
+    },
+    "med-deco@256,153": {
+      "label": "Caixotes de feira",
+      "category": "Feira"
+    },
+    "med-deco@320,130": {
+      "label": "Espantalho e varal",
+      "category": "Fazenda"
+    },
+    "med-deco@384,130": {
+      "label": "Lamparina 3",
+      "category": "Luzes"
+    },
+    "med-deco@352,167": {
+      "label": "Frascos no chão",
+      "category": "Vila",
+      "kind": "floor"
+    },
+    "med-deco@0,193": {
+      "label": "Cruz de pedra alta",
+      "category": "Cemitério"
+    },
+    "med-deco@100,202": {
+      "label": "Pia de pedra",
+      "category": "Estátuas e fontes"
+    },
+    "med-deco@128,202": {
+      "label": "Bacia de pedra",
+      "category": "Estátuas e fontes"
+    },
+    "med-deco@204,192": {
+      "label": "Varal vazio",
+      "category": "Vila"
+    },
+    "med-deco@288,198": {
+      "label": "Varal com roupas",
+      "category": "Vila"
+    },
+    "med-deco@352,187": {
+      "hidden": true
+    },
+    "med-deco@395,171": {
+      "hidden": true
+    },
+    "med-deco@364,198": {
+      "label": "Poste de madeira",
+      "category": "Vila"
+    },
+    "med-deco@38,225": {
+      "label": "Marco quebrado",
+      "category": "Cemitério"
+    },
+    "med-deco@65,226": {
+      "label": "Totem de pedra",
+      "category": "Estátuas e fontes"
+    },
+    "med-deco@384,204": {
+      "hidden": true
+    },
+    "med-deco@99,234": {
+      "label": "Pedestal de pedra",
+      "category": "Estátuas e fontes"
+    },
+    "med-deco@128,234": {
+      "label": "Pia batismal",
+      "category": "Estátuas e fontes"
+    },
+    "med-deco@202,241": {
+      "label": "Tábuas soltas",
+      "category": "Vila",
+      "kind": "floor"
+    },
+    "med-deco@331,233": {
+      "label": "Estaca",
+      "category": "Vila"
+    },
+    "med-deco@206,267": {
+      "label": "Tábuas cruzadas",
+      "category": "Vila",
+      "kind": "floor"
+    },
+    "med-deco@265,271": {
+      "label": "Tábua caída",
+      "category": "Vila",
+      "kind": "floor"
+    },
+    "med-deco@384,256": {
+      "label": "Lampiões duplos",
+      "category": "Luzes"
+    },
+    "med-deco@402,236": {
+      "hidden": true
+    },
+    "med-deco@4,294": {
+      "label": "Estátua de donzela",
+      "category": "Estátuas e fontes"
+    },
+    "med-deco@36,292": {
+      "label": "Estátua ajoelhada",
+      "category": "Estátuas e fontes"
+    },
+    "med-deco@97,288": {
+      "label": "Estátua encapuzada",
+      "category": "Estátuas e fontes"
+    },
+    "med-deco@128,292": {
+      "label": "Estátua de anjo",
+      "category": "Estátuas e fontes"
+    },
+    "med-deco@172,288": {
+      "label": "Monumento",
+      "category": "Estátuas e fontes"
+    },
+    "med-deco@237,288": {
+      "label": "Poste com gancho",
+      "category": "Vila"
+    },
+    "med-deco@269,288": {
+      "label": "Estaca 2",
+      "category": "Vila"
+    },
+    "med-deco@293,271": {
+      "label": "Tábua 2",
+      "category": "Vila",
+      "kind": "floor"
+    },
+    "med-deco@301,288": {
+      "label": "Estaca 3",
+      "category": "Vila"
+    },
+    "med-deco@416,299": {
+      "label": "Árvore retorcida",
+      "category": "Vila"
+    },
+    "med-deco@448,288": {
+      "label": "Árvore-relógio",
+      "category": "Vila"
+    },
+    "med-deco@0,355": {
+      "label": "Viga caída",
+      "category": "Vila",
+      "kind": "floor"
+    },
+    "med-deco@360,356": {
+      "label": "Casinha de madeira",
+      "category": "Vila"
+    },
+    "med-deco@0,387": {
+      "label": "Viga caída 2",
+      "category": "Vila",
+      "kind": "floor"
+    },
+    "med-deco@0,432": {
+      "label": "Poço de pedra",
+      "category": "Vila"
+    },
+    "med-deco@70,417": {
+      "label": "Balde de poço",
+      "category": "Vila"
+    },
+    "med-deco@96,416": {
+      "label": "Poste de cerca",
+      "category": "Fazenda"
+    },
+    "med-deco@128,416": {
+      "label": "Poste de cerca 2",
+      "category": "Fazenda"
+    },
+    "med-deco@160,416": {
+      "label": "Poste de cerca 3",
+      "category": "Fazenda"
+    },
+    "med-deco@416,416": {
+      "label": "Poço com roldana",
+      "category": "Vila"
+    },
+    "med-deco@102,448": {
+      "label": "Balde",
+      "category": "Vila"
+    },
+    "med-deco@213,442": {
+      "label": "Postes duplos",
+      "category": "Fazenda"
+    },
+    "med-deco@0,480": {
+      "label": "Mureta de pedra curva",
+      "category": "Vila"
+    },
+    "med-deco@70,481": {
+      "label": "Balde 2",
+      "category": "Vila"
+    },
+    "med-deco@102,481": {
+      "label": "Balde 3",
+      "category": "Vila"
+    },
+    "med-deco@270,457": {
+      "label": "Telhado de telhas",
+      "category": "Vila",
+      "kind": "over"
+    },
+    "med-deco@369,457": {
+      "label": "Parede de tábuas",
+      "category": "Vila"
+    },
+    "med-deco@196,514": {
+      "label": "Carrinho de mão",
+      "category": "Fazenda"
+    },
+    "med-deco@291,514": {
+      "hidden": true
+    },
+    "med-deco@292,544": {
+      "hidden": true
+    },
+    "med-deco@304,521": {
+      "hidden": true
+    },
+    "med-deco@317,530": {
+      "hidden": true
+    },
+    "med-deco@353,513": {
+      "label": "Alicate",
+      "category": "Ferramentas",
+      "kind": "floor"
+    },
+    "med-deco@368,522": {
+      "label": "Martelo",
+      "category": "Ferramentas",
+      "kind": "floor"
+    },
+    "med-deco@385,514": {
+      "label": "Martelo 2",
+      "category": "Ferramentas",
+      "kind": "floor"
+    },
+    "med-deco@320,553": {
+      "label": "Serrote pequeno",
+      "category": "Ferramentas",
+      "kind": "floor"
+    },
+    "med-deco@358,550": {
+      "label": "Grampo",
+      "category": "Ferramentas",
+      "kind": "floor"
+    },
+    "med-deco@426,536": {
+      "label": "Cocho de feno",
+      "category": "Fazenda"
+    },
+    "med-deco@202,586": {
+      "label": "Pá",
+      "category": "Ferramentas"
+    },
+    "med-deco@230,587": {
+      "label": "Ancinho",
+      "category": "Ferramentas"
+    },
+    "med-deco@261,587": {
+      "label": "Enxada",
+      "category": "Ferramentas"
+    },
+    "med-deco@293,582": {
+      "label": "Forcado",
+      "category": "Ferramentas"
+    },
+    "med-deco@328,583": {
+      "label": "Rastelo",
+      "category": "Ferramentas"
+    },
+    "med-deco@358,593": {
+      "label": "Marreta",
+      "category": "Ferramentas"
+    },
+    "med-deco@384,578": {
+      "label": "Tenaz",
+      "category": "Ferramentas"
+    },
+    "med-deco@397,578": {
+      "label": "Tenaz 2",
+      "category": "Ferramentas"
+    },
+    "med-deco@426,577": {
+      "label": "Cocho de água",
+      "category": "Fazenda"
+    },
+    "med-deco@70,646": {
+      "label": "Monte de feno",
+      "category": "Fazenda"
+    },
+    "med-deco@192,640": {
+      "label": "Carroça de feno pequena",
+      "category": "Fazenda"
+    },
+    "med-deco@385,622": {
+      "label": "Serrote",
+      "category": "Ferramentas",
+      "kind": "floor"
+    },
+    "med-deco@387,611": {
+      "hidden": true
+    },
+    "med-deco@426,609": {
+      "label": "Banco de madeira",
+      "category": "Móveis"
+    },
+    "med-deco@5,649": {
+      "label": "Fardo de feno redondo",
+      "category": "Fazenda"
+    },
+    "med-deco@134,640": {
+      "label": "Foice",
+      "category": "Ferramentas"
+    },
+    "med-deco@171,640": {
+      "label": "Foice 2",
+      "category": "Ferramentas"
+    },
+    "med-deco@288,656": {
+      "label": "Abrigo de madeira",
+      "category": "Fazenda"
+    },
+    "med-deco@354,657": {
+      "label": "Lenha empilhada",
+      "category": "Fazenda"
+    },
+    "med-deco@402,641": {
+      "label": "Lenha empilhada 2",
+      "category": "Fazenda"
+    },
+    "med-deco@455,646": {
+      "label": "Pilha de lenha grande",
+      "category": "Fazenda"
+    },
+    "med-deco@67,710": {
+      "label": "Batedeira de manteiga",
+      "category": "Fazenda"
+    },
+    "med-deco@96,686": {
+      "label": "Fardos de feno",
+      "category": "Fazenda"
+    },
+    "med-deco@421,680": {
+      "label": "Tora",
+      "category": "Fazenda",
+      "kind": "floor"
+    },
+    "med-deco@224,708": {
+      "label": "Carroça de madeira",
+      "category": "Fazenda"
+    },
+    "med-deco@421,705": {
+      "label": "Toras cortadas",
+      "category": "Fazenda"
+    },
+    "med-deco@448,705": {
+      "label": "Toco com machado",
+      "category": "Fazenda"
+    },
+    "med-deco@485,704": {
+      "label": "Toco de rachar lenha",
+      "category": "Fazenda"
+    },
+    "med-deco@4,738": {
+      "label": "Feno espalhado",
+      "category": "Fazenda",
+      "kind": "floor"
+    },
+    "med-deco@136,739": {
+      "label": "Carroça de feno",
+      "category": "Fazenda"
+    },
+    "med-deco@417,737": {
+      "label": "Bigorna no toco",
+      "category": "Ferramentas"
+    },
+    "med-deco@20,763": {
+      "label": "Arado",
+      "category": "Fazenda"
+    },
+    "med-deco@451,744": {
+      "label": "Bigorna pequena",
+      "category": "Ferramentas"
+    },
+    "med-deco@483,742": {
+      "label": "Toco cortado",
+      "category": "Fazenda"
+    },
+    "med-deco@320,768": {
+      "hidden": true
+    },
+    "med-deco@362,769": {
+      "label": "Caixote",
+      "category": "Vila"
+    },
+    "med-deco@419,769": {
+      "label": "Bigorna no toco 2",
+      "category": "Ferramentas"
+    },
+    "med-deco@459,773": {
+      "label": "Bigorna",
+      "category": "Ferramentas"
+    },
+    "med-deco@496,800": {
+      "label": "Poste alto",
+      "category": "Vila"
+    },
+    "med-deco@491,864": {
+      "label": "Poste alto 2",
+      "category": "Vila"
+    },
+    "med-deco@132,960": {
+      "label": "Banquinho redondo",
+      "category": "Móveis"
+    },
+    "med-deco@162,960": {
+      "label": "Cadeira de madeira",
+      "category": "Móveis"
+    },
+    "med-deco@194,960": {
+      "label": "Painel pequeno",
+      "category": "Móveis"
+    },
+    "med-deco@151,1020": {
+      "label": "Biombo de tábuas",
+      "category": "Móveis"
+    },
+    "med-deco@0,1056": {
+      "hidden": true
+    },
+    "med-deco@480,1056": {
+      "hidden": true
+    },
+    "med-deco@138,1090": {
+      "label": "Banqueta",
+      "category": "Móveis"
+    },
+    "med-deco@164,1092": {
+      "label": "Banco baixo",
+      "category": "Móveis"
+    },
+    "med-deco@193,1091": {
+      "label": "Banco comprido",
+      "category": "Móveis"
+    },
+    "med-deco@259,1088": {
+      "label": "Mesa de tábuas",
+      "category": "Móveis"
+    },
+    "med-deco@134,1120": {
+      "label": "Tábua em pé",
+      "category": "Vila"
+    },
+    "med-deco@168,1120": {
+      "label": "Tábua em pé 2",
+      "category": "Vila"
+    },
+    "med-deco@193,1145": {
+      "label": "Banco",
+      "category": "Móveis"
+    },
+    "med-deco@257,1122": {
+      "label": "Mesa rústica",
+      "category": "Móveis"
+    },
+    "med-deco@11,1330": {
+      "label": "Forca",
+      "category": "Vila"
+    },
+    "med-deco@64,1326": {
+      "label": "Palco de madeira",
+      "category": "Vila"
+    },
+    "med-deco@389,1312": {
+      "hidden": true
+    },
+    "med-deco@401,1352": {
+      "label": "Banca com portas",
+      "category": "Feira"
+    },
+    "med-deco@1,1426": {
+      "label": "Forca dupla",
+      "category": "Vila"
+    },
+    "med-deco@69,1415": {
+      "label": "Tronco de castigo",
+      "category": "Vila"
+    },
+    "med-deco@199,1408": {
+      "label": "Carroça grande",
+      "category": "Fazenda"
+    },
+    "med-deco@416,1440": {
+      "label": "Rodas de carroça",
+      "category": "Fazenda"
+    },
+    "med-deco@485,1445": {
+      "label": "Roda pequena",
+      "category": "Fazenda"
+    },
+    "med-deco@133,1472": {
+      "label": "Pelourinho",
+      "category": "Vila"
+    },
+    "med-deco@485,1477": {
+      "label": "Roda caída",
+      "category": "Fazenda",
+      "kind": "floor"
+    },
+    "med-deco@0,1507": {
+      "label": "Cerquinha",
+      "category": "Fazenda"
+    },
+    "med-deco@38,1504": {
+      "label": "Suporte de lanças",
+      "category": "Acampamento"
+    },
+    "med-deco@6,1539": {
+      "label": "Cerquinha 2",
+      "category": "Fazenda"
+    },
+    "med-deco@97,1522": {
+      "label": "Alvo de palha",
+      "category": "Acampamento"
+    },
+    "med-deco@142,1517": {
+      "label": "Alvo de arco e flecha",
+      "category": "Acampamento"
+    },
+    "med-deco@194,1512": {
+      "label": "Arco",
+      "category": "Acampamento",
+      "kind": "floor"
+    },
+    "med-deco@421,1505": {
+      "label": "Tripé de madeira",
+      "category": "Acampamento"
+    },
+    "med-deco@448,1510": {
+      "label": "Tripé de fogueira",
+      "category": "Acampamento"
+    },
+    "med-deco@64,1548": {
+      "label": "Paliçada",
+      "category": "Acampamento"
+    },
+    "med-deco@195,1539": {
+      "label": "Flecha caída",
+      "category": "Acampamento",
+      "kind": "floor"
+    },
+    "med-deco@229,1541": {
+      "label": "Flechas cravadas",
+      "category": "Acampamento"
+    },
+    "med-deco@25,1573": {
+      "label": "Machadinha",
+      "category": "Acampamento"
+    },
+    "med-deco@36,1572": {
+      "label": "Feixe de flechas",
+      "category": "Acampamento"
+    },
+    "med-deco@102,1570": {
+      "label": "Cesto de flechas",
+      "category": "Acampamento"
+    },
+    "med-deco@150,1574": {
+      "label": "Lança cravada",
+      "category": "Acampamento"
+    },
+    "med-deco@162,1570": {
+      "label": "Alvo pequeno",
+      "category": "Acampamento"
+    },
+    "med-deco@195,1573": {
+      "label": "Arco 2",
+      "category": "Acampamento",
+      "kind": "floor"
+    },
+    "med-deco@199,1586": {
+      "label": "Arco 3",
+      "category": "Acampamento",
+      "kind": "floor"
+    },
+    "med-deco@322,1576": {
+      "label": "Lenha de fogueira",
+      "category": "Acampamento"
+    },
+    "med-deco@355,1569": {
+      "label": "Caldeirão",
+      "category": "Acampamento"
+    },
+    "med-deco@9,1604": {
+      "label": "Tenda grande aberta",
+      "category": "Acampamento"
+    },
+    "med-deco@193,1608": {
+      "label": "Estaca de tenda",
+      "category": "Acampamento"
+    },
+    "med-deco@245,1604": {
+      "label": "Tenda pequena",
+      "category": "Acampamento"
+    },
+    "med-deco@386,1733": {
+      "label": "Tenda de ponta",
+      "category": "Acampamento"
+    },
+    "med-deco@23,1760": {
+      "label": "Lona de tenda",
+      "category": "Acampamento",
+      "kind": "over"
+    },
+    "med-deco@252,1765": {
+      "label": "Mastro",
+      "category": "Acampamento"
+    },
+    "med-deco@315,1760": {
+      "label": "Mastro 2",
+      "category": "Acampamento"
+    },
+    "med-deco@0,1824": {
+      "label": "Entrada de tenda",
+      "category": "Acampamento"
+    },
+    "med-deco@224,1856": {
+      "label": "Estaca de ferro",
+      "category": "Acampamento"
+    },
+    "med-deco@282,1856": {
+      "label": "Estaca de ferro 2",
+      "category": "Acampamento"
+    },
+    "med-deco@192,3": {
+      "label": "Placa pendurada 1",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@192,35": {
+      "label": "Placa pendurada 2",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@224,3": {
+      "label": "Placa pendurada 3",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@224,35": {
+      "label": "Placa pendurada 4",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@256,3": {
+      "label": "Placa pendurada 5",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@256,35": {
+      "label": "Placa pendurada 6",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@288,3": {
+      "label": "Placa pendurada 7",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@288,35": {
+      "label": "Placa pendurada 8",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@320,3": {
+      "label": "Placa pendurada 9",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@320,35": {
+      "label": "Placa pendurada 10",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@352,0": {
+      "label": "Placa pendurada 11",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@365,32": {
+      "label": "Placa pendurada 12",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@0,800": {
+      "label": "Barraca de feira branca",
+      "category": "Feira"
+    },
+    "med-deco@96,800": {
+      "label": "Barraca de feira azul",
+      "category": "Feira"
+    },
+    "med-deco@160,800": {
+      "label": "Barraca de feira marrom",
+      "category": "Feira"
+    },
+    "med-deco@256,800": {
+      "label": "Barraca de feira laranja",
+      "category": "Feira"
+    },
+    "med-deco@320,800": {
+      "label": "Barraca de feira verde",
+      "category": "Feira"
+    },
+    "med-deco@416,800": {
+      "label": "Barraca de feira verde pequena",
+      "category": "Feira"
+    },
+    "med-deco@0,960": {
+      "label": "Lona clara",
+      "category": "Feira",
+      "kind": "over"
+    },
+    "med-deco@0,1088": {
+      "label": "Painel de tábuas",
+      "category": "Vila"
+    },
+    "med-deco@320,1029": {
+      "label": "Toldo ondulado marrom",
+      "category": "Feira",
+      "kind": "over"
+    },
+    "med-deco@384,1024": {
+      "label": "Toldo largo marrom",
+      "category": "Feira",
+      "kind": "over"
+    },
+    "med-deco@320,1157": {
+      "label": "Toldo ondulado azul",
+      "category": "Feira",
+      "kind": "over"
+    },
+    "med-deco@384,1120": {
+      "label": "Toldo largo azul",
+      "category": "Feira",
+      "kind": "over"
+    },
+    "med-deco@384,1216": {
+      "label": "Toldo largo verde",
+      "category": "Feira",
+      "kind": "over"
+    },
+    "med-deco@320,1285": {
+      "label": "Toldo ondulado verde",
+      "category": "Feira",
+      "kind": "over"
+    },
+    "med-deco@0,1218": {
+      "label": "Estandarte branco",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@32,1218": {
+      "label": "Estandarte azul",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@64,1218": {
+      "label": "Estandarte verde",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@96,1218": {
+      "label": "Estandarte vermelho",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@128,1218": {
+      "label": "Estandarte dourado",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@160,1220": {
+      "label": "Estandarte preto",
+      "category": "Vila",
+      "kind": "wall"
+    },
+    "med-deco@201,1184": {
+      "label": "Tapete enrolado azul",
+      "category": "Feira"
+    },
+    "med-deco@201,1216": {
+      "label": "Tapete enrolado vermelho",
+      "category": "Feira"
+    },
+    "med-deco@201,1248": {
+      "label": "Tapete enrolado verde",
+      "category": "Feira"
+    },
+    "med-deco@201,1280": {
+      "label": "Tapete enrolado marrom",
+      "category": "Feira"
+    },
+    "med-deco@199,1312": {
+      "label": "Carroça coberta",
+      "category": "Feira"
+    },
+    "med-deco@288,960": {
+      "label": "Balcão de feira",
+      "category": "Feira"
+    },
+    "med-deco@352,960": {
+      "label": "Balcão de feira duplo",
+      "category": "Feira"
+    },
+    "med-deco@416,960": {
+      "label": "Sombra de toldo",
+      "category": "Feira",
+      "kind": "floor"
+    },
+    "med-deco@480,928": {
+      "label": "Poste de feira",
+      "category": "Feira"
+    },
+    "med-deco@226,960": {
+      "label": "Arca de madeira",
+      "category": "Móveis"
+    },
+    "med-deco@226,1024": {
+      "label": "Arca de madeira (tampa)",
+      "category": "Móveis"
+    },
+    "med-deco@416,0": {
+      "label": "Lampião de ferro",
+      "category": "Luzes",
+      "light": null
+    },
+    "med-deco@416,32": {
+      "label": "Lampião de ferro 2",
+      "category": "Luzes",
+      "light": null
+    },
+    "med-deco@416,64": {
+      "label": "Lampião aceso",
+      "category": "Luzes"
+    },
+    "med-deco@416,96": {
+      "label": "Lampião aceso 2",
+      "category": "Luzes"
+    },
+    "med-deco@416,128": {
+      "label": "Lampião aceso 3",
+      "category": "Luzes"
+    },
+    "med-deco@416,160": {
+      "label": "Tocha de parede",
+      "category": "Luzes"
+    },
+    "med-deco@416,192": {
+      "label": "Tocha de parede 2",
+      "category": "Luzes"
+    },
+    "med-deco@416,224": {
+      "label": "Tocha de parede 3",
+      "category": "Luzes"
+    },
+    "med-deco@416,256": {
+      "label": "Tochas duplas",
+      "category": "Luzes"
+    },
+    "med-deco@0,512": {
+      "label": "Chafariz",
+      "category": "Estátuas e fontes"
+    },
+    "med-deco@0,576": {
+      "label": "Chafariz de pedra",
+      "category": "Estátuas e fontes"
+    },
+    "med-deco@256,1504": {
+      "label": "Brasas",
+      "category": "Acampamento",
+      "light": {
+        "x": 0,
+        "y": -6,
+        "radius": 72,
+        "color": "#ff7a30",
+        "intensity": 0.7,
+        "flicker": 0.4
+      }
+    },
+    "med-deco@256,1536": {
+      "label": "Fogueira",
+      "category": "Acampamento",
+      "light": {
+        "x": 0,
+        "y": -12,
+        "radius": 144,
+        "color": "#ff9a40",
+        "intensity": 1,
+        "flicker": 0.35
+      }
+    },
+    "med-signs@1,0": {
+      "label": "Placa de direção 2",
+      "category": "Vila"
+    },
+    "med-signs@12,0": {
+      "label": "Postes com corda",
+      "category": "Vila"
+    },
+    "med-signs@33,0": {
+      "label": "Placa dupla",
+      "category": "Vila"
+    },
+    "med-signs@96,3": {
+      "label": "Espantalho",
+      "category": "Fazenda"
+    },
+    "med-signs@1,32": {
+      "label": "Quadro de avisos 2",
+      "category": "Vila"
+    },
+    "med-signs@33,32": {
+      "label": "Quadro com cartazes",
+      "category": "Vila"
+    },
+    "med-signs@0,102": {
+      "label": "Varal com roupas 2",
+      "category": "Vila"
+    }
+  },
+  "terrains": [
+    {
+      "type": "fence",
+      "file": "fence_medieval.png",
+      "tsx": "fence_medieval.tsx",
+      "idPrefix": "fence",
+      "category": "Cercas",
+      "labels": [
+        "Cerca de vigas",
+        "Cerca de troncos",
+        "Cerca de tábuas",
+        "Cerca de estacas",
+        "Cerca de corda",
+        "Cerca de estacas densa",
+        "Cerca torta",
+        "Muro de pedra",
+        "Paliçada",
+        "Cerca 10"
+      ]
+    }
+  ]
+}

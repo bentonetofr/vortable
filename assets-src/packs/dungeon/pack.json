@@ -1,0 +1,186 @@
+{
+  "name": "[LPC] Dungeon Elements",
+  "license": "CC-BY 3.0/4.0, GPL 2.0/3.0, OGA-BY 3.0",
+  "source": "https://opengameart.org/content/lpc-dungeon-elements",
+  "sheets": [
+    {
+      "id": "dun",
+      "file": "dungeonex.png",
+      "category": "Masmorra",
+      "label": "Peça de masmorra",
+      "tags": [
+        "masmorra",
+        "prisão"
+      ],
+      "collision": "base"
+    },
+    {
+      "id": "dun-fire",
+      "file": "fire.png",
+      "mode": "pieces",
+      "category": "Luzes",
+      "label": "Fogo",
+      "tags": [
+        "fogo",
+        "masmorra"
+      ],
+      "light": {
+        "x": 0,
+        "y": -10,
+        "radius": 112,
+        "color": "#ff9040",
+        "intensity": 1,
+        "flicker": 0.35
+      },
+      "pieces": [],
+      "anims": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "frames": 4,
+          "dy": 32,
+          "fps": 8,
+          "label": "Fogo",
+          "light": {
+            "x": 0,
+            "y": -10,
+            "radius": 112,
+            "color": "#ff9040",
+            "intensity": 1,
+            "flicker": 0.35
+          }
+        }
+      ]
+    },
+    {
+      "id": "dun-boil",
+      "file": "boil.png",
+      "mode": "pieces",
+      "category": "Masmorra",
+      "label": "Caldeirão fervendo",
+      "tags": [
+        "masmorra",
+        "bruxaria"
+      ],
+      "collision": "base",
+      "pieces": [],
+      "anims": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "frames": 4,
+          "dy": 32,
+          "fps": 6,
+          "label": "Caldeirão fervendo",
+          "collision": "base"
+        }
+      ]
+    }
+  ],
+  "objects": {
+    "dun@5,12": {
+      "label": "Erva de masmorra",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "dun@35,1": {
+      "label": "Caldeirão"
+    },
+    "dun@68,0": {
+      "label": "Cadeira de lado"
+    },
+    "dun@96,0": {
+      "label": "Mesa redonda"
+    },
+    "dun@9,35": {
+      "label": "Erva daninha",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "dun@96,32": {
+      "label": "Mesa com cartas"
+    },
+    "dun@131,8": {
+      "label": "Cadeira de lado 2"
+    },
+    "dun@34,40": {
+      "label": "Lenha queimada",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "dun@168,22": {
+      "label": "Banco comprido"
+    },
+    "dun@258,10": {
+      "label": "Banco comprido (vertical)"
+    },
+    "dun@8,89": {
+      "label": "Catre com manta"
+    },
+    "dun@72,89": {
+      "label": "Catre bagunçado"
+    },
+    "dun@153,73": {
+      "label": "Catre duplo"
+    },
+    "dun@224,99": {
+      "label": "Musgo",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "dun@127,137": {
+      "label": "Catre duplo 2"
+    },
+    "dun@224,131": {
+      "label": "Mancha no chão",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "dun@264,130": {
+      "label": "Rachadura no chão",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "dun@250,160": {
+      "label": "Porta de cela"
+    },
+    "dun@288,136": {
+      "label": "Teia de aranha",
+      "kind": "wall",
+      "collision": "none"
+    },
+    "dun@6,168": {
+      "label": "Cama de ferro"
+    },
+    "dun@70,179": {
+      "label": "Beliche de ferro"
+    },
+    "dun@296,160": {
+      "label": "Teia de aranha 2",
+      "kind": "wall",
+      "collision": "none"
+    },
+    "dun@150,192": {
+      "label": "Cama de ferro larga"
+    },
+    "dun@0,260": {
+      "label": "Esqueleto acorrentado",
+      "kind": "wall",
+      "collision": "none"
+    },
+    "dun@32,256": {
+      "label": "Ossos espalhados",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "dun@68,259": {
+      "label": "Caveira",
+      "kind": "floor",
+      "collision": "none"
+    }
+  }
+}

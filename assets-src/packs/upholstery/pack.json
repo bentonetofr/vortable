@@ -1,0 +1,329 @@
+{
+  "name": "[LPC] Upholstery",
+  "license": "CC-BY 3.0/4.0, CC-BY-SA 3.0/4.0, GPL 3.0, OGA-BY 3.0",
+  "source": "https://opengameart.org/content/lpc-upholstery",
+  "sheets": [
+    {
+      "id": "uph-dourado",
+      "file": "upholstery-recolors.png",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "w": 256,
+        "h": 480
+      },
+      "category": "Móveis estofados",
+      "label": "Estofado",
+      "variant": "Dourado",
+      "tags": [
+        "interior",
+        "tecido",
+        "móvel"
+      ],
+      "collision": "base"
+    },
+    {
+      "id": "uph-azul",
+      "file": "upholstery-recolors.png",
+      "crop": {
+        "x": 256,
+        "y": 0,
+        "w": 256,
+        "h": 480
+      },
+      "category": "Móveis estofados",
+      "label": "Estofado",
+      "variant": "Azul",
+      "tags": [
+        "interior",
+        "tecido",
+        "móvel"
+      ],
+      "collision": "base",
+      "variantOf": "uph-dourado"
+    },
+    {
+      "id": "uph-vermelho",
+      "file": "upholstery-recolors.png",
+      "crop": {
+        "x": 0,
+        "y": 480,
+        "w": 256,
+        "h": 480
+      },
+      "category": "Móveis estofados",
+      "label": "Estofado",
+      "variant": "Vermelho",
+      "tags": [
+        "interior",
+        "tecido",
+        "móvel"
+      ],
+      "collision": "base",
+      "variantOf": "uph-dourado"
+    },
+    {
+      "id": "uph-roxo",
+      "file": "upholstery-recolors.png",
+      "crop": {
+        "x": 256,
+        "y": 480,
+        "w": 256,
+        "h": 480
+      },
+      "category": "Móveis estofados",
+      "label": "Estofado",
+      "variant": "Roxo",
+      "tags": [
+        "interior",
+        "tecido",
+        "móvel"
+      ],
+      "collision": "base",
+      "variantOf": "uph-dourado"
+    }
+  ],
+  "objects": {
+    "uph-dourado@0,0": {
+      "label": "Bandô de cortina",
+      "kind": "wall",
+      "collision": "none"
+    },
+    "uph-dourado@105,0": {
+      "label": "Cortinas abertas",
+      "kind": "wall",
+      "collision": "none"
+    },
+    "uph-dourado@160,0": {
+      "label": "Cortina fechada",
+      "kind": "wall",
+      "collision": "none"
+    },
+    "uph-dourado@197,1": {
+      "label": "Cortinas presas",
+      "kind": "wall",
+      "collision": "none"
+    },
+    "uph-dourado@32,32": {
+      "hidden": true
+    },
+    "uph-dourado@4,64": {
+      "label": "Abajur de pé",
+      "collision": "base",
+      "light": {
+        "x": 0,
+        "y": -22,
+        "radius": 80,
+        "color": "#ffe0a0",
+        "intensity": 0.8,
+        "flicker": 0.05
+      }
+    },
+    "uph-dourado@35,64": {
+      "label": "Abajur de pé 2",
+      "collision": "base",
+      "light": {
+        "x": 0,
+        "y": -22,
+        "radius": 80,
+        "color": "#ffe0a0",
+        "intensity": 0.8,
+        "flicker": 0.05
+      }
+    },
+    "uph-dourado@71,67": {
+      "label": "Abajur de mesa",
+      "collision": "none",
+      "light": {
+        "x": 0,
+        "y": -22,
+        "radius": 80,
+        "color": "#ffe0a0",
+        "intensity": 0.8,
+        "flicker": 0.05
+      }
+    },
+    "uph-dourado@103,67": {
+      "label": "Abajur de mesa 2",
+      "collision": "none",
+      "light": {
+        "x": 0,
+        "y": -22,
+        "radius": 80,
+        "color": "#ffe0a0",
+        "intensity": 0.8,
+        "flicker": 0.05
+      }
+    },
+    "uph-dourado@5,100": {
+      "label": "Abajur grande",
+      "collision": "base",
+      "light": {
+        "x": 0,
+        "y": -22,
+        "radius": 80,
+        "color": "#ffe0a0",
+        "intensity": 0.8,
+        "flicker": 0.05
+      }
+    },
+    "uph-dourado@37,100": {
+      "label": "Abajur grande 2",
+      "collision": "base",
+      "light": {
+        "x": 0,
+        "y": -22,
+        "radius": 80,
+        "color": "#ffe0a0",
+        "intensity": 0.8,
+        "flicker": 0.05
+      }
+    },
+    "uph-dourado@160,96": {
+      "label": "Biombo de tecido"
+    },
+    "uph-dourado@3,164": {
+      "label": "Franja de cortina",
+      "kind": "wall",
+      "collision": "none"
+    },
+    "uph-dourado@37,160": {
+      "label": "Cadeira estofada"
+    },
+    "uph-dourado@68,160": {
+      "label": "Cordão de cortina",
+      "kind": "wall",
+      "collision": "none"
+    },
+    "uph-dourado@98,160": {
+      "label": "Cordão de cortina 2",
+      "kind": "wall",
+      "collision": "none"
+    },
+    "uph-dourado@128,160": {
+      "label": "Poltrona"
+    },
+    "uph-dourado@164,161": {
+      "label": "Cadeira estofada de lado"
+    },
+    "uph-dourado@197,160": {
+      "label": "Sofá"
+    },
+    "uph-dourado@35,197": {
+      "label": "Poltrona de costas"
+    },
+    "uph-dourado@128,194": {
+      "label": "Poltrona 2"
+    },
+    "uph-dourado@165,193": {
+      "label": "Cadeira de lado"
+    },
+    "uph-dourado@196,197": {
+      "label": "Sofá longo"
+    },
+    "uph-dourado@35,229": {
+      "label": "Poltrona de costas 2"
+    },
+    "uph-dourado@128,224": {
+      "label": "Sofá de três lugares"
+    },
+    "uph-dourado@192,224": {
+      "label": "Cadeira alta de lado"
+    },
+    "uph-dourado@229,224": {
+      "label": "Divã"
+    },
+    "uph-dourado@36,261": {
+      "label": "Poltrona escura"
+    },
+    "uph-dourado@128,258": {
+      "label": "Sofá escuro"
+    },
+    "uph-dourado@36,293": {
+      "label": "Poltrona escura de costas"
+    },
+    "uph-dourado@64,320": {
+      "label": "Mesa com cadeiras"
+    },
+    "uph-dourado@133,296": {
+      "label": "Almofada",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "uph-dourado@163,298": {
+      "label": "Tapete de pele",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "uph-dourado@229,296": {
+      "label": "Pufe"
+    },
+    "uph-dourado@0,337": {
+      "label": "Sofá entalhado"
+    },
+    "uph-dourado@127,329": {
+      "label": "Sofá entalhado longo"
+    },
+    "uph-dourado@229,324": {
+      "label": "Banquinho estofado"
+    },
+    "uph-dourado@192,352": {
+      "label": "Mesinha com cadeiras"
+    },
+    "uph-dourado@224,353": {
+      "label": "Mesa redonda com toalha"
+    },
+    "uph-dourado@0,384": {
+      "label": "Cadeira de costas"
+    },
+    "uph-dourado@38,385": {
+      "label": "Cadeira de lado 2"
+    },
+    "uph-dourado@128,384": {
+      "label": "Mesa e cadeiras"
+    },
+    "uph-dourado@0,419": {
+      "label": "Sofá e cadeira"
+    },
+    "uph-dourado@38,417": {
+      "label": "Cadeira de lado 3"
+    },
+    "uph-dourado@100,417": {
+      "label": "Cadeira de frente"
+    },
+    "uph-dourado@164,417": {
+      "label": "Cadeira de lado 4"
+    },
+    "uph-dourado@228,417": {
+      "label": "Cadeira de lado 5"
+    },
+    "uph-dourado@64,450": {
+      "label": "Poltrona larga"
+    },
+    "uph-dourado@101,449": {
+      "label": "Cadeira de lado 6"
+    },
+    "uph-dourado@128,450": {
+      "label": "Poltrona larga 2"
+    },
+    "uph-dourado@165,449": {
+      "label": "Cadeira de lado 7"
+    },
+    "uph-dourado@192,450": {
+      "label": "Poltrona larga 3"
+    },
+    "uph-dourado@229,449": {
+      "label": "Cadeira de lado 8"
+    },
+    "uph-azul@64,96": {
+      "label": "Tecido azul",
+      "kind": "floor",
+      "collision": "none"
+    },
+    "uph-vermelho@64,96": {
+      "label": "Tecido vermelho",
+      "kind": "floor",
+      "collision": "none"
+    }
+  }
+}

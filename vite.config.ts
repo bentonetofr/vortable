@@ -56,8 +56,9 @@ export default defineConfig({
   plugins: [curate()],
   server: {
     port: 5180,
-    // o catálogo é refeito pela curadoria: não recarregar a página por isso
-    watch: { ignored: ['**/public/assets/catalog/**', '**/assets-src/**'] },
+    // a arte-fonte não interessa ao Vite (o catálogo gerado em public/ ele
+    // precisa ver: é assim que arquivos novos passam a ser servidos)
+    watch: { ignored: ['**/assets-src/**'] },
   },
   // o Phaser sozinho tem ~1,2 MB; o aviso padrão (500 kB) não ajuda aqui
   build: { chunkSizeWarningLimit: 1600 },

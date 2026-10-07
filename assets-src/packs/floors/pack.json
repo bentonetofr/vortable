@@ -1,0 +1,696 @@
+{
+  "name": "[LPC] Floors",
+  "license": "CC-BY-SA 4.0",
+  "source": "https://opengameart.org/content/lpc-floors",
+  "terrains": [
+    {
+      "type": "gen",
+      "file": "floors.png",
+      "idPrefix": "floor",
+      "items": [
+        {
+          "x": 96,
+          "y": 1088,
+          "size": 32,
+          "label": "Madeira 1",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 128,
+          "y": 1088,
+          "size": 32,
+          "label": "Madeira 2",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 576,
+          "y": 1120,
+          "size": 64,
+          "label": "Madeira 3",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 544,
+          "y": 1152,
+          "size": 32,
+          "label": "Madeira 4",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 576,
+          "y": 1184,
+          "size": 64,
+          "label": "Madeira 5",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 544,
+          "y": 1216,
+          "size": 32,
+          "label": "Madeira 6",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 576,
+          "y": 1248,
+          "size": 64,
+          "label": "Madeira 7",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 800,
+          "y": 1248,
+          "size": 32,
+          "label": "Madeira 8",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 832,
+          "y": 1248,
+          "size": 64,
+          "label": "Madeira 9",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 544,
+          "y": 1280,
+          "size": 32,
+          "label": "Madeira 10",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 320,
+          "y": 1312,
+          "size": 64,
+          "label": "Madeira 11",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 576,
+          "y": 1312,
+          "size": 64,
+          "label": "Madeira 12",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 544,
+          "y": 1344,
+          "size": 32,
+          "label": "Madeira 13",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 576,
+          "y": 1376,
+          "size": 64,
+          "label": "Madeira 14",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 544,
+          "y": 1408,
+          "size": 32,
+          "label": "Madeira 15",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 576,
+          "y": 1440,
+          "size": 64,
+          "label": "Madeira 16",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 544,
+          "y": 1472,
+          "size": 32,
+          "label": "Madeira 17",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 576,
+          "y": 1504,
+          "size": 64,
+          "label": "Madeira 18",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 544,
+          "y": 1536,
+          "size": 32,
+          "label": "Madeira 19",
+          "category": "Pisos de madeira"
+        },
+        {
+          "x": 224,
+          "y": 1600,
+          "size": 32,
+          "label": "Ladrilho 1",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 256,
+          "y": 1600,
+          "size": 32,
+          "label": "Ladrilho 2",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 288,
+          "y": 1600,
+          "size": 32,
+          "label": "Ladrilho 3",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 320,
+          "y": 1600,
+          "size": 32,
+          "label": "Ladrilho 4",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 0,
+          "y": 1632,
+          "size": 32,
+          "label": "Ladrilho 5",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 160,
+          "y": 1632,
+          "size": 32,
+          "label": "Ladrilho 6",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 192,
+          "y": 1632,
+          "size": 32,
+          "label": "Ladrilho 7",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 288,
+          "y": 1632,
+          "size": 32,
+          "label": "Ladrilho 8",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 320,
+          "y": 1632,
+          "size": 32,
+          "label": "Ladrilho 9",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 384,
+          "y": 1632,
+          "size": 64,
+          "label": "Pedra 1",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 448,
+          "y": 1632,
+          "size": 32,
+          "label": "Pedra 2",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 672,
+          "y": 1632,
+          "size": 32,
+          "label": "Pedra 3",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 0,
+          "y": 1664,
+          "size": 32,
+          "label": "Ladrilho 10",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 160,
+          "y": 1664,
+          "size": 32,
+          "label": "Ladrilho 11",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 192,
+          "y": 1664,
+          "size": 32,
+          "label": "Ladrilho 12",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 288,
+          "y": 1664,
+          "size": 32,
+          "label": "Ladrilho 13",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 320,
+          "y": 1664,
+          "size": 32,
+          "label": "Ladrilho 14",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 448,
+          "y": 1664,
+          "size": 32,
+          "label": "Pedra 4",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 640,
+          "y": 1664,
+          "size": 32,
+          "label": "Pedra 5",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 960,
+          "y": 1664,
+          "size": 32,
+          "label": "Pedra 6",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 992,
+          "y": 1664,
+          "size": 32,
+          "label": "Pedra 7",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 0,
+          "y": 1696,
+          "size": 32,
+          "label": "Ladrilho 15",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 160,
+          "y": 1696,
+          "size": 32,
+          "label": "Ladrilho 16",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 288,
+          "y": 1696,
+          "size": 32,
+          "label": "Ladrilho 17",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 320,
+          "y": 1696,
+          "size": 32,
+          "label": "Ladrilho 18",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 384,
+          "y": 1696,
+          "size": 64,
+          "label": "Pedra 8",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 448,
+          "y": 1696,
+          "size": 32,
+          "label": "Pedra 9",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 672,
+          "y": 1696,
+          "size": 32,
+          "label": "Pedra 10",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 0,
+          "y": 1728,
+          "size": 32,
+          "label": "Ladrilho 19",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 160,
+          "y": 1728,
+          "size": 32,
+          "label": "Ladrilho 20",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 288,
+          "y": 1728,
+          "size": 32,
+          "label": "Ladrilho 21",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 320,
+          "y": 1728,
+          "size": 32,
+          "label": "Ladrilho 22",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 448,
+          "y": 1728,
+          "size": 32,
+          "label": "Pedra 11",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 960,
+          "y": 1728,
+          "size": 32,
+          "label": "Pedra 12",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 0,
+          "y": 1760,
+          "size": 32,
+          "label": "Ladrilho 23",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 160,
+          "y": 1760,
+          "size": 32,
+          "label": "Ladrilho 24",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 288,
+          "y": 1760,
+          "size": 32,
+          "label": "Ladrilho 25",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 320,
+          "y": 1760,
+          "size": 32,
+          "label": "Ladrilho 26",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 384,
+          "y": 1760,
+          "size": 64,
+          "label": "Pedra 13",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 448,
+          "y": 1760,
+          "size": 32,
+          "label": "Pedra 14",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 672,
+          "y": 1760,
+          "size": 32,
+          "label": "Pedra 15",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 960,
+          "y": 1760,
+          "size": 32,
+          "label": "Pedra 16",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 0,
+          "y": 1792,
+          "size": 32,
+          "label": "Ladrilho 27",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 160,
+          "y": 1792,
+          "size": 32,
+          "label": "Ladrilho 28",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 192,
+          "y": 1792,
+          "size": 32,
+          "label": "Ladrilho 29",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 288,
+          "y": 1792,
+          "size": 32,
+          "label": "Ladrilho 30",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 320,
+          "y": 1792,
+          "size": 32,
+          "label": "Ladrilho 31",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 448,
+          "y": 1792,
+          "size": 32,
+          "label": "Pedra 17",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 640,
+          "y": 1792,
+          "size": 32,
+          "label": "Pedra 18",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 960,
+          "y": 1792,
+          "size": 32,
+          "label": "Pedra 19",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 992,
+          "y": 1792,
+          "size": 32,
+          "label": "Pedra 20",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 0,
+          "y": 1824,
+          "size": 32,
+          "label": "Ladrilho 32",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 160,
+          "y": 1824,
+          "size": 32,
+          "label": "Ladrilho 33",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 288,
+          "y": 1824,
+          "size": 32,
+          "label": "Ladrilho 34",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 320,
+          "y": 1824,
+          "size": 32,
+          "label": "Ladrilho 35",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 384,
+          "y": 1824,
+          "size": 64,
+          "label": "Pedra 21",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 448,
+          "y": 1824,
+          "size": 32,
+          "label": "Pedra 22",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 448,
+          "y": 1856,
+          "size": 32,
+          "label": "Pedra 23",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 640,
+          "y": 1856,
+          "size": 32,
+          "label": "Pedra 24",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 960,
+          "y": 1856,
+          "size": 32,
+          "label": "Pedra 25",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 992,
+          "y": 1856,
+          "size": 32,
+          "label": "Pedra 26",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 384,
+          "y": 1888,
+          "size": 64,
+          "label": "Pedra 27",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 448,
+          "y": 1888,
+          "size": 32,
+          "label": "Pedra 28",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 448,
+          "y": 1920,
+          "size": 32,
+          "label": "Pedra 29",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 640,
+          "y": 1920,
+          "size": 32,
+          "label": "Pedra 30",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 960,
+          "y": 1920,
+          "size": 32,
+          "label": "Pedra 31",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 0,
+          "y": 1952,
+          "size": 64,
+          "label": "Ladrilho 36",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 128,
+          "y": 1952,
+          "size": 32,
+          "label": "Ladrilho 37",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 192,
+          "y": 1952,
+          "size": 64,
+          "label": "Ladrilho 38",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 384,
+          "y": 1952,
+          "size": 64,
+          "label": "Pedra 32",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 448,
+          "y": 1952,
+          "size": 32,
+          "label": "Pedra 33",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 960,
+          "y": 1952,
+          "size": 32,
+          "label": "Pedra 34",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 64,
+          "y": 1984,
+          "size": 32,
+          "label": "Ladrilho 39",
+          "category": "Ladrilhos"
+        },
+        {
+          "x": 448,
+          "y": 1984,
+          "size": 32,
+          "label": "Pedra 35",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 640,
+          "y": 1984,
+          "size": 32,
+          "label": "Pedra 36",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 960,
+          "y": 1984,
+          "size": 32,
+          "label": "Pedra 37",
+          "category": "Pisos de pedra"
+        },
+        {
+          "x": 992,
+          "y": 1984,
+          "size": 32,
+          "label": "Pedra 38",
+          "category": "Pisos de pedra"
+        }
+      ]
+    },
+    {
+      "type": "wang",
+      "file": "floors.png",
+      "tsx": "floors.tsx",
+      "set": "Rugs",
+      "idPrefix": "rug",
+      "layer": "overlay",
+      "labelPrefix": "Tapete",
+      "category": "Tapetes"
+    }
+  ]
+}

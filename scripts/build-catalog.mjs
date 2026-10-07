@@ -15,12 +15,31 @@
 //   mode "strip"  cada linha de quadros (frame: {w,h}) vira UM objeto animado
 //                 (fps); quadros vazios no fim da linha são ignorados
 //   mode "pieces" retângulos escritos à mão (pieces: [{x,y,w,h}]), cortados no opaco
+//   mode "grid"   cada célula (cell: {w,h}, padrão 32×32) com algo vira uma peça
+//                 (trim: true corta cada uma no que é opaco)
+// Extras de qualquer folha:
+//   crop: {x,y,w,h}        usa só um pedaço da imagem (ex.: um tom de cor)
+//   ignoreColor: "#rrggbb" cor que marca "vazio" na folha (vira transparente)
+//   exclude: [{x,y,w,h}]   áreas ignoradas (arte fora do tema)
+//   anims: [{x,y,w,h,frames,fps,dx?,dy?,...}]  animações dentro da folha (quadros lado a lado)
+//   pieces (numa folha automática): retângulos à mão pra peças que se encostam
+//   regions: [{x,y,w,h,...}] ajustes pra todas as peças cujo centro cai na área
+//                 (label vira "label 1", "label 2"...; hidden esconde a área toda)
 //   variantOf/variant: a folha é outra versão (cor/estado) de outra folha; as
 //                 peças na mesma posição viram variantes da mesma peça
 //   peças (mode "pieces") com o mesmo group/variant também viram variantes
 //
 // Ajuste de curadoria (objects[id]): label, category, tags, kind, solids,
 // sort, light, fps, hidden. O que não for ajustado sai automático.
+//
+// Terrenos (manifest.terrains), viram catalog/terrains.json:
+//   { type: 'block', file, id, label, category, x?, y? }   bloco LPC 3×6/3×7
+//   { type: 'gen', file, idPrefix, items: [{x,y,size,label,category}] }
+//                 pisos montados no navegador de uma textura de 32 ou 64px
+//   { type: 'wang', file, tsx, set, idPrefix, labels|labelPrefix, category|categories,
+//     solid?, layer? }   autotile de cantos do Tiled (paredes, molduras, tapetes)
+//   { type: 'fence', file, tsx, idPrefix, labels, category }
+//                 cercas (wangsets de borda do Tiled), camada de tiles
 //
 //   node scripts/build-catalog.mjs              tudo
 //   node scripts/build-catalog.mjs --pack nome  só um pacote (curadoria)
@@ -35,6 +54,7 @@ const SRC = path.join(ROOT, 'assets-src')
 const PACKS = path.join(SRC, 'packs')
 const OUT = path.join(ROOT, 'public', 'assets')
 const CATALOG = path.join(OUT, 'catalog', 'objects.json')
+const TERRAIN_CATALOG = path.join(OUT, 'catalog', 'terrains.json')
 
 /** Arquivos copiados como estão (terrenos etc.). */
 const COPY = [
@@ -51,6 +71,7 @@ const MIN = 12
 const OPAQUE = 250
 /** Largura da folha gerada; 1px de folga entre peças. */
 const ATLAS_W = 1024
+const ATLAS_MAX_H = 2048
 const PAD = 1
 
 const only = process.argv.includes('--pack') ? process.argv[process.argv.indexOf('--pack') + 1] : null
@@ -169,6 +190,43 @@ function autoBase(png, r, mask) {
   return { solid: { x: left + 1 - Math.round(r.w / 2), y: -lift - depth, w, h: depth }, sort: lift + Math.round(depth / 2) }
 }
 
+function cropPng(png, r) {
+  const out = new PNG({ width: r.w, height: r.h })
+  PNG.bitblt(png, out, r.x, r.y, r.w, r.h, 0, 0)
+  return out
+}
+
+function clearRect(png, r) {
+  for (let y = Math.max(0, r.y); y < Math.min(png.height, r.y + r.h); y++)
+    for (let x = Math.max(0, r.x); x < Math.min(png.width, r.x + r.w); x++) png.data[(y * png.width + x) * 4 + 3] = 0
+}
+
+function clearColor(png, hex) {
+  const n = parseInt(hex.slice(1), 16)
+  const [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255]
+  const d = png.data
+  for (let i = 0; i < d.length; i += 4) if (d[i] === r && d[i + 1] === g && d[i + 2] === b) d[i + 3] = 0
+}
+
+/** Uma animação (quadros lado a lado), recortada na união do que é opaco. */
+function animPiece(sheet, png, a) {
+  const dx = a.dx ?? (a.dy ? 0 : a.w), dy = a.dy ?? 0
+  const boxes = []
+  for (let i = 0; i < a.frames; i++) {
+    const box = opaqueBox(png, a.x + i * dx, a.y + i * dy, a.w, a.h)
+    if (box) boxes.push({ ox: a.x + i * dx, oy: a.y + i * dy, box })
+  }
+  if (!boxes.length) return null
+  const top = Math.min(...boxes.map((b) => b.box.y - b.oy)), bottom = Math.max(...boxes.map((b) => b.box.y - b.oy + b.box.h))
+  const left = Math.min(...boxes.map((b) => b.box.x - b.ox)), right = Math.max(...boxes.map((b) => b.box.x - b.ox + b.box.w))
+  const { x: _x, y: _y, w: _w, h: _h, frames: _f, dx: _d, dy: _e, ...meta } = a
+  return {
+    id: `${sheet.id}@${a.x},${a.y}`,
+    src: boxes.map((b) => ({ x: b.ox + left, y: b.oy + top, w: right - left, h: bottom - top })),
+    meta,
+  }
+}
+
 // ── Pacote → peças ──────────────────────────────────────
 
 /**
@@ -179,16 +237,38 @@ function piecesOf(sheet, png) {
   const mode = sheet.mode ?? 'auto'
   if (mode === 'auto') {
     const { kept, label } = components(png)
-    return kept.map((c) => ({ id: `${sheet.id}@${c.x},${c.y}`, src: [c], mask: (si) => label[si] !== c.id }))
+    const used = new Set()
+    return kept.map((c) => {
+      // duas peças com o mesmo canto (uma dentro da caixa da outra): o tamanho desempata
+      let id = `${sheet.id}@${c.x},${c.y}`
+      if (used.has(id)) id += `,${c.w}x${c.h}`
+      used.add(id)
+      return { id, src: [c], mask: (si) => label[si] !== c.id }
+    })
   }
   if (mode === 'pieces') {
     // cada retângulo é cortado no que tem de opaco (dá pra marcar a célula com folga)
     return sheet.pieces.flatMap((p) => {
-      const box = opaqueBox(png, p.x, p.y, p.w, p.h)
+      const found = opaqueBox(png, p.x, p.y, p.w, p.h)
+      // trim: false mantém o retângulo inteiro (variantes que trocam sem "pular")
+      const box = found && p.trim === false ? { x: p.x, y: p.y, w: p.w, h: p.h } : found
       // o resto da entrada (label, kind, light...) vale como ajuste de curadoria
-      const { x: _x, y: _y, w: _w, h: _h, ...meta } = p
+      const { x: _x, y: _y, w: _w, h: _h, trim: _t, ...meta } = p
       return box ? [{ id: `${sheet.id}@${box.x},${box.y}`, src: [box], meta }] : []
     })
+  }
+  if (mode === 'grid') {
+    const cw = sheet.cell?.w ?? 32, ch = sheet.cell?.h ?? 32
+    const out = []
+    for (let y = 0; y + ch <= png.height; y += ch) {
+      for (let x = 0; x + cw <= png.width; x += cw) {
+        const box = opaqueBox(png, x, y, cw, ch)
+        if (!box) continue
+        // por padrão a célula inteira (encaixa na grade); trim: true corta no opaco
+        out.push({ id: `${sheet.id}@${x},${y}`, src: [sheet.trim ? box : { x, y, w: cw, h: ch }] })
+      }
+    }
+    return out
   }
   if (mode === 'strip') {
     const { w, h } = sheet.frame
@@ -222,18 +302,52 @@ function buildPack(packId) {
   const sheets = []
   const defs = []
 
-  for (const sheet of manifest.sheets) {
-    const png = PNG.sync.read(fs.readFileSync(path.join(dir, sheet.file)))
+  for (const sheet of manifest.sheets ?? []) {
+    let png = PNG.sync.read(fs.readFileSync(path.join(dir, sheet.file)))
+    if (sheet.crop) png = cropPng(png, sheet.crop)
+    if (sheet.ignoreColor) clearColor(png, sheet.ignoreColor)
+    for (const r of sheet.exclude ?? []) clearRect(png, r)
     const kind = sheet.kind ?? 'stand'
     if (!KINDS.includes(kind)) throw new Error(`${sheet.id}: kind inválido "${kind}"`)
-    const pieces = piecesOf(sheet, png)
+    // animações saem da folha antes de procurar as peças soltas
+    const anims = (sheet.anims ?? []).map((a) => animPiece(sheet, png, a)).filter(Boolean)
+    const work = new PNG({ width: png.width, height: png.height })
+    png.data.copy(work.data)
+    for (const a of sheet.anims ?? []) {
+      const dx = a.dx ?? (a.dy ? 0 : a.w), dy = a.dy ?? 0
+      for (let i = 0; i < a.frames; i++) clearRect(work, { x: a.x + i * dx, y: a.y + i * dy, w: a.w, h: a.h })
+    }
+    // folha automática pode ter retângulos à mão (peças que se encostam na arte)
+    const manual = (sheet.mode ?? 'auto') !== 'pieces' ? piecesOf({ ...sheet, mode: 'pieces', pieces: sheet.pieces ?? [] }, work) : []
+    for (const p of sheet.mode !== 'pieces' ? sheet.pieces ?? [] : []) clearRect(work, p)
+    const pieces = [
+      ...piecesOf(sheet, work).map((p) => ({ ...p, png: work })),
+      ...manual.map((p) => ({ ...p, png })),
+      ...anims.map((p) => ({ ...p, png })),
+    ]
+    // ajustes por área (regions): o centro do primeiro quadro decide
+    const regions = sheet.regions ?? []
+    const regionOf = (p) => {
+      const r = p.src[0], cx = r.x + r.w / 2, cy = r.y + r.h / 2
+      return regions.findIndex((g) => cx >= g.x && cx < g.x + g.w && cy >= g.y && cy < g.y + g.h)
+    }
+    const count = new Map(), seen = new Map()
+    for (const p of pieces) { const g = regionOf(p); p.region = g; count.set(g, (count.get(g) ?? 0) + 1) }
     const items = []
     pieces.forEach((p, i) => {
-      const ov = { ...p.meta, ...overrides[p.id] }
+      let regionMeta = {}
+      if (p.region >= 0) {
+        const { x: _x, y: _y, w: _w, h: _h, label, ...rest } = regions[p.region]
+        const n = (seen.get(p.region) ?? 0) + 1
+        seen.set(p.region, n)
+        regionMeta = { ...rest, ...(label ? { label: count.get(p.region) > 1 ? `${label} ${n}` : label } : {}) }
+      }
+      const ov = { ...regionMeta, ...p.meta, ...overrides[p.id] }
       const r = p.src[0]
       const k = ov.kind ?? kind
-      const auto = sheet.collision === 'base' ? autoBase : autoFoot
-      const foot = k === 'stand' && sheet.collision !== 'none' ? auto(png, r, p.mask) : null
+      const collision = ov.collision ?? sheet.collision
+      const auto = collision === 'base' ? autoBase : autoFoot
+      const foot = k === 'stand' && collision !== 'none' ? auto(p.png, r, p.mask) : null
       const def = {
         id: p.id,
         pack: packId,
@@ -253,7 +367,7 @@ function buildPack(packId) {
       if (sheet.variant) def.variant = sheet.variant
       // escondida continua na folha gerada (as outras não mudam de lugar
       // durante a curadoria), só não entra no catálogo
-      items.push({ def, piece: p, src: r, hidden: !!ov.hidden })
+      items.push({ def, piece: { ...p, meta: { ...regionMeta, ...p.meta } }, src: r, hidden: !!ov.hidden })
     })
     sheets.push({ sheet, png, items })
   }
@@ -270,7 +384,9 @@ function buildPack(packId) {
         const d = Math.hypot(b.src.x + b.src.w / 2 - c.x, b.src.y + b.src.h - c.y)
         if (d < bestD && Math.abs(b.src.w - it.src.w) < 20 && Math.abs(b.src.h - it.src.h) < 20) { best = b; bestD = d }
       }
-      if (!best || best.hidden) continue
+      if (!best) continue
+      // peça base escondida esconde as variantes (a não ser que tenham ajuste próprio)
+      if (best.hidden) { if (!overrides[it.def.id]) it.hidden = true; continue }
       best.def.group = best.def.id
       it.def.group = best.def.id
       // a variante herda o que foi curado na peça base (a curadoria é feita uma vez)
@@ -298,33 +414,42 @@ function buildPack(packId) {
   }
   for (const { items } of sheets) for (const it of items) if (!it.hidden) defs.push(it.def)
 
-  // empacota cada folha em prateleiras (linhas), na ordem de leitura
+  // empacota cada folha em prateleiras (linhas), na ordem de leitura; folha
+  // gerada grande demais vira várias páginas (limite de textura das GPUs)
   const atlases = []
-  for (const { sheet, png, items } of sheets) {
+  for (const { sheet, items } of sheets) {
     const frames = items.flatMap((it) => it.piece.src.map((src, f) => ({ it, src, f })))
-    let cx = 0, cy = 0, rowH = 0
+    if (!frames.length) continue
+    let page = 0, cx = 0, cy = 0, rowH = 0
+    const heights = [0]
     for (const fr of frames) {
       if (cx + fr.src.w > ATLAS_W) { cx = 0; cy += rowH + PAD; rowH = 0 }
+      // quadros de uma animação ficam na mesma página
+      if (cy + fr.src.h > ATLAS_MAX_H && (fr.f === 0 || !fr.it.def.anim)) { page++; heights.push(0); cx = 0; cy = 0; rowH = 0 }
+      fr.page = page
       fr.ax = cx
       fr.ay = cy
       cx += fr.src.w + PAD
       rowH = Math.max(rowH, fr.src.h)
+      heights[page] = Math.max(heights[page], cy + rowH)
     }
-    if (!frames.length) continue
-    const atlas = new PNG({ width: ATLAS_W, height: cy + rowH })
+    const pageId = (n) => (n === 0 ? sheet.id : `${sheet.id}~${n + 1}`)
+    const pngs = heights.map((hh) => new PNG({ width: ATLAS_W, height: hh }))
     for (const fr of frames) {
       const { src, it } = fr
+      const from = it.piece.png
+      const atlas = pngs[fr.page]
       for (let y = 0; y < src.h; y++) {
         for (let x = 0; x < src.w; x++) {
-          const si = (src.y + y) * png.width + (src.x + x)
+          const si = (src.y + y) * from.width + (src.x + x)
           if (it.piece.mask?.(si)) continue
-          png.data.copy(atlas.data, ((fr.ay + y) * ATLAS_W + fr.ax + x) * 4, si * 4, si * 4 + 4)
+          from.data.copy(atlas.data, ((fr.ay + y) * ATLAS_W + fr.ax + x) * 4, si * 4, si * 4 + 4)
         }
       }
-      if (fr.f === 0) { it.def.x = fr.ax; it.def.y = fr.ay }
+      if (fr.f === 0) { it.def.x = fr.ax; it.def.y = fr.ay; it.def.sheet = pageId(fr.page) }
       if (it.def.anim) it.def.anim.frames.push([fr.ax, fr.ay])
     }
-    atlases.push({ id: sheet.id, png: atlas })
+    pngs.forEach((png, n) => atlases.push({ id: pageId(n), png }))
   }
 
   return { manifest, defs, atlases }
@@ -389,5 +514,120 @@ if (!only) {
   const stale = path.join(OUT, 'credits', 'CREDITS-trees.txt')
   if (fs.existsSync(stale)) fs.rmSync(stale)
 }
+// ── Terrenos dos pacotes ────────────────────────────────
+// manifest.terrains: [{ type: 'block' | 'gen' | 'wang', file, ... }] (ver README dos pacotes)
+// Sempre refeitos por inteiro (é rápido): o rank de cada um depende da ordem global.
+
+/** Tabela de cada cor de um wangset de cantos do Tiled: cor → máscara → tiles [x, y]. */
+function readWang(tsxPath, setName) {
+  const xml = fs.readFileSync(tsxPath, 'utf8')
+  const cols = Number(xml.match(/columns="(\d+)"/)[1])
+  const set = xml.split('<wangset ').slice(1).find((w) => w.match(/name="([^"]*)"/)[1] === setName)
+  if (!set) throw new Error(`${tsxPath}: wangset "${setName}" não existe`)
+  const colors = [...set.matchAll(/<wangcolor name="([^"]*)"/g)].map((m) => m[1])
+  const table = new Map()
+  for (const t of set.matchAll(/<wangtile tileid="(\d+)" wangid="([^"]*)"/g)) {
+    const v = t[2].split(',').map(Number)
+    const used = new Set([v[1], v[3], v[5], v[7]].filter(Boolean))
+    if (used.size !== 1) continue // tiles que misturam duas cores: não usados
+    const c = [...used][0]
+    // bits do Vortable: TL=1, TR=2, BL=4, BR=8 (wangid: 7=TL, 1=TR, 5=BL, 3=BR)
+    const mask = (v[7] === c ? 1 : 0) | (v[1] === c ? 2 : 0) | (v[5] === c ? 4 : 0) | (v[3] === c ? 8 : 0)
+    const id = Number(t[1])
+    if (!table.has(c)) table.set(c, {})
+    ;(table.get(c)[mask] ??= []).push([(id % cols) * 32, Math.floor(id / cols) * 32])
+  }
+  return { colors, table }
+}
+
+/**
+ * Cercas: wangsets de BORDA no formato antigo do Tiled (wangid em hex, um
+ * nibble por posição a partir do menos significativo: 0 cima, 2 direita,
+ * 4 baixo, 6 esquerda). Cor 1 = a cerca continua por aquela borda.
+ * Devolve, por wangset: nome e tabela máscara (cima=1, dir=2, baixo=4, esq=8) → [x, y].
+ */
+function readFenceSets(tsxPath) {
+  const xml = fs.readFileSync(tsxPath, 'utf8')
+  const cols = Number(xml.match(/columns="(\d+)"/)[1])
+  return xml.split('<wangset ').slice(1).map((set) => {
+    const name = set.match(/name="([^"]*)"/)[1]
+    const table = {}
+    for (const t of set.matchAll(/<wangtile tileid="(\d+)" wangid="0x([0-9a-fA-F]+)"/g)) {
+      const v = parseInt(t[2], 16)
+      const edge = (i) => (v >>> (i * 4)) & 15
+      const mask = (edge(0) === 1 ? 1 : 0) | (edge(2) === 1 ? 2 : 0) | (edge(4) === 1 ? 4 : 0) | (edge(6) === 1 ? 8 : 0)
+      const id = Number(t[1])
+      ;(table[mask] ??= []).push([(id % cols) * 32, Math.floor(id / cols) * 32])
+    }
+    return { name, table }
+  })
+}
+
+/** O tile mais "cheio" (mais pixels opacos) entre os da tabela: vira a miniatura. */
+function bestThumb(png, tiles) {
+  let best = null, bestN = -1
+  for (const list of Object.values(tiles)) for (const [x, y] of list) {
+    let n = 0
+    for (let j = 0; j < 32; j++) for (let i = 0; i < 32; i++) if (png.data[((y + j) * png.width + x + i) * 4 + 3] > 8) n++
+    if (n > bestN) { best = [x, y]; bestN = n }
+  }
+  return best
+}
+
+function buildTerrains() {
+  const out = { sheets: [], terrains: [] }
+  fs.mkdirSync(path.join(OUT, 'terrain'), { recursive: true })
+  let rank = 1000
+  for (const packId of packIds) {
+    const dir = path.join(PACKS, packId)
+    const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'pack.json'), 'utf8'))
+    for (const entry of manifest.terrains ?? []) {
+      const sheet = `${packId}-${path.basename(entry.file, '.png')}`
+      const url = `terrain/${sheet}.png`
+      if (!out.sheets.some((s) => s.id === sheet)) {
+        fs.copyFileSync(path.join(dir, entry.file), path.join(OUT, url))
+        out.sheets.push({ id: sheet, pack: packId, url })
+      }
+      const base = { pack: packId, sheet, ...(entry.solid ? { solid: true } : {}), ...(entry.layer ? { layer: entry.layer } : {}) }
+      if (entry.type === 'block') {
+        out.terrains.push({ ...base, id: entry.id, label: entry.label, category: entry.category, rank: rank++, origin: [entry.x ?? 0, entry.y ?? 0], ...(entry.fills ? { fills: entry.fills } : {}) })
+      } else if (entry.type === 'gen') {
+        entry.items.forEach((it, k) => {
+          out.terrains.push({ ...base, id: `${entry.idPrefix}-${k + 1}`, label: it.label, category: it.category ?? entry.category, rank: rank++, gen: { url, x: it.x, y: it.y, size: it.size ?? 32 } })
+        })
+      } else if (entry.type === 'wang') {
+        const png = PNG.sync.read(fs.readFileSync(path.join(dir, entry.file)))
+        const { colors, table } = readWang(path.join(dir, entry.tsx), entry.set)
+        colors.forEach((_, i) => {
+          const c = i + 1
+          const tiles = table.get(c)
+          if (!tiles || (entry.hide ?? []).includes(c)) return
+          const label = entry.labels?.[i] ?? `${entry.labelPrefix} ${c}`
+          const category = entry.categories ? entry.categories[Math.floor(i / (entry.perCategory ?? 16))] : entry.category
+          out.terrains.push({ ...base, id: `${entry.idPrefix}-${c}`, label, category, rank: rank++, wang: tiles, thumb: bestThumb(png, tiles) })
+        })
+      } else if (entry.type === 'fence') {
+        const png = PNG.sync.read(fs.readFileSync(path.join(dir, entry.file)))
+        readFenceSets(path.join(dir, entry.tsx)).forEach((set, i) => {
+          out.terrains.push({ ...base, id: `${entry.idPrefix}-${i + 1}`, label: entry.labels?.[i] ?? set.name, category: entry.category, rank: rank++, layer: 'fence', fence: set.table, thumb: set.table[10]?.[0] ?? set.table[2]?.[0] ?? bestThumb(png, set.table) })
+        })
+      } else {
+        throw new Error(`${packId}: terreno de tipo desconhecido "${entry.type}"`)
+      }
+    }
+  }
+  const seenIds = new Set()
+  for (const t of out.terrains) {
+    if (seenIds.has(t.id)) throw new Error(`terreno com id repetido: ${t.id}`)
+    seenIds.add(t.id)
+  }
+  fs.writeFileSync(TERRAIN_CATALOG, JSON.stringify(out))
+  // folhas de terreno que sobraram de versões antigas
+  const live = new Set(out.sheets.map((s) => path.basename(s.url)))
+  for (const f of fs.readdirSync(path.join(OUT, 'terrain'))) if (!live.has(f)) fs.rmSync(path.join(OUT, 'terrain', f))
+  return out.terrains.length
+}
+const nTerrains = buildTerrains()
+
 const n = catalog.objects.filter((o) => !only || o.pack === only).length
-console.log(`${n} objetos${only ? ` no pacote ${only}` : ` em ${catalog.packs.length} pacotes`}`)
+console.log(`${n} objetos${only ? ` no pacote ${only}` : ` em ${catalog.packs.length} pacotes`}; ${nTerrains} terrenos de pacote`)

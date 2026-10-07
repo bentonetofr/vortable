@@ -9,13 +9,14 @@ import { h, injectStyle } from '../ui/dom'
 import { creditsBody } from '../ui/credits'
 import { ICONS } from './icons'
 import type { EditorState, Tool } from './EditorState'
-import { TERRAINS, canBeBase, terrainById, terrainFrameRect, terrainTexture } from '../assets/terrains'
+import { TERRAINS, canBeBase, isFence, isOverlay, terrainById, terrainTexture, terrainThumb } from '../assets/terrains'
 import { KIND_LABELS, objectCatalog, objectDef, objectSolids, paletteObjects, sheetTexture, variantsOf, type ObjectDef } from '../assets/objects'
 import { curateForm, type CurateOverride } from './curate'
 import { readList, writeList } from './prefs'
 import { parseZone, summarize, type WorldStorage, type ZoneSummary } from '../storage'
-import { TILE, ZONE_MAX, ZONE_MIN, clampZoneSize, newId, newZone, type Portal, type ZoneData, type ZoneObject } from '../types'
+import { TILE, ZONE_MAX, ZONE_MIN, Z_MAX, clampZoneSize, newId, newZone, type Portal, type ZoneData, type ZoneObject } from '../types'
 import { solidTerrainRects } from '../world/ground'
+import { fenceSolids } from '../world/fences'
 
 export interface EditorHooks {
   /** Pasta de assets (pros créditos). */
@@ -68,6 +69,7 @@ export class EditorUI {
   /** Qual saída o painel está mostrando (só redesenha quando troca). */
   private shownPortal: string | null = null
   private objectFilter = ''
+  private terrainFilter = ''
   private objectCategory = ALL
   private objectEl!: HTMLDivElement
   /** O que o painel da peça está mostrando (só redesenha quando muda). */
@@ -255,26 +257,45 @@ export class EditorUI {
   }
 
   private renderTerrains() {
-    const groups = new Map<string, typeof TERRAINS>()
-    for (const t of TERRAINS) groups.set(t.category, [...(groups.get(t.category) ?? []), t])
-    for (const [cat, list] of groups) {
-      const grid = h('div', { class: 'vt-grid vt-terrains' })
-      for (const t of list) {
-        const c = h('canvas', { width: 32, height: 32 }) as HTMLCanvasElement
-        const r = terrainFrameRect(t, 10)
-        c.getContext('2d')!.drawImage(this.hooks.textureImage(terrainTexture(t)), r.x, r.y, 32, 32, 0, 0, 32, 32)
-        const cell = h('button', {
-          class: 'vt-cell',
-          title: t.label + (t.solid ? ' (não dá pra andar)' : ''),
-          onclick: () => {
-            this.state.set({ terrain: t.id, tool: this.state.tool === 'fill' ? 'fill' : 'brush' })
-          },
-        }, c, h('span', {}, t.label))
-        this.terrainCells.set(t.id, cell)
-        grid.append(cell)
+    const search = h('input', {
+      class: 'vt-search',
+      placeholder: `Buscar entre ${TERRAINS.length} terrenos (parede, tapete, piso...)`,
+      value: this.terrainFilter,
+      oninput: () => { this.terrainFilter = search.value; fill() },
+    })
+    const list = h('div')
+    const fill = () => {
+      list.replaceChildren()
+      this.terrainCells.clear()
+      const q = fold(this.terrainFilter.trim())
+      const groups = new Map<string, typeof TERRAINS>()
+      for (const t of TERRAINS) {
+        if (q && !fold(`${t.label} ${t.category}`).includes(q)) continue
+        groups.set(t.category, [...(groups.get(t.category) ?? []), t])
       }
-      this.paneEl.append(h('div', { class: 'vt-group' }, h('h4', {}, cat), grid))
+      if (!groups.size) list.append(h('div', { class: 'vt-empty' }, 'Nada encontrado.'))
+      for (const [cat, items] of groups) {
+        const grid = h('div', { class: 'vt-grid vt-terrains' })
+        for (const t of items) {
+          const c = h('canvas', { width: 32, height: 32 }) as HTMLCanvasElement
+          const r = terrainThumb(t)
+          c.getContext('2d')!.drawImage(this.hooks.textureImage(terrainTexture(t)), r.x, r.y, 32, 32, 0, 0, 32, 32)
+          const cell = h('button', {
+            class: 'vt-cell',
+            title: t.label + (t.solid ? ' (não dá pra andar)' : '') + (isOverlay(t) ? ' (camada de cima: pinta por cima do chão)' : '') + (isFence(t) ? ' (cerca: pinta tiles e liga sozinha)' : ''),
+            onclick: () => {
+              this.state.set({ terrain: t.id, tool: this.state.tool === 'fill' ? 'fill' : 'brush' })
+            },
+          }, c, h('span', {}, t.label))
+          this.terrainCells.set(t.id, cell)
+          grid.append(cell)
+        }
+        list.append(h('div', { class: 'vt-group' }, h('h4', {}, cat), grid))
+      }
+      this.refresh()
     }
+    this.paneEl.append(search, list)
+    fill()
   }
 
   private renderObjects() {
@@ -390,7 +411,7 @@ export class EditorUI {
     }
     const flipped = placed ? !!placed.flip : s.flip
     const fav = !!def && this.favorites.includes(this.primary(def).id)
-    const key = def ? [def.id, flipped, !!placed, fav, this.catalogVersion].join('|') : ''
+    const key = def ? [def.id, flipped, !!placed, placed?.z ?? 0, fav, this.catalogVersion].join('|') : ''
     if (key === this.shownObject) return
     this.shownObject = key
     this.objectEl.hidden = !def
@@ -426,6 +447,12 @@ export class EditorUI {
           onclick: () => choose(v),
         }, this.thumb(v, 36))),
       ),
+      ...(placed ? [h('div', { class: 'vt-row vt-objheight', title: 'Altura (em cima de mesa, balcão, prateleira). O ponto no chão decide quem fica na frente.' },
+        h('label', {}, 'Altura'),
+        h('button', { class: 'vt-btn', title: 'Baixar (Shift: 16px)', onclick: (e: MouseEvent) => this.lift(placed, e.shiftKey ? -16 : -4) }, '▼'),
+        h('b', {}, `${placed.z ?? 0}px`),
+        h('button', { class: 'vt-btn', title: 'Elevar (Shift: 16px)', onclick: (e: MouseEvent) => this.lift(placed, e.shiftKey ? 16 : 4) }, '▲'),
+      )] : []),
       h('div', { class: 'vt-row vt-objactions' },
         h('button', { class: `vt-btn${fav ? ' vt-on' : ''}`, title: fav ? 'Tirar dos favoritos' : 'Favoritar', html: `${ICONS.star}<span>${fav ? 'Favorito' : 'Favoritar'}</span>`, onclick: () => this.toggleFavorite(d) }),
         h('button', { class: `vt-btn${flipped ? ' vt-on' : ''}`, title: 'Espelhar (F)', onclick: () => this.flip() }, 'Espelhar'),
@@ -433,6 +460,18 @@ export class EditorUI {
         placed ? h('button', { class: 'vt-btn vt-danger', title: 'Apagar (Del)', html: ICONS.trash, onclick: () => this.hooks.deleteSelected() }) : null,
       ),
     )
+  }
+
+  /** Sobe/desce um objeto colocado (em cima de mesa etc.). */
+  private lift(o: ZoneObject, dz: number) {
+    const z = Math.max(0, Math.min(Z_MAX, (o.z ?? 0) + dz))
+    if (z === (o.z ?? 0)) return
+    const s = this.state
+    s.checkpoint()
+    if (z) o.z = z
+    else delete o.z
+    s.edited()
+    s.emit('objects')
   }
 
   private openCurate(def: ObjectDef) {
@@ -630,10 +669,14 @@ export class EditorUI {
     parts.push(h('span', {}, `Zoom ${Math.round(s.zoom * 100)}%`))
     parts.push(h('span', {}, `${z.objects.length} objetos`))
     parts.push(s.dirty ? h('span', { class: 'vt-dirty' }, '● não salvo') : h('span', {}, 'salvo'))
+    const chosenTerrain = terrainById.get(s.terrain)
+    const overlay = !!chosenTerrain && isOverlay(chosenTerrain)
+    const fence = !!chosenTerrain && isFence(chosenTerrain)
+    const layerNote = overlay ? ' (camada de cima)' : fence ? ' (cerca: pinta tiles e liga sozinha)' : ''
     const hint = {
-      brush: `Pincel: ${terrainById.get(s.terrain)?.label ?? ''} — arraste pra pintar`,
-      fill: `Balde: ${terrainById.get(s.terrain)?.label ?? ''} — clique pra preencher a área`,
-      erase: 'Borracha — volta ao terreno de fundo',
+      brush: `Pincel: ${chosenTerrain?.label ?? ''}${layerNote} — arraste pra pintar`,
+      fill: fence ? 'Balde não vale pra cercas — use o pincel' : `Balde: ${chosenTerrain?.label ?? ''}${layerNote} — clique pra preencher a área`,
+      erase: overlay ? 'Borracha — apaga tapetes e molduras (camada de cima)' : fence ? 'Borracha — apaga cercas' : 'Borracha — volta ao terreno de fundo',
       object: s.objectKind ? 'Clique pra colocar · F espelha · Esc solta o objeto' : 'Escolha um objeto na aba Objetos',
       select: s.selected !== null ? 'Arraste pra mover · F espelha · Del apaga' : 'Clique num objeto pra selecionar',
       portal: s.selectedPortal ? 'Escolha o destino no painel · arraste pra mover · Del apaga' : 'Arraste pra desenhar uma saída · clique numa saída pra editar',
@@ -749,16 +792,29 @@ export class EditorUI {
       return
     }
     this.state.checkpoint()
-    const corners: string[] = new Array((width + 1) * (height + 1)).fill('')
-    for (let y = 0; y <= Math.min(height, z.height); y++)
-      for (let x = 0; x <= Math.min(width, z.width); x++)
-        corners[y * (width + 1) + x] = z.corners[y * (z.width + 1) + x]
+    const regrid = (src: string[]) => {
+      const out: string[] = new Array((width + 1) * (height + 1)).fill('')
+      for (let y = 0; y <= Math.min(height, z.height); y++)
+        for (let x = 0; x <= Math.min(width, z.width); x++)
+          out[y * (width + 1) + x] = src[y * (z.width + 1) + x]
+      return out
+    }
+    const corners = regrid(z.corners)
+    const regridTiles = (src: string[]) => {
+      const out: string[] = new Array(width * height).fill('')
+      for (let y = 0; y < Math.min(height, z.height); y++)
+        for (let x = 0; x < Math.min(width, z.width); x++)
+          out[y * width + x] = src[y * z.width + x]
+      return out
+    }
     const W = width * TILE, H = height * TILE
     const resized: ZoneData = {
       ...z,
       width,
       height,
       corners,
+      ...(z.overlay ? { overlay: regrid(z.overlay) } : {}),
+      ...(z.fences ? { fences: regridTiles(z.fences) } : {}),
       objects: z.objects.filter((o) => o.x <= W && o.y <= H),
       portals: z.portals.filter((p) => p.x < W && p.y < H).map((p) => ({ ...p, w: Math.min(p.w, W - p.x), h: Math.min(p.h, H - p.y) })),
       spawn: { x: Math.min(z.spawn.x, W - 16), y: Math.min(z.spawn.y, H - 16) },
@@ -792,7 +848,7 @@ export class EditorUI {
     const foot = { x: z.spawn.x - 9, y: z.spawn.y - 10, w: 18, h: 10 }
     const hit = (r: { x: number; y: number; w: number; h: number }) =>
       foot.x < r.x + r.w && r.x < foot.x + foot.w && foot.y < r.y + r.h && r.y < foot.y + foot.h
-    if (solidTerrainRects(z).some(hit)) return true
+    if (solidTerrainRects(z).some(hit) || fenceSolids(z).some(hit)) return true
     return z.objects.some((o) => {
       const def = objectDef(o.kind)
       return !!def && objectSolids(def, o).some(hit)

@@ -1,11 +1,13 @@
 // ────────────────────────────────────────────────────────
 // Gera, num canvas, o bloco de autotile (3×7 tiles, mesmo layout do LPC)
-// dos terrenos de interior a partir de uma textura de 32×32 que se repete.
+// dos terrenos de interior a partir de uma textura de 32×32 que se repete
+// (ou de 64×64: aí os 4 quadros de miolo são os 4 quadrantes, e o chão
+// escolhe o quadrante pela posição — ver fillFrame em ground.ts).
 // Cada pedaço da borda cobre só os quadrantes dos cantos que têm o
 // terreno (bordas retas), com uma linha escura marcando o limite.
 // ────────────────────────────────────────────────────────
 
-import { GEN_TERRAINS, type TerrainDef } from './terrains'
+import { GEN_COLS, genTerrains, type TerrainDef } from './terrains'
 import { MASK_FRAMES } from '../world/ground'
 
 const QUADS: [bit: number, qx: number, qy: number][] = [[1, 0, 0], [2, 16, 0], [4, 0, 16], [8, 16, 16]]
@@ -24,18 +26,21 @@ function frameMasks() {
  * `images` = imagens-fonte já carregadas, por URL relativa.
  */
 export function buildGeneratedTerrains(images: Map<string, CanvasImageSource>) {
+  const list = genTerrains()
   const canvas = document.createElement('canvas')
-  canvas.width = Math.max(1, GEN_TERRAINS.length) * 96
-  canvas.height = 224
+  canvas.width = Math.min(GEN_COLS, Math.max(1, list.length)) * 96
+  canvas.height = Math.max(1, Math.ceil(list.length / GEN_COLS)) * 224
   const ctx = canvas.getContext('2d')!
   ctx.imageSmoothingEnabled = false
   const masks = frameMasks()
 
-  for (const t of GEN_TERRAINS) {
-    const tile = sourceTile(t, images)
+  for (const t of list) {
+    const tiles = sourceTiles(t, images)
     for (const [frame, mask] of masks) {
       const x = t.block[1] * 96 + (frame % 3) * 32
-      const y = Math.floor(frame / 3) * 32
+      const y = t.block[0] * 224 + Math.floor(frame / 3) * 32
+      // miolo de textura 64×64: cada quadro de miolo é um quadrante
+      const tile = tiles[Math.max(0, FILL_FRAMES.indexOf(frame))] ?? tiles[0]
       for (const [bit, qx, qy] of QUADS) {
         if (mask & bit) ctx.drawImage(tile, qx, qy, 16, 16, x + qx, y + qy, 16, 16)
       }
@@ -45,19 +50,23 @@ export function buildGeneratedTerrains(images: Map<string, CanvasImageSource>) {
   return canvas
 }
 
-function sourceTile(t: TerrainDef, images: Map<string, CanvasImageSource>) {
-  const c = document.createElement('canvas')
-  c.width = c.height = 32
-  const ctx = c.getContext('2d')!
+/** Os tiles de 32×32 da textura: 1 (repete) ou 4 (quadrantes de uma de 64×64). */
+function sourceTiles(t: TerrainDef, images: Map<string, CanvasImageSource>) {
   const g = t.gen!
-  if ('color' in g) {
-    ctx.fillStyle = g.color
-    ctx.fillRect(0, 0, 32, 32)
-  } else {
-    const img = images.get(g.url)
-    if (img) ctx.drawImage(img, g.x, g.y, 32, 32, 0, 0, 32, 32)
-  }
-  return c
+  const quads = 'url' in g && g.size === 64 ? [[0, 0], [32, 0], [0, 32], [32, 32]] : [[0, 0]]
+  return quads.map(([ox, oy]) => {
+    const c = document.createElement('canvas')
+    c.width = c.height = 32
+    const ctx = c.getContext('2d')!
+    if ('color' in g) {
+      ctx.fillStyle = g.color
+      ctx.fillRect(0, 0, 32, 32)
+    } else {
+      const img = images.get(g.url)
+      if (img) ctx.drawImage(img, g.x + ox, g.y + oy, 32, 32, 0, 0, 32, 32)
+    }
+    return c
+  })
 }
 
 /** Linha escura de 2px do lado de dentro, onde o terreno encontra o vizinho. */

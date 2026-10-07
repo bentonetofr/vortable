@@ -1,0 +1,2231 @@
+{
+  "name": "[LPC] Flowers / Plants / Fungi / Wood",
+  "license": "CC-BY-SA 3.0",
+  "source": "https://opengameart.org/content/lpc-flowers-plants-fungi-wood",
+  "sheets": [
+    {
+      "id": "plants",
+      "file": "plants.png",
+      "category": "Plantas",
+      "label": "Planta",
+      "tags": [
+        "natureza",
+        "planta"
+      ],
+      "collision": "none"
+    }
+  ],
+  "objects": {
+    "plants@6,5": {
+      "label": "Flor 1",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@39,4": {
+      "label": "Flor 2",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@168,8": {
+      "label": "Flor 3",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@8,40": {
+      "label": "Flor 4",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@40,41": {
+      "label": "Flor 5",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@72,40": {
+      "label": "Flor 6",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@202,46": {
+      "label": "Flor 7",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@233,46": {
+      "label": "Flor 8",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@266,47": {
+      "label": "Flor 9",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@297,48": {
+      "label": "Flor 10",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@324,36": {
+      "label": "Flor 11",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@327,66": {
+      "label": "Flor 12",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@364,69": {
+      "label": "Flor 13",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@386,65": {
+      "label": "Flor 14",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@2,113": {
+      "label": "Flor 15",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@14,99": {
+      "label": "Flor 16",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@34,113": {
+      "label": "Flor 17",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@46,99": {
+      "label": "Flor 18",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@113,98": {
+      "label": "Flor 19",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@128,105": {
+      "label": "Flor 20",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@327,98": {
+      "label": "Flor 21",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@364,101": {
+      "label": "Flor 22",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@391,98": {
+      "label": "Flor 23",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@428,101": {
+      "label": "Flor 24",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@455,98": {
+      "label": "Flor 25",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@492,101": {
+      "label": "Flor 26",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@13,145": {
+      "label": "Flor 27",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@45,145": {
+      "label": "Flor 28",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@78,146": {
+      "label": "Flor 29",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@97,129": {
+      "label": "Canteiro de flores",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@203,132": {
+      "label": "Flor 30",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@235,132": {
+      "label": "Flor 31",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@267,132": {
+      "label": "Flor 32",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@299,132": {
+      "label": "Flor 33",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@1,161": {
+      "label": "Flor 34",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@32,161": {
+      "label": "Flor 35",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@65,161": {
+      "label": "Flor 36",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@196,177": {
+      "label": "Flor 37",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@203,163": {
+      "label": "Flor 38",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@228,177": {
+      "label": "Flor 39",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@235,163": {
+      "label": "Flor 40",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@164,198": {
+      "label": "Flor 41",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@228,199": {
+      "label": "Flor 42",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@260,177": {
+      "label": "Flor 43",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@267,163": {
+      "label": "Flor 44",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@291,200": {
+      "label": "Flor 45",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@292,177": {
+      "label": "Flor 46",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@299,163": {
+      "label": "Flor 47",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@321,177": {
+      "label": "Flor 48",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@324,162": {
+      "label": "Flor 49",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@356,163": {
+      "label": "Flor 50",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@388,162": {
+      "label": "Flor 51",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@420,162": {
+      "label": "Flor 52",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@488,163": {
+      "label": "Flor 53",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@135,199": {
+      "label": "Girassol",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@196,197": {
+      "label": "Flor 54",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@259,200": {
+      "label": "Flor 55",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@326,203": {
+      "label": "Flor 56",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@355,200": {
+      "label": "Flor 57",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@390,203": {
+      "label": "Flor 58",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@135,230": {
+      "label": "Flor 59",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@160,231": {
+      "label": "Flor gigante",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@330,231": {
+      "label": "Flor 60",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@359,229": {
+      "label": "Flor 61",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@391,229": {
+      "label": "Flor 62",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@424,207": {
+      "label": "Flor 63",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@456,207": {
+      "label": "Flor 64",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@488,207": {
+      "label": "Flor 65",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@201,232": {
+      "label": "Flor 66",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@233,233": {
+      "label": "Flor 67",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@265,232": {
+      "label": "Flor 68",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@297,232": {
+      "label": "Flor 69",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@422,232": {
+      "label": "Flor 70",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@454,232": {
+      "label": "Flor 71",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@486,232": {
+      "label": "Flor 72",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@1,264": {
+      "label": "Folhagem 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@32,262": {
+      "label": "Folhagem 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@65,264": {
+      "label": "Arbusto rosa 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@96,262": {
+      "label": "Arbusto rosa 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@141,258": {
+      "label": "Rosas",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@202,263": {
+      "label": "Florzinha 1",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@234,264": {
+      "label": "Florzinha 2",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@265,266": {
+      "label": "Florzinha 3",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@297,266": {
+      "label": "Florzinha 4",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@328,264": {
+      "label": "Trevo 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@359,265": {
+      "label": "Trevo 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@391,265": {
+      "label": "Florzinha 5",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@425,265": {
+      "label": "Florzinha 6",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@1,296": {
+      "label": "Folhagem vermelha 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@32,294": {
+      "label": "Folhagem vermelha 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@96,294": {
+      "label": "Galhada seca 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos"
+    },
+    "plants@193,293": {
+      "label": "Florzinha 7",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@257,293": {
+      "label": "Florzinha 8",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@289,293": {
+      "label": "Florzinha 9",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@388,295": {
+      "label": "Florzinha 10",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@416,292": {
+      "label": "Florzinha 11",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@451,288": {
+      "label": "Florzinha 12",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@456,266": {
+      "label": "Florzinha 13",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@490,265": {
+      "label": "Florzinha 14",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@65,296": {
+      "label": "Galhada seca 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos"
+    },
+    "plants@210,299": {
+      "label": "Florzinha 15",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@226,291": {
+      "label": "Florzinha 16",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@274,299": {
+      "label": "Florzinha 17",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@306,299": {
+      "label": "Florzinha 18",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@323,294": {
+      "label": "Erva 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@352,292": {
+      "label": "Erva 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@497,289": {
+      "label": "Erva 3",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@9,330": {
+      "label": "Erva 4",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@46,333": {
+      "label": "Erva 5",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@73,331": {
+      "label": "Erva 6",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@97,333": {
+      "label": "Erva 7",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@145,339": {
+      "label": "Erva 8",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@174,332": {
+      "label": "Erva 9",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@192,327": {
+      "label": "Flores do campo 1",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@71,358": {
+      "label": "Erva 10",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@256,338": {
+      "label": "Flores do campo 2",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@299,336": {
+      "label": "Flores do campo 3",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@322,327": {
+      "label": "Erva 11",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@355,326": {
+      "label": "Erva 12",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@393,324": {
+      "label": "Erva 13",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@452,323": {
+      "label": "Erva 14",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@456,302": {
+      "label": "Erva 15",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@398,337": {
+      "label": "Erva 16",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@421,328": {
+      "label": "Erva 17",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@482,304": {
+      "label": "Erva 18",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@192,332": {
+      "label": "Moita alta",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@385,334": {
+      "label": "Erva 19",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@485,326": {
+      "label": "Erva 20",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@165,362": {
+      "label": "Erva 21",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@295,365": {
+      "label": "Erva 22",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@323,359": {
+      "label": "Erva 23",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@360,362": {
+      "label": "Erva 24",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@386,357": {
+      "label": "Erva 25",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@417,353": {
+      "label": "Erva 26",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@458,364": {
+      "label": "Erva 27",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@485,358": {
+      "label": "Erva 28",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@131,388": {
+      "label": "Erva 29",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@169,386": {
+      "label": "Erva 30",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@192,384": {
+      "label": "Bambuzinho",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@294,399": {
+      "label": "Erva 31",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@322,389": {
+      "label": "Erva 32",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@352,390": {
+      "label": "Erva 33",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@385,387": {
+      "label": "Erva 34",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@453,386": {
+      "label": "Arbusto escuro",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@0,418": {
+      "label": "Nabo",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@34,423": {
+      "label": "Taboa 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas aquáticas"
+    },
+    "plants@67,424": {
+      "label": "Taboa 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas aquáticas"
+    },
+    "plants@99,427": {
+      "label": "Junco 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas aquáticas"
+    },
+    "plants@129,417": {
+      "label": "Junco 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas aquáticas"
+    },
+    "plants@162,450": {
+      "label": "Junco 3",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas aquáticas"
+    },
+    "plants@192,429": {
+      "label": "Moita baixa 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos"
+    },
+    "plants@239,432": {
+      "label": "Moita baixa 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos"
+    },
+    "plants@256,429": {
+      "label": "Moita baixa 3",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos"
+    },
+    "plants@288,418": {
+      "label": "Videira",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@321,416": {
+      "label": "Broto 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@354,417": {
+      "label": "Broto 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@389,432": {
+      "label": "Folha",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@11,487": {
+      "label": "Musgo",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas",
+      "kind": "floor"
+    },
+    "plants@34,484": {
+      "label": "Vitória-régia 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas aquáticas",
+      "kind": "floor"
+    },
+    "plants@66,487": {
+      "label": "Vitória-régia 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas aquáticas",
+      "kind": "floor"
+    },
+    "plants@0,512": {
+      "label": "Flor de lótus 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas aquáticas"
+    },
+    "plants@32,513": {
+      "label": "Flor de lótus 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas aquáticas"
+    },
+    "plants@64,512": {
+      "label": "Lótus",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas aquáticas",
+      "kind": "floor"
+    },
+    "plants@98,493": {
+      "label": "Vitória-régia 3",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas aquáticas",
+      "kind": "floor"
+    },
+    "plants@66,548": {
+      "label": "Vitória-régia 4",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas aquáticas",
+      "kind": "floor"
+    },
+    "plants@201,549": {
+      "label": "Cipó 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@292,548": {
+      "label": "Cipó 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@324,583": {
+      "label": "Cipó 3",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@354,559": {
+      "label": "Folha seca 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas",
+      "kind": "floor"
+    },
+    "plants@386,544": {
+      "label": "Trepadeira 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@416,544": {
+      "label": "Trepadeira 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@448,546": {
+      "label": "Flor alta 1",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@487,546": {
+      "label": "Flor alta 2",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@12,587": {
+      "label": "Cogumelinho 1",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@73,586": {
+      "label": "Cogumelinho 2",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@368,576": {
+      "label": "Folha seca 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas",
+      "kind": "floor"
+    },
+    "plants@227,615": {
+      "label": "Broto 3",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@297,615": {
+      "label": "Broto 4",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@323,615": {
+      "label": "Arbusto seco 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos"
+    },
+    "plants@361,614": {
+      "label": "Arbusto seco 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos"
+    },
+    "plants@386,614": {
+      "label": "Arbusto seco 3",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos"
+    },
+    "plants@423,616": {
+      "label": "Arbusto seco 4",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos"
+    },
+    "plants@459,610": {
+      "label": "Flor 73",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@482,612": {
+      "label": "Lírio laranja",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@97,650": {
+      "label": "Cogumelo 1",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@112,649": {
+      "label": "Cogumelo 2",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@130,650": {
+      "label": "Cogumelo 3",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@145,649": {
+      "label": "Cogumelo 4",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@162,650": {
+      "label": "Cogumelo vermelho 1",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@177,649": {
+      "label": "Cogumelo vermelho 2",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@198,642": {
+      "label": "Galho seco 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos"
+    },
+    "plants@259,641": {
+      "label": "Árvore jovem 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@322,646": {
+      "label": "Árvore jovem 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@390,654": {
+      "label": "Muda 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@419,641": {
+      "label": "Muda 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@449,642": {
+      "label": "Planta escura",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@481,641": {
+      "label": "Abóboras pequenas",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@1,705": {
+      "label": "Cogumelos roxos",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@35,704": {
+      "label": "Cogumelos marrons",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@66,705": {
+      "label": "Cogumelos vermelhos",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@102,683": {
+      "label": "Cogumelo achatado 1",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@135,683": {
+      "label": "Cogumelo achatado 2",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@167,683": {
+      "label": "Cogumelo vermelho 3",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@428,672": {
+      "label": "Arbusto de frutas",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@488,683": {
+      "label": "Abóbora",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas",
+      "collision": "base"
+    },
+    "plants@103,714": {
+      "label": "Cogumelo pintado",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@135,708": {
+      "label": "Cogumelo roxo",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@168,711": {
+      "label": "Cogumelo azul",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@193,716": {
+      "label": "Arbusto 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@256,708": {
+      "label": "Arbusto 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@14,751": {
+      "label": "Cogumelo 5",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@47,751": {
+      "label": "Cogumelo 6",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@66,736": {
+      "label": "Cogumelo gigante",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos",
+      "collision": "base"
+    },
+    "plants@320,712": {
+      "label": "Moita clara",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@387,712": {
+      "label": "Arbusto seco 5",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos"
+    },
+    "plants@451,712": {
+      "label": "Galho seco 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos"
+    },
+    "plants@484,706": {
+      "label": "Galho seco 3",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos"
+    },
+    "plants@6,768": {
+      "label": "Toco 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@105,744": {
+      "label": "Frutinhas",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@35,776": {
+      "label": "Toco pequeno 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@71,776": {
+      "label": "Toco pequeno 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@97,770": {
+      "label": "Toco cortado",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@130,771": {
+      "label": "Toco com flores",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@139,756": {
+      "label": "Cogumelinho 3",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@163,770": {
+      "label": "Flor roxa",
+      "tags": [
+        "natureza",
+        "flor",
+        "jardim"
+      ],
+      "category": "Flores"
+    },
+    "plants@164,746": {
+      "label": "Cogumelo rosa",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@114,771": {
+      "label": "Fungo",
+      "tags": [
+        "natureza",
+        "cogumelo",
+        "floresta"
+      ],
+      "category": "Cogumelos"
+    },
+    "plants@193,780": {
+      "label": "Moita escura 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@256,772": {
+      "label": "Moita escura 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@320,776": {
+      "label": "Moita escura 3",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@384,768": {
+      "label": "Folhagem larga",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@450,775": {
+      "label": "Folhagem com flores",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@1,805": {
+      "label": "Toco 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@36,811": {
+      "label": "Toco 3",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@96,806": {
+      "label": "Raízes",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "kind": "floor"
+    },
+    "plants@131,802": {
+      "label": "Toco com cogumelos 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@162,803": {
+      "label": "Toco com cogumelos 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@384,806": {
+      "label": "Arbusto alto 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@450,808": {
+      "label": "Folhas largas",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@5,837": {
+      "label": "Toco com musgo",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@97,838": {
+      "label": "Toco com anéis",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@135,832": {
+      "label": "Planta fina",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Plantas"
+    },
+    "plants@161,838": {
+      "label": "Tronco com folhas",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@224,832": {
+      "label": "Tronco caído com musgo",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@225,834": {
+      "label": "Arbusto alto 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@289,842": {
+      "label": "Arbusto alto 3",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@314,834": {
+      "label": "Arbusto alto 4",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@0,864": {
+      "label": "Tronco oco caído",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@425,846": {
+      "label": "Moitinha 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos"
+    },
+    "plants@450,837": {
+      "label": "Moitinha 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos"
+    },
+    "plants@480,832": {
+      "label": "Moitinha 3",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos"
+    },
+    "plants@132,878": {
+      "label": "Tronco caído",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@96,904": {
+      "label": "Galho caído 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "kind": "floor"
+    },
+    "plants@138,900": {
+      "label": "Galho caído 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "kind": "floor"
+    },
+    "plants@393,877": {
+      "label": "Moitinha 4",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos"
+    },
+    "plants@421,872": {
+      "label": "Moitinha 5",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos"
+    },
+    "plants@448,871": {
+      "label": "Moitinha 6",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos"
+    },
+    "plants@481,868": {
+      "label": "Moitinha 7",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos"
+    },
+    "plants@64,928": {
+      "label": "Tronco cortado",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@192,911": {
+      "label": "Arvoreta 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@0,960": {
+      "label": "Toras",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@32,993": {
+      "label": "Toras amarradas",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@65,992": {
+      "label": "Escada de madeira",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos"
+    },
+    "plants@138,971": {
+      "label": "Tronco oco",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Troncos e galhos",
+      "collision": "base"
+    },
+    "plants@192,974": {
+      "label": "Palmeirinha",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@227,964": {
+      "label": "Pinheirinho 1",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@259,964": {
+      "label": "Pinheirinho 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@288,962": {
+      "label": "Arvoreta 2",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@333,960": {
+      "label": "Arvoreta 3",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@398,970": {
+      "label": "Arvoreta 4",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@453,970": {
+      "label": "Arvoreta 5",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    },
+    "plants@484,962": {
+      "label": "Arvoreta 6",
+      "tags": [
+        "natureza"
+      ],
+      "category": "Arbustos",
+      "collision": "base"
+    }
+  }
+}

@@ -1,0 +1,174 @@
+{
+  "name": "LPC Tile Atlas 2 (frutas, cerejeiras)",
+  "license": "CC-BY-SA 3.0 / GPL 3.0",
+  "source": "https://opengameart.org/content/lpc-tile-atlas2",
+  "sheets": [
+    {
+      "id": "atlas-cherry",
+      "file": "obj_misk_atlas.png",
+      "mode": "pieces",
+      "category": "Árvores",
+      "label": "Cerejeira",
+      "tags": [
+        "natureza",
+        "árvore",
+        "oriental"
+      ],
+      "collision": "foot",
+      "pieces": [
+        {
+          "x": 224,
+          "y": 128,
+          "w": 112,
+          "h": 96,
+          "label": "Copa de cerejeira",
+          "kind": "over",
+          "collision": "none"
+        },
+        {
+          "x": 336,
+          "y": 128,
+          "w": 112,
+          "h": 96,
+          "label": "Copa de cerejeira 2",
+          "kind": "over",
+          "collision": "none"
+        },
+        {
+          "x": 224,
+          "y": 224,
+          "w": 112,
+          "h": 150,
+          "label": "Cerejeira"
+        },
+        {
+          "x": 336,
+          "y": 224,
+          "w": 112,
+          "h": 150,
+          "label": "Cerejeira 2"
+        },
+        {
+          "x": 512,
+          "y": 0,
+          "w": 64,
+          "h": 96,
+          "label": "Árvore seca pequena"
+        },
+        {
+          "x": 512,
+          "y": 96,
+          "w": 48,
+          "h": 40,
+          "label": "Toco oco pequeno"
+        }
+      ]
+    },
+    {
+      "id": "atlas-food",
+      "file": "obj_misk_atlas.png",
+      "crop": {
+        "x": 576,
+        "y": 0,
+        "w": 160,
+        "h": 200
+      },
+      "category": "Comida",
+      "label": "Fruta",
+      "tags": [
+        "comida",
+        "feira",
+        "cozinha"
+      ],
+      "collision": "none"
+    }
+  ],
+  "objects": {
+    "atlas-food@38,10": {
+      "label": "Limão"
+    },
+    "atlas-food@70,10": {
+      "label": "Limão-taiti"
+    },
+    "atlas-food@100,5": {
+      "label": "Cenoura"
+    },
+    "atlas-food@41,41": {
+      "label": "Cebola"
+    },
+    "atlas-food@100,37": {
+      "label": "Rabanete"
+    },
+    "atlas-food@133,13": {
+      "label": "Vagem"
+    },
+    "atlas-food@71,40": {
+      "label": "Berinjela"
+    },
+    "atlas-food@0,71": {
+      "hidden": true
+    },
+    "atlas-food@36,70": {
+      "label": "Melancia",
+      "collision": "base"
+    },
+    "atlas-food@70,73": {
+      "label": "Abobrinha"
+    },
+    "atlas-food@103,70": {
+      "label": "Pepino"
+    },
+    "atlas-food@132,48": {
+      "label": "Milho"
+    },
+    "atlas-food@135,70": {
+      "label": "Cerejas"
+    },
+    "atlas-food@8,101": {
+      "label": "Maçã"
+    },
+    "atlas-food@34,106": {
+      "label": "Melancia 2",
+      "collision": "base"
+    },
+    "atlas-food@70,105": {
+      "label": "Laranja"
+    },
+    "atlas-food@105,102": {
+      "label": "Pera"
+    },
+    "atlas-food@8,134": {
+      "label": "Pimentão verde"
+    },
+    "atlas-food@37,132": {
+      "label": "Tomate"
+    },
+    "atlas-food@71,136": {
+      "label": "Morango"
+    },
+    "atlas-food@105,133": {
+      "label": "Cebola roxa"
+    },
+    "atlas-food@133,111": {
+      "label": "Banana"
+    },
+    "atlas-food@137,136": {
+      "label": "Brócolis"
+    },
+    "atlas-food@10,166": {
+      "label": "Berinjela pequena"
+    },
+    "atlas-food@68,166": {
+      "label": "Abóbora",
+      "collision": "base"
+    },
+    "atlas-food@100,166": {
+      "label": "Abóbora de Halloween",
+      "collision": "base"
+    },
+    "atlas-food@132,166": {
+      "label": "Abóbora de Halloween 2",
+      "collision": "base"
+    }
+  }
+}

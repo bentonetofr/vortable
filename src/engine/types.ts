@@ -22,6 +22,13 @@ export interface ZoneData {
    * '' = terreno base. As bordas entre terrenos saem daqui (autotile).
    */
   corners: string[]
+  /**
+   * Camada por cima do chão (molduras de teto, tapetes), no mesmo formato
+   * de `corners`; '' = nada. Ausente = camada vazia.
+   */
+  overlay?: string[]
+  /** Cercas, uma por TILE (width × height, linha a linha); '' = nada. */
+  fences?: string[]
   objects: ZoneObject[]
   /** Saídas: áreas que levam a outra zona (porta, escada, borda do mapa). */
   portals: Portal[]
@@ -66,7 +73,16 @@ export interface ZoneObject {
   y: number
   /** Espelhado na horizontal. */
   flip?: boolean
+  /**
+   * Altura em px (em cima de uma mesa, balcão, prateleira): o desenho sobe,
+   * mas a profundidade continua sendo a do ponto no chão (x, y) — assim
+   * a comida na mesa fica na frente da mesa e atrás de quem passa na frente.
+   * Objeto elevado não colide.
+   */
+  z?: number
 }
+
+export const Z_MAX = 160
 
 export const ZONE_MIN = 8
 export const ZONE_MAX = 128

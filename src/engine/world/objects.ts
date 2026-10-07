@@ -42,10 +42,15 @@ export function createObjectSprite(scene: Phaser.Scene, o: ZoneObject, missing: 
     if (missing === 'skip') return null
     return scene.add.sprite(o.x, o.y, '__MISSING').setOrigin(0.5, 1).setDepth(o.y)
   }
-  const s = scene.add.sprite(o.x, o.y, sheetTexture(def.sheet), def.id).setOrigin(0.5, 1).setFlipX(!!o.flip).setName(def.id)
-  s.setDepth(objectDepth(def, o.y))
+  const s = scene.add.sprite(o.x, o.y - (o.z ?? 0), sheetTexture(def.sheet), def.id).setOrigin(0.5, 1).setFlipX(!!o.flip).setName(def.id)
+  s.setDepth(depthOf(def, o))
   playAnim(s, def)
   return s
+}
+
+/** Elevado (em cima de algo) fica um tiquinho acima do que está no mesmo ponto. */
+function depthOf(def: ObjectDef | undefined, o: ZoneObject) {
+  return objectDepth(def, o.y) + (o.z ? 0.5 : 0)
 }
 
 /** Começa a animação num quadro sorteado (tochas lado a lado não piscam juntas). */
@@ -57,7 +62,7 @@ function playAnim(s: ObjectSprite, def: ObjectDef) {
 /** Reaplica posição/espelho/arte de um sprite (arrastar, espelhar, trocar variante no editor). */
 export function updateObjectSprite(s: ObjectSprite, o: ZoneObject) {
   const def = objectDef(o.kind)
-  s.setPosition(o.x, o.y).setFlipX(!!o.flip).setDepth(objectDepth(def, o.y))
+  s.setPosition(o.x, o.y - (o.z ?? 0)).setFlipX(!!o.flip).setDepth(depthOf(def, o))
   if (def && s.name !== def.id) {
     s.stop()
     s.setTexture(sheetTexture(def.sheet), def.id).setName(def.id)
@@ -69,7 +74,7 @@ export function updateObjectSprite(s: ObjectSprite, o: ZoneObject) {
 export function addObjectSolids(scene: Phaser.Scene, objects: ZoneObject[], solids: Phaser.Physics.Arcade.StaticGroup) {
   for (const o of objects) {
     const def = objectDef(o.kind)
-    if (!def) continue
+    if (!def || o.z) continue
     for (const r of objectSolids(def, o)) solids.add(scene.add.zone(r.x + r.w / 2, r.y + r.h / 2, r.w, r.h))
   }
 }
@@ -108,8 +113,8 @@ export class Occluders {
       kind: def.kind,
       x0: o.x - def.w / 2,
       x1: o.x + def.w / 2,
-      y0: o.y - def.h,
-      y1: o.y,
+      y0: o.y - (o.z ?? 0) - def.h,
+      y1: o.y - (o.z ?? 0),
       line: o.y - def.sort,
     })
   }

@@ -248,6 +248,8 @@
 .vt-variants[hidden] { display: none; }
 .vt-variants canvas { width: 100%; height: 100%; }
 .vt-objactions { flex-wrap: wrap; }
+.vt-objheight b { min-width: 40px; text-align: center; color: var(--vt-text); }
+.vt-objheight .vt-btn { padding: 2px 8px; }
 .vt-objactions .vt-btn { padding: 4px 8px; font-size: 12px; }
 .vt-objactions .vt-btn svg { width: 14px; height: 14px; }
 .vt-btn.vt-on { border-color: var(--vt-accent); color: var(--vt-accent-bright); background: var(--vt-accent-glow); }

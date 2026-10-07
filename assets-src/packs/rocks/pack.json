@@ -1,0 +1,877 @@
+{
+  "name": "[LPC] Rocks",
+  "license": "CC-BY-SA 3.0 / CC-BY-SA 4.0",
+  "source": "https://opengameart.org/content/lpc-rocks",
+  "sheets": [
+    {
+      "id": "rock-cinza",
+      "file": "rocks.png",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "w": 1024,
+        "h": 256
+      },
+      "category": "Pedras",
+      "label": "Pedra",
+      "variant": "Cinza",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "collision": "base"
+    },
+    {
+      "id": "rock-escura",
+      "file": "rocks.png",
+      "crop": {
+        "x": 0,
+        "y": 256,
+        "w": 1024,
+        "h": 256
+      },
+      "category": "Pedras",
+      "label": "Pedra",
+      "variant": "Escura",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "collision": "base",
+      "variantOf": "rock-cinza"
+    },
+    {
+      "id": "rock-carvao",
+      "file": "rocks.png",
+      "crop": {
+        "x": 0,
+        "y": 512,
+        "w": 1024,
+        "h": 256
+      },
+      "category": "Pedras",
+      "label": "Pedra",
+      "variant": "Carvão",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "collision": "base",
+      "variantOf": "rock-cinza"
+    },
+    {
+      "id": "rock-arenito",
+      "file": "rocks.png",
+      "crop": {
+        "x": 0,
+        "y": 768,
+        "w": 1024,
+        "h": 256
+      },
+      "category": "Pedras",
+      "label": "Pedra",
+      "variant": "Arenito",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "collision": "base",
+      "variantOf": "rock-cinza"
+    },
+    {
+      "id": "rock-cinza-neve",
+      "file": "rocks-snow.png",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "w": 1024,
+        "h": 256
+      },
+      "category": "Pedras",
+      "label": "Pedra",
+      "variant": "Cinza com neve",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "collision": "base",
+      "variantOf": "rock-cinza"
+    },
+    {
+      "id": "rock-escura-neve",
+      "file": "rocks-snow.png",
+      "crop": {
+        "x": 0,
+        "y": 256,
+        "w": 1024,
+        "h": 256
+      },
+      "category": "Pedras",
+      "label": "Pedra",
+      "variant": "Escura com neve",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "collision": "base",
+      "variantOf": "rock-cinza"
+    },
+    {
+      "id": "rock-carvao-neve",
+      "file": "rocks-snow.png",
+      "crop": {
+        "x": 0,
+        "y": 512,
+        "w": 1024,
+        "h": 256
+      },
+      "category": "Pedras",
+      "label": "Pedra",
+      "variant": "Carvão com neve",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "collision": "base",
+      "variantOf": "rock-cinza"
+    },
+    {
+      "id": "rock-arenito-neve",
+      "file": "rocks-snow.png",
+      "crop": {
+        "x": 0,
+        "y": 768,
+        "w": 1024,
+        "h": 256
+      },
+      "category": "Pedras",
+      "label": "Pedra",
+      "variant": "Arenito com neve",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "collision": "base",
+      "variantOf": "rock-cinza"
+    }
+  ],
+  "objects": {
+    "rock-cinza@0,11": {
+      "label": "Rocha grande",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@64,14": {
+      "label": "Rocha chata",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@128,8": {
+      "label": "Pedra em pé",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@164,3": {
+      "label": "Menir",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza",
+        "ruína",
+        "ritual"
+      ]
+    },
+    "rock-cinza@199,10": {
+      "label": "Pedrinha",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@231,13": {
+      "label": "Pedrinha 2",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@256,6": {
+      "label": "Pedras em pé",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@263,8": {
+      "label": "Pedrinha 3",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@387,1": {
+      "label": "Dólmen",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza",
+        "ruína",
+        "ritual"
+      ]
+    },
+    "rock-cinza@515,2": {
+      "label": "Rochedo de colunas",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@585,0": {
+      "label": "Rochedo de cristais",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@646,8": {
+      "label": "Rochedo áspero",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@198,36": {
+      "label": "Laje de pedra",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@257,35": {
+      "label": "Pedra redonda",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@769,13": {
+      "label": "Rochedo áspero 2",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@3,73": {
+      "label": "Rochedo",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@67,70": {
+      "label": "Rochedo com musgo",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@132,70": {
+      "label": "Rochedo 2",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@197,79": {
+      "label": "Rochedo 3",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@576,70": {
+      "label": "Seixos",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@611,64": {
+      "label": "Pilha de pedras",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@263,100": {
+      "label": "Seixos com grama",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@264,114": {
+      "label": "Pedregulho",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@290,107": {
+      "label": "Pedregulhos",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@327,105": {
+      "label": "Pedra pequena",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@359,105": {
+      "label": "Pedra pequena 2",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@386,103": {
+      "label": "Seixos 2",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@416,96": {
+      "label": "Pedras com grama",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@480,96": {
+      "label": "Bloco de pedra",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@519,103": {
+      "label": "Estalagmite",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza",
+        "caverna"
+      ]
+    },
+    "rock-cinza@548,106": {
+      "label": "Estalagmites",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza",
+        "caverna"
+      ]
+    },
+    "rock-cinza@101,140": {
+      "label": "Pedrinha 4",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@391,132": {
+      "label": "Rocha com musgo",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@457,132": {
+      "label": "Rocha grande 2",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@585,111": {
+      "label": "Estalagmites 2",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza",
+        "caverna"
+      ]
+    },
+    "rock-cinza@617,98": {
+      "label": "Estalagmite fina",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza",
+        "caverna"
+      ]
+    },
+    "rock-cinza@130,139": {
+      "label": "Pedrinhas",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@324,131": {
+      "label": "Pedra lisa",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@353,134": {
+      "label": "Pedra lisa 2",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@608,128": {
+      "label": "Estalagmites 3",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza",
+        "caverna"
+      ]
+    },
+    "rock-cinza@779,136": {
+      "label": "Coluna de rocha",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@843,134": {
+      "label": "Coluna de rocha 2",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@32,181": {
+      "label": "Lascas de pedra",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@96,164": {
+      "label": "Lascas de pedra 2",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@128,161": {
+      "label": "Lascas de pedra 3",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@169,161": {
+      "label": "Lascas de pedra 4",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@225,166": {
+      "label": "Seixos 3",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@304,161": {
+      "label": "Pedrinha 5",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@65,199": {
+      "label": "Menir pontudo",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza",
+        "ruína",
+        "ritual"
+      ]
+    },
+    "rock-cinza@98,199": {
+      "label": "Menires",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza",
+        "ruína",
+        "ritual"
+      ]
+    },
+    "rock-cinza@140,198": {
+      "label": "Pedrinha 6",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@194,207": {
+      "label": "Pedra torta",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@261,198": {
+      "label": "Menir fino",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza",
+        "ruína",
+        "ritual"
+      ]
+    },
+    "rock-cinza@292,197": {
+      "label": "Rochedo grande",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@306,178": {
+      "label": "Pedrinha 7",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@322,163": {
+      "label": "Pedra média",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@359,164": {
+      "label": "Pedrinha 8",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@513,163": {
+      "label": "Pedrinha 9",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@530,162": {
+      "label": "Pedras empilhadas",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@1,193": {
+      "label": "Menires duplos",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza",
+        "ruína",
+        "ritual"
+      ]
+    },
+    "rock-cinza@228,192": {
+      "label": "Pedra cortada",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@651,170": {
+      "label": "Rochedo áspero 3",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@391,207": {
+      "label": "Pedregulhos 2",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@419,206": {
+      "label": "Pedregulhos 3",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@449,196": {
+      "label": "Pedregulhos 4",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@515,199": {
+      "label": "Pilha de pedras 2",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@547,196": {
+      "label": "Pedra áspera",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@452,238": {
+      "label": "Pedregulhos 5",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@517,242": {
+      "label": "Pedrinhas 2",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ],
+      "kind": "floor",
+      "solids": [],
+      "sort": 0
+    },
+    "rock-cinza@545,236": {
+      "label": "Pedra áspera 2",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@588,224": {
+      "label": "Pedra áspera 3",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@778,207": {
+      "label": "Coluna áspera",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@840,193": {
+      "label": "Coluna áspera 2",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-cinza@486,234": {
+      "label": "Pedra áspera pequena",
+      "category": "Pedras",
+      "tags": [
+        "pedra",
+        "natureza"
+      ]
+    },
+    "rock-escura@416,96": {
+      "hidden": true
+    },
+    "rock-carvao@416,96": {
+      "hidden": true
+    },
+    "rock-arenito@288,6": {
+      "hidden": true
+    },
+    "rock-arenito@256,68": {
+      "hidden": true
+    },
+    "rock-arenito@416,96": {
+      "hidden": true
+    },
+    "rock-escura-neve@416,96": {
+      "hidden": true
+    },
+    "rock-carvao-neve@416,96": {
+      "hidden": true
+    },
+    "rock-arenito-neve@288,6": {
+      "hidden": true
+    },
+    "rock-arenito-neve@256,68": {
+      "hidden": true
+    },
+    "rock-arenito-neve@416,96": {
+      "hidden": true
+    }
+  }
+}

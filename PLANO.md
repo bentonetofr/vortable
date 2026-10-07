@@ -116,33 +116,40 @@ scripts/      ferramentas de assets
 - Luz por peça já fica gravada (tochas, fogões, postes) e passa a brilhar no M3.3
 - ✅ *Qualquer peça LPC pode entrar no editor com comportamento certo*
 
-### M3.2 — Grande leva de arte (exteriores, interiores, pedra, natureza)
-Regra de coesão: **só LPC** (mesma perspectiva ¾, grade de 32px, mesma família de cores).
-Nada é redimensionado. O centro é **medieval/fantasia rural**; temas diferentes que forem
-LPC e coesos entre si (castelo/gótico, oriental, urbano antigo) também entram, **cada um na
-sua categoria**. Fica de fora só o que é moderno demais (máquinas de venda, privadas
-modernas, pichação).
+### M3.2 — Grande leva de arte ✅ (concluído)
+Regra de coesão: **só LPC** (perspectiva ¾, grade de 32px, mesma família de cores), nada
+redimensionado; temas diferentes em categorias próprias; nada moderno.
 
-| Grupo | O que entra | Pacotes (OpenGameArt) |
-|---|---|---|
-| Vila | casas prontas de enxaimel e palha, poço, carroças, barracas de feira, toldos, barris, caixotes, lenha, varal, espantalho, placas, estábulo | [LPC] Medieval Village Decorations · Thatched-roof Cottage · Signposts, graves, line cloths and scare crow |
-| Construções modulares | paredes externas, telhados, portas e janelas pra montar casas sob medida | [LPC] Roofs · [LPC] Windows & Doors · LPC Tile Atlas |
-| Cercas e muros | cerca de madeira, muro de pedra, grade de ferro, portões | LPC Tile Atlas · Medieval Village Decorations |
-| Pedra e relevo | rochas, pedregulhos, dólmen, pedras de neve, cristais | [LPC] Rocks · LPC Tile Atlas |
-| Natureza | flores, plantas, fungos, folhas, troncos, cerejeiras, arbustos | [LPC] Flowers/Plants/Fungi/Wood · LPC Tile Atlas |
-| Fazenda | terra arada (volta!), plantações com estágios, feno, sacos, ferramentas | [LPC] Farming tilesets · LPC Tile Atlas |
-| Interiores — estrutura | **paredes com perspectiva** (topo + face, como no Stardew), dezenas de pisos, rodapés, escadas | [LPC] Walls · [LPC] Floors |
-| Interiores — móveis | camas, mesas, cadeiras, bancos, estantes, armários, baús, lareira, fogão, cortinas, quadros, vasos, velas, livros | [LPC] Wooden Furniture · [LPC] Upholstery · [LPC] House interior and decorations · LPC Tile Atlas |
-| Comida e utensílios | frutas, legumes, pães, carnes, peixes, garrafas, panelas | LPC Tile Atlas · House interior |
-| Masmorra | correntes, grades, ossos, alavancas, pedras soltas, portas de ferro | [LPC] Dungeon Elements |
-| Luzes | tochas (animadas), lampiões, braseiros, velas, lareira | [LPC] Animated Torch · Medieval Village · House interior |
+**Objetos — 2.456 peças em 13 pacotes** (nomeadas à mão as mais usadas):
+| Pacote | O que tem |
+|---|---|
+| Vila medieval | cemitério, poço, carroças, feno, ferramentas, forca/pelourinho, alvos, tendas, barracas de feira, toldos, estandartes, placas penduradas, lampiões e tochas animados, chafarizes animados, fogueira animada |
+| Pedras | 74 modelos × 8 variantes (cinza, escura, carvão, arenito, com e sem neve): rochedos, menires, dólmen, estalagmites, seixos |
+| Plantas | 272: flores, ervas, cogumelos, arbustos, tocos, troncos caídos, plantas aquáticas |
+| Fazenda | 7 plantações × 5 estágios (variantes), comida (82), sacos, caixotes, barcos |
+| Interior | cozinha (balcões, fogões, forno animado), estantes, armários, lareira, relógio animado, armas na parede |
+| Móveis de madeira | 83 modelos × 4 madeiras (escura, clara, branca, verde): camas, mesas, armários, pianos, órgão, biombos, relógios |
+| Estofados | 53 modelos × 4 cores: sofás, poltronas, cortinas, abajures |
+| Masmorra | catres, celas, correntes, ossos, teias, fogo e caldeirão animados |
+| Portas e janelas | 20 portas com estados (fechada/aberta) + ~110 janelas, arcos, batentes |
+| Atlas | cerejeiras (oriental), frutas e legumes |
 
-- **Paredes de interior** viram um terreno especial com perspectiva: pintar a parede gera o
-  topo e a face automaticamente (no formato do [LPC] Walls)
-- Estimativa: **800 a 1.500 peças** depois da curadoria; +20 a 40 MB de arte
-- Licenças: CC-BY-SA 3.0/4.0, GPL, OGA-BY, CC-BY — todas permitem uso com crédito
-  (a tela de créditos já existe e passa a listar cada pacote)
-- ✅ *Dá pra montar uma vila com casas, uma taverna mobiliada e uma masmorra*
+**Terrenos novos — 433**:
+- **Paredes em perspectiva**: 252 estilos em 16 famílias (pedra, tijolo, papéis de parede,
+  reboco, enxaimel, madeiras); pinta-se uma faixa de 3 tiles e sai moldura + face + rodapé
+- **Camada de cima** (nova): 32 **molduras de teto** (a borda escura dos cômodos) e 40
+  **tapetes** — pintados por cima do piso, com borracha/balde próprios
+- **96 pisos** (madeira, ladrilho, pedra), escolhidos por emendarem sem costura
+- **Cercas** (camada de tiles nova): 9 tipos que se ligam sozinhos, com y-sort e colisão
+- Fazenda: trigo verde, trigo maduro, capim alto, terra arada (sobre grama)
+
+**Recursos que vieram junto**: altura de objeto (comida/velas em cima da mesa), busca de
+terrenos, variantes de estado (portas, baús, plantações), animações dentro das folhas.
+
+- ⏳ Ficou pra depois: **telhados e paredes externas modulares** ([LPC] Roofs, Thatched-roof
+  Cottage) — precisam de uma ferramenta de "telhado" própria; peças de castelo/gótico dos
+  atlas (são tilesets de construção, não objetos); terra arada que funcione fora da grama
+- ✅ *Dá pra montar uma vila, uma taverna mobiliada e uma masmorra*
 
 ### M3.3 — Iluminação e atmosfera
 - **Luz ambiente por zona**: cor + intensidade, com presets (Dia, Entardecer, Noite,

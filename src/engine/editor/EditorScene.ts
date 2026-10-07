@@ -13,8 +13,9 @@
 
 import Phaser from 'phaser'
 import { objectDef, objectSolids, sheetTexture } from '../assets/objects'
-import { terrainById } from '../assets/terrains'
-import { Ground, cornerTerrain, solidTerrainRects } from '../world/ground'
+import { isFence, isOverlay, terrainById } from '../assets/terrains'
+import { FenceLayer, fenceAt, fenceSolids } from '../world/fences'
+import { Ground, cornerTerrain, overlayTerrain, solidTerrainRects } from '../world/ground'
 import { createObjectSprite, updateObjectSprite, type ObjectSprite } from '../world/objects'
 import { TILE, newId, type Portal, type ZoneObject } from '../types'
 import type { EditorState } from './EditorState'
@@ -26,6 +27,7 @@ const SELECT_TINT = 0x9fd3ff
 export class EditorScene extends Phaser.Scene {
   private state!: EditorState
   private ground!: Ground
+  private fences!: FenceLayer
   private sprites: (ObjectSprite | null)[] = []
   private gridGfx!: Phaser.GameObjects.Graphics
   private collisionGfx!: Phaser.GameObjects.Graphics
@@ -56,6 +58,7 @@ export class EditorScene extends Phaser.Scene {
 
   create() {
     this.ground = new Ground(this, this.state.zone)
+    this.fences = new FenceLayer(this, this.state.zone)
     this.gridGfx = this.add.graphics().setDepth(1e8)
     this.collisionGfx = this.add.graphics().setDepth(1e8 + 1)
     this.cursorGfx = this.add.graphics().setDepth(1e8 + 2)
@@ -107,6 +110,7 @@ export class EditorScene extends Phaser.Scene {
     this.state.view = null
     this.ground.rt.destroy()
     this.ground = new Ground(this, this.state.zone)
+    this.fences.setZone(this.state.zone)
     this.rebuildObjects()
     this.fitBounds()
     this.refreshOverlays()
@@ -181,11 +185,11 @@ export class EditorScene extends Phaser.Scene {
     this.collisionGfx.clear()
     if (this.state.showCollision) {
       this.collisionGfx.fillStyle(0x3b82f6, 0.35)
-      for (const r of solidTerrainRects(z)) this.collisionGfx.fillRect(r.x, r.y, r.w, r.h)
+      for (const r of [...solidTerrainRects(z), ...fenceSolids(z)]) this.collisionGfx.fillRect(r.x, r.y, r.w, r.h)
       this.collisionGfx.fillStyle(0xef4444, 0.55)
       for (const o of z.objects) {
         const def = objectDef(o.kind)
-        if (def) for (const r of objectSolids(def, o)) this.collisionGfx.fillRect(r.x, r.y, r.w, r.h)
+        if (def && !o.z) for (const r of objectSolids(def, o)) this.collisionGfx.fillRect(r.x, r.y, r.w, r.h)
       }
       // linha do pé do selecionado: quem passa acima dela fica atrás
       const sel = this.state.selected !== null ? z.objects[this.state.selected] : null
@@ -253,6 +257,12 @@ export class EditorScene extends Phaser.Scene {
     const w = 2 / this.cameras.main.zoom
     g.lineStyle(w * 2, 0x000000, 0.5).strokeRect(b.x, b.y, b.width, b.height)
     g.lineStyle(w, 0xffc174, 1).strokeRect(b.x, b.y, b.width, b.height)
+    // elevado: mostra o ponto no chão que decide quem fica na frente
+    const o = this.state.zone.objects[this.state.selected!]
+    if (o?.z) {
+      g.lineStyle(w, 0xffc174, 0.8).lineBetween(o.x, o.y, o.x, o.y - o.z)
+      g.strokeEllipse(o.x, o.y, 10, 5)
+    }
   }
 
   private drawCursor(p: Phaser.Input.Pointer) {
@@ -453,28 +463,73 @@ export class EditorScene extends Phaser.Scene {
     this.lastPaint = { tx, ty }
   }
 
+  /** O terreno escolhido é uma cerca (camada de tiles)? */
+  private get fenceLayer() {
+    const t = terrainById.get(this.state.terrain)
+    return !!t && isFence(t)
+  }
+
+  /** Cercas: pinta TILES (não vértices) e refaz os pedaços ligados. */
+  private stampFence(tx0: number, ty0: number, n: number, value: string) {
+    const z = this.state.zone
+    if (value === '' && !z.fences) return
+    let changed = false
+    for (let ty = Math.max(0, ty0); ty < Math.min(z.height, ty0 + n); ty++) {
+      for (let tx = Math.max(0, tx0); tx < Math.min(z.width, tx0 + n); tx++) {
+        const i = ty * z.width + tx
+        if ((z.fences?.[i] ?? '') === value) continue
+        if (!this.strokeSaved) {
+          this.state.checkpoint()
+          this.strokeSaved = true
+        }
+        if (!z.fences) z.fences = new Array(z.width * z.height).fill('')
+        z.fences[i] = value
+        changed = true
+      }
+    }
+    if (changed) this.fences.rebuild()
+  }
+
+  /** O terreno escolhido é da camada de cima (molduras, tapetes)? */
+  private get overlayLayer() {
+    const t = terrainById.get(this.state.terrain)
+    return !!t && isOverlay(t)
+  }
+
+  /** A grade de vértices da camada do terreno escolhido (cria a de cima, se preciso). */
+  private layerGrid() {
+    const z = this.state.zone
+    if (!this.overlayLayer) return z.corners
+    if (!z.overlay) z.overlay = new Array(z.corners.length).fill('')
+    return z.overlay
+  }
+
   /**
-   * Pinta os vértices do quadrado do pincel. O pincel grava o terreno
-   * explicitamente; a borracha grava '' (= o fundo da zona, que pode mudar).
+   * Pinta os vértices do quadrado do pincel, na camada do terreno escolhido.
+   * O pincel grava o terreno explicitamente; a borracha grava '' (no chão =
+   * o fundo da zona, que pode mudar; na camada de cima = nada).
    */
   private stamp(wx: number, wy: number) {
     const z = this.state.zone
     const value = this.state.tool === 'erase' ? '' : this.state.terrain
     const { tx0, ty0, n } = this.brushTiles(wx, wy)
+    if (this.fenceLayer) return this.stampFence(tx0, ty0, n, value)
     const vx0 = Math.max(0, tx0), vy0 = Math.max(0, ty0)
     const vx1 = Math.min(z.width, tx0 + n), vy1 = Math.min(z.height, ty0 + n)
     if (vx0 > vx1 || vy0 > vy1) return
     const W = z.width + 1
+    // apagar a camada de cima que nem existe: nada a fazer
+    if (value === '' && this.overlayLayer && !z.overlay) return
     let changed = false
     for (let vy = vy0; vy <= vy1; vy++) {
       for (let vx = vx0; vx <= vx1; vx++) {
         const i = vy * W + vx
-        if (z.corners[i] === value) continue
+        if ((this.overlayLayer ? z.overlay?.[i] ?? '' : z.corners[i]) === value) continue
         if (!this.strokeSaved) {
           this.state.checkpoint()
           this.strokeSaved = true
         }
-        z.corners[i] = value
+        this.layerGrid()[i] = value
         changed = true
       }
     }
@@ -485,24 +540,30 @@ export class EditorScene extends Phaser.Scene {
     const z = this.state.zone
     const vx = Math.round(wx / TILE), vy = Math.round(wy / TILE)
     if (vx < 0 || vy < 0 || vx > z.width || vy > z.height) return
+    // cerca não tem balde: o pincel já desenha a linha
+    if (this.fenceLayer) return
     const W = z.width + 1, H = z.height + 1
-    const target = cornerTerrain(z, vx, vy).id
+    const overlay = this.overlayLayer
+    // na camada de cima, o "terreno" de um vértice é o id gravado ('' = nada)
+    const at = (x: number, y: number) => (overlay ? z.overlay?.[y * W + x] ?? '' : cornerTerrain(z, x, y).id)
+    const target = at(vx, vy)
     const value = this.state.terrain
     if (target === value || !terrainById.has(value)) return
 
     this.state.checkpoint()
+    const grid = this.layerGrid()
     const seen = new Uint8Array(W * H)
     const stack = [vy * W + vx]
     seen[stack[0]] = 1
     while (stack.length) {
       const i = stack.pop()!
-      z.corners[i] = value
+      grid[i] = value
       const x = i % W, y = (i - x) / W
       const next = [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]
       for (const [nx, ny] of next) {
         if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue
         const j = ny * W + nx
-        if (!seen[j] && cornerTerrain(z, nx, ny).id === target) {
+        if (!seen[j] && at(nx, ny) === target) {
           seen[j] = 1
           stack.push(j)
         }
@@ -549,7 +610,9 @@ export class EditorScene extends Phaser.Scene {
     const z = this.state.zone
     const vx = Phaser.Math.Clamp(Math.round(p.worldX / TILE), 0, z.width)
     const vy = Phaser.Math.Clamp(Math.round(p.worldY / TILE), 0, z.height)
-    this.state.set({ terrain: cornerTerrain(z, vx, vy).id, tool: tool === 'fill' ? 'fill' : 'brush' })
+    // cerca no tile, depois tapete/moldura, depois o chão
+    const picked = fenceAt(z, Math.floor(p.worldX / TILE), Math.floor(p.worldY / TILE)) ?? overlayTerrain(z, vx, vy) ?? cornerTerrain(z, vx, vy)
+    this.state.set({ terrain: picked.id, tool: tool === 'fill' ? 'fill' : 'brush' })
   }
 
   // ── Ações chamadas pela interface ──────────────────────

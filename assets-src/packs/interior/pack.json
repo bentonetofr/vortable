@@ -1,0 +1,635 @@
+{
+  "name": "[LPC] House interior and decorations",
+  "license": "CC-BY-SA 3.0 / GPL 3.0",
+  "source": "https://opengameart.org/content/lpc-house-interior-and-decorations",
+  "sheets": [
+    {
+      "id": "int",
+      "file": "interior.png",
+      "mode": "pieces",
+      "category": "Interior",
+      "label": "Peça de interior",
+      "tags": [
+        "interior",
+        "casa"
+      ],
+      "collision": "base",
+      "pieces": [
+        {
+          "x": 160,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Garrafa verde",
+          "collision": "none"
+        },
+        {
+          "x": 192,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Taça e garrafa",
+          "collision": "none"
+        },
+        {
+          "x": 224,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Espadas na parede",
+          "kind": "wall",
+          "collision": "none"
+        },
+        {
+          "x": 256,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Martelo de guerra na parede",
+          "kind": "wall",
+          "collision": "none"
+        },
+        {
+          "x": 288,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Cordas na parede",
+          "kind": "wall",
+          "collision": "none"
+        },
+        {
+          "x": 320,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Sachê pendurado",
+          "kind": "wall",
+          "collision": "none"
+        },
+        {
+          "x": 352,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Lamparina pendurada",
+          "kind": "wall",
+          "collision": "none",
+          "light": {
+            "x": 0,
+            "y": -12,
+            "radius": 64,
+            "color": "#ffd070",
+            "intensity": 0.8,
+            "flicker": 0.1
+          }
+        },
+        {
+          "x": 384,
+          "y": 0,
+          "w": 32,
+          "h": 64,
+          "label": "Cestos empilhados"
+        },
+        {
+          "x": 416,
+          "y": 0,
+          "w": 32,
+          "h": 64,
+          "label": "Armário de barril"
+        },
+        {
+          "x": 448,
+          "y": 0,
+          "w": 32,
+          "h": 96,
+          "label": "Cama de solteiro"
+        },
+        {
+          "x": 160,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Bandeja de prata",
+          "collision": "none"
+        },
+        {
+          "x": 192,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Pratos de prata",
+          "collision": "none"
+        },
+        {
+          "x": 224,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Cabide",
+          "kind": "wall",
+          "collision": "none"
+        },
+        {
+          "x": 256,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Escudo na parede",
+          "kind": "wall",
+          "collision": "none"
+        },
+        {
+          "x": 288,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Caveira",
+          "collision": "none"
+        },
+        {
+          "x": 320,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Lamparina pendurada 2",
+          "kind": "wall",
+          "collision": "none",
+          "light": {
+            "x": 0,
+            "y": -12,
+            "radius": 64,
+            "color": "#ffd070",
+            "intensity": 0.8,
+            "flicker": 0.1
+          }
+        },
+        {
+          "x": 352,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Lamparina pendurada 3",
+          "kind": "wall",
+          "collision": "none",
+          "light": {
+            "x": 0,
+            "y": -12,
+            "radius": 64,
+            "color": "#ffd070",
+            "intensity": 0.8,
+            "flicker": 0.1
+          }
+        },
+        {
+          "x": 160,
+          "y": 64,
+          "w": 32,
+          "h": 32,
+          "label": "Pratinhos",
+          "collision": "none"
+        },
+        {
+          "x": 192,
+          "y": 64,
+          "w": 32,
+          "h": 32,
+          "label": "Pilha de pratos",
+          "collision": "none"
+        },
+        {
+          "x": 224,
+          "y": 64,
+          "w": 32,
+          "h": 32,
+          "label": "Bacia com água",
+          "collision": "none"
+        },
+        {
+          "x": 256,
+          "y": 64,
+          "w": 32,
+          "h": 32,
+          "label": "Galho seco no vaso",
+          "collision": "none"
+        },
+        {
+          "x": 288,
+          "y": 64,
+          "w": 32,
+          "h": 32,
+          "label": "Papéis",
+          "kind": "floor",
+          "collision": "none"
+        },
+        {
+          "x": 320,
+          "y": 64,
+          "w": 32,
+          "h": 32,
+          "label": "Ânforas"
+        },
+        {
+          "x": 416,
+          "y": 64,
+          "w": 32,
+          "h": 32,
+          "label": "Mesinha redonda"
+        },
+        {
+          "x": 64,
+          "y": 96,
+          "w": 32,
+          "h": 64,
+          "label": "Balcão com pia"
+        },
+        {
+          "x": 96,
+          "y": 96,
+          "w": 32,
+          "h": 64,
+          "label": "Balcão de cozinha"
+        },
+        {
+          "x": 128,
+          "y": 96,
+          "w": 32,
+          "h": 64,
+          "label": "Fogão de balcão"
+        },
+        {
+          "x": 160,
+          "y": 96,
+          "w": 32,
+          "h": 96,
+          "label": "Armário de cozinha alto"
+        },
+        {
+          "x": 192,
+          "y": 96,
+          "w": 32,
+          "h": 64,
+          "label": "Armário de cozinha"
+        },
+        {
+          "x": 224,
+          "y": 96,
+          "w": 64,
+          "h": 32,
+          "label": "Prateleira de elmos"
+        },
+        {
+          "x": 288,
+          "y": 96,
+          "w": 64,
+          "h": 32,
+          "label": "Prateleira de armaduras"
+        },
+        {
+          "x": 352,
+          "y": 80,
+          "w": 64,
+          "h": 82,
+          "label": "Lareira de tijolos",
+          "light": {
+            "x": 0,
+            "y": -30,
+            "radius": 128,
+            "color": "#ff9a40",
+            "intensity": 1,
+            "flicker": 0.3
+          }
+        },
+        {
+          "x": 320,
+          "y": 162,
+          "w": 96,
+          "h": 40,
+          "label": "Lareira de tijolos baixa",
+          "light": {
+            "x": 0,
+            "y": -14,
+            "radius": 112,
+            "color": "#ff9a40",
+            "intensity": 1,
+            "flicker": 0.3
+          }
+        },
+        {
+          "x": 224,
+          "y": 128,
+          "w": 32,
+          "h": 32,
+          "label": "Sacos e frascos",
+          "collision": "none"
+        },
+        {
+          "x": 256,
+          "y": 128,
+          "w": 32,
+          "h": 32,
+          "label": "Lanterna cinza",
+          "kind": "wall",
+          "collision": "none"
+        },
+        {
+          "x": 288,
+          "y": 128,
+          "w": 32,
+          "h": 32,
+          "label": "Frascos coloridos",
+          "collision": "none"
+        },
+        {
+          "x": 64,
+          "y": 160,
+          "w": 32,
+          "h": 32,
+          "label": "Tábua com peixe",
+          "collision": "none"
+        },
+        {
+          "x": 96,
+          "y": 160,
+          "w": 32,
+          "h": 32,
+          "label": "Armarinho de pratos"
+        },
+        {
+          "x": 128,
+          "y": 160,
+          "w": 32,
+          "h": 32,
+          "label": "Fogão com chaleira"
+        },
+        {
+          "x": 0,
+          "y": 192,
+          "w": 32,
+          "h": 64,
+          "label": "Armário de duas portas"
+        },
+        {
+          "x": 32,
+          "y": 192,
+          "w": 32,
+          "h": 64,
+          "label": "Estante de livros"
+        },
+        {
+          "x": 64,
+          "y": 192,
+          "w": 32,
+          "h": 64,
+          "label": "Estante de pratos"
+        },
+        {
+          "x": 96,
+          "y": 192,
+          "w": 32,
+          "h": 64,
+          "label": "Cômoda"
+        },
+        {
+          "x": 128,
+          "y": 208,
+          "w": 32,
+          "h": 48,
+          "label": "Cômoda baixa"
+        },
+        {
+          "x": 160,
+          "y": 192,
+          "w": 32,
+          "h": 64,
+          "label": "Estante com bacia"
+        },
+        {
+          "x": 192,
+          "y": 192,
+          "w": 32,
+          "h": 64,
+          "label": "Estante com sacos"
+        },
+        {
+          "x": 224,
+          "y": 208,
+          "w": 32,
+          "h": 32,
+          "label": "Livros na prateleira",
+          "collision": "none"
+        },
+        {
+          "x": 224,
+          "y": 224,
+          "w": 32,
+          "h": 32,
+          "label": "Corda pendurada",
+          "kind": "wall",
+          "collision": "none"
+        },
+        {
+          "x": 288,
+          "y": 192,
+          "w": 64,
+          "h": 32,
+          "label": "Cano em arco",
+          "kind": "wall",
+          "collision": "none"
+        },
+        {
+          "x": 320,
+          "y": 224,
+          "w": 32,
+          "h": 96,
+          "label": "Fogão de ferro com cano"
+        },
+        {
+          "x": 288,
+          "y": 256,
+          "w": 32,
+          "h": 32,
+          "label": "Chapa de fogão"
+        },
+        {
+          "x": 352,
+          "y": 256,
+          "w": 64,
+          "h": 32,
+          "label": "Fornalha de ferro dupla",
+          "light": {
+            "x": 0,
+            "y": -12,
+            "radius": 96,
+            "color": "#ff8a30",
+            "intensity": 0.9,
+            "flicker": 0.3
+          }
+        },
+        {
+          "x": 352,
+          "y": 288,
+          "w": 32,
+          "h": 32,
+          "label": "Fogão de ferro aceso",
+          "light": {
+            "x": 0,
+            "y": -12,
+            "radius": 80,
+            "color": "#ff8a30",
+            "intensity": 0.9,
+            "flicker": 0.3
+          }
+        },
+        {
+          "x": 0,
+          "y": 256,
+          "w": 32,
+          "h": 64,
+          "label": "Prateleira com teias"
+        },
+        {
+          "x": 32,
+          "y": 256,
+          "w": 64,
+          "h": 64,
+          "label": "Pilha de barris"
+        },
+        {
+          "x": 96,
+          "y": 256,
+          "w": 32,
+          "h": 64,
+          "label": "Armário de ferro"
+        },
+        {
+          "x": 128,
+          "y": 256,
+          "w": 32,
+          "h": 32,
+          "label": "Caixa de ferramentas"
+        },
+        {
+          "x": 128,
+          "y": 288,
+          "w": 32,
+          "h": 32,
+          "label": "Caixa de lâminas"
+        },
+        {
+          "x": 160,
+          "y": 256,
+          "w": 32,
+          "h": 32,
+          "label": "Cocho com água"
+        },
+        {
+          "x": 192,
+          "y": 256,
+          "w": 32,
+          "h": 64,
+          "label": "Suporte de lanças"
+        },
+        {
+          "x": 0,
+          "y": 320,
+          "w": 32,
+          "h": 32,
+          "label": "Mesa redonda com teias"
+        },
+        {
+          "x": 64,
+          "y": 352,
+          "w": 32,
+          "h": 32,
+          "label": "Mesinha com vela",
+          "light": {
+            "x": 0,
+            "y": -22,
+            "radius": 56,
+            "color": "#ffd080",
+            "intensity": 0.7,
+            "flicker": 0.15
+          }
+        },
+        {
+          "x": 0,
+          "y": 352,
+          "w": 64,
+          "h": 64,
+          "label": "Mesa de alquimia",
+          "light": {
+            "x": 0,
+            "y": -22,
+            "radius": 56,
+            "color": "#ffd080",
+            "intensity": 0.7,
+            "flicker": 0.15
+          }
+        },
+        {
+          "x": 64,
+          "y": 384,
+          "w": 32,
+          "h": 32,
+          "label": "Mesinha com vela 2",
+          "light": {
+            "x": 0,
+            "y": -22,
+            "radius": 56,
+            "color": "#ffd080",
+            "intensity": 0.7,
+            "flicker": 0.15
+          }
+        },
+        {
+          "x": 96,
+          "y": 384,
+          "w": 32,
+          "h": 32,
+          "label": "Galho",
+          "collision": "none"
+        },
+        {
+          "x": 128,
+          "y": 384,
+          "w": 32,
+          "h": 32,
+          "label": "Galho 2",
+          "collision": "none"
+        }
+      ],
+      "anims": [
+        {
+          "x": 32,
+          "y": 320,
+          "w": 32,
+          "h": 32,
+          "frames": 3,
+          "fps": 2,
+          "label": "Relógio de parede",
+          "kind": "wall",
+          "collision": "none"
+        },
+        {
+          "x": 192,
+          "y": 160,
+          "w": 32,
+          "h": 32,
+          "frames": 3,
+          "fps": 8,
+          "label": "Forno aceso",
+          "light": {
+            "x": 0,
+            "y": -10,
+            "radius": 80,
+            "color": "#ff8a30",
+            "intensity": 0.9,
+            "flicker": 0.3
+          }
+        }
+      ]
+    }
+  ],
+  "objects": {}
+}

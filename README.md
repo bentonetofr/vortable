@@ -45,6 +45,15 @@ npm run dev
 - **Nova → Interior** cria uma zona pequena com fundo escuro; use os terrenos de *Interior*
   (pisos, tapetes, paredes).
 
+### Terrenos, paredes, tapetes e cercas
+
+- **Paredes**: pinte uma faixa de 3 tiles de altura com um terreno de *Paredes* (sai moldura,
+  face e rodapé); em volta do cômodo, pinte uma **moldura de teto** por cima da sala inteira.
+- **Camada de cima** (molduras de teto e tapetes): pinta por cima do piso. Com um desses
+  escolhido, borracha e balde agem só nessa camada.
+- **Cercas**: pinte o caminho com o pincel; cada pedaço se liga aos vizinhos sozinho.
+- A busca no topo da aba acha por nome ou família ("tijolo", "tapete", "madeira").
+
 ### Objetos
 
 - Quatro tipos: **em pé** (árvore, armário: o boneco passa na frente ou atrás), **no chão**
@@ -53,6 +62,8 @@ npm run dev
   transparentes quando escondem o boneco.
 - Peças com **variantes** (cores da árvore, baú fechado/aberto) aparecem uma vez na paleta;
   troque a variante no painel da peça, inclusive de um objeto já colocado.
+- **Altura** (objeto selecionado): ▲/▼ sobe a peça pra cima de uma mesa ou balcão; quem
+  decide quem fica na frente é o ponto no chão.
 - `F` espelha. ★ marca favoritos; *Recentes* lembra o que você usou. A busca acha por nome,
   tag e tipo (sem precisar de acento).
 - **Curar** (só com `npm run dev`): ajusta nome, categoria, tags, tipo, colisão (desenhe

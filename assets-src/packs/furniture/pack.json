@@ -1,0 +1,375 @@
+{
+  "name": "[LPC] Wooden Furniture",
+  "license": "CC-BY-SA 3.0 / CC-BY-SA 4.0 / GPL 3.0",
+  "source": "https://opengameart.org/content/lpc-wooden-furniture",
+  "sheets": [
+    {
+      "id": "furn-dark-wood",
+      "file": "dark-wood.png",
+      "category": "Móveis",
+      "label": "Móvel",
+      "variant": "Madeira escura",
+      "tags": [
+        "interior",
+        "madeira",
+        "móvel"
+      ],
+      "collision": "base"
+    },
+    {
+      "id": "furn-blonde-wood",
+      "file": "blonde-wood.png",
+      "category": "Móveis",
+      "label": "Móvel",
+      "variant": "Madeira clara",
+      "tags": [
+        "interior",
+        "madeira",
+        "móvel"
+      ],
+      "collision": "base",
+      "variantOf": "furn-dark-wood"
+    },
+    {
+      "id": "furn-white-wood",
+      "file": "white-wood.png",
+      "category": "Móveis",
+      "label": "Móvel",
+      "variant": "Madeira branca",
+      "tags": [
+        "interior",
+        "madeira",
+        "móvel"
+      ],
+      "collision": "base",
+      "variantOf": "furn-dark-wood"
+    },
+    {
+      "id": "furn-green-wood",
+      "file": "green-wood.png",
+      "category": "Móveis",
+      "label": "Móvel",
+      "variant": "Madeira verde",
+      "tags": [
+        "interior",
+        "madeira",
+        "móvel"
+      ],
+      "collision": "base",
+      "variantOf": "furn-dark-wood"
+    }
+  ],
+  "objects": {
+    "furn-dark-wood@0,12": {
+      "label": "Móvel entalhado"
+    },
+    "furn-dark-wood@96,0": {
+      "hidden": true
+    },
+    "furn-dark-wood@450,33": {
+      "label": "Prateleira baixa"
+    },
+    "furn-dark-wood@482,33": {
+      "label": "Armário baixo"
+    },
+    "furn-dark-wood@102,64": {
+      "label": "Armário grande"
+    },
+    "furn-dark-wood@160,64": {
+      "hidden": true
+    },
+    "furn-dark-wood@354,65": {
+      "label": "Gaveteiro baixo"
+    },
+    "furn-dark-wood@354,81": {
+      "label": "Armário de portas"
+    },
+    "furn-dark-wood@386,73": {
+      "label": "Armário de portas 2"
+    },
+    "furn-dark-wood@418,65": {
+      "label": "Armário alto"
+    },
+    "furn-dark-wood@160,130": {
+      "label": "Banquinho redondo"
+    },
+    "furn-dark-wood@270,128": {
+      "hidden": true
+    },
+    "furn-dark-wood@354,113": {
+      "hidden": true
+    },
+    "furn-dark-wood@386,105": {
+      "label": "Gaveteiro baixo 2"
+    },
+    "furn-dark-wood@450,97": {
+      "label": "Armário de portas 3"
+    },
+    "furn-dark-wood@482,97": {
+      "label": "Criado-mudo"
+    },
+    "furn-dark-wood@136,176": {
+      "label": "Cadeira lateral"
+    },
+    "furn-dark-wood@0,233": {
+      "label": "Mesa comprida"
+    },
+    "furn-dark-wood@100,231": {
+      "label": "Cadeira de encosto alto"
+    },
+    "furn-dark-wood@225,227": {
+      "label": "Mesa redonda grande"
+    },
+    "furn-dark-wood@296,236": {
+      "label": "Cadeira de encosto alto 2"
+    },
+    "furn-dark-wood@334,232": {
+      "label": "Banco comprido"
+    },
+    "furn-dark-wood@416,224": {
+      "label": "Mesinha alta"
+    },
+    "furn-dark-wood@451,232": {
+      "label": "Banquinho"
+    },
+    "furn-dark-wood@480,211": {
+      "label": "Mesa baixa"
+    },
+    "furn-dark-wood@484,229": {
+      "label": "Banquinho 2"
+    },
+    "furn-dark-wood@135,264": {
+      "label": "Banco baixo"
+    },
+    "furn-dark-wood@328,258": {
+      "label": "Mesa de centro comprida"
+    },
+    "furn-dark-wood@452,264": {
+      "label": "Pufe"
+    },
+    "furn-dark-wood@485,261": {
+      "label": "Poltrona pequena"
+    },
+    "furn-dark-wood@0,304": {
+      "hidden": true
+    },
+    "furn-dark-wood@256,288": {
+      "hidden": true
+    },
+    "furn-dark-wood@0,368": {
+      "hidden": true
+    },
+    "furn-dark-wood@0,419": {
+      "hidden": true
+    },
+    "furn-dark-wood@128,417": {
+      "hidden": true
+    },
+    "furn-dark-wood@8,452": {
+      "label": "Cama de casal"
+    },
+    "furn-dark-wood@72,451": {
+      "label": "Cama de casal entalhada"
+    },
+    "furn-dark-wood@0,485": {
+      "label": "Pé de cama"
+    },
+    "furn-dark-wood@72,485": {
+      "label": "Pé de cama 2"
+    },
+    "furn-dark-wood@320,503": {
+      "label": "Escrivaninha dupla"
+    },
+    "furn-dark-wood@419,488": {
+      "label": "Par de cadeiras"
+    },
+    "furn-dark-wood@451,480": {
+      "hidden": true
+    },
+    "furn-dark-wood@483,488": {
+      "label": "Par de cadeiras 2"
+    },
+    "furn-dark-wood@8,536": {
+      "label": "Cama estreita"
+    },
+    "furn-dark-wood@50,536": {
+      "hidden": true
+    },
+    "furn-dark-wood@68,536": {
+      "hidden": true
+    },
+    "furn-dark-wood@96,536": {
+      "label": "Cama estreita 2"
+    },
+    "furn-dark-wood@136,544": {
+      "label": "Cama estreita 3"
+    },
+    "furn-dark-wood@178,544": {
+      "hidden": true
+    },
+    "furn-dark-wood@200,544": {
+      "hidden": true
+    },
+    "furn-dark-wood@224,544": {
+      "label": "Cama estreita 4"
+    },
+    "furn-dark-wood@265,557": {
+      "label": "Cama estreita 5"
+    },
+    "furn-dark-wood@306,557": {
+      "hidden": true
+    },
+    "furn-dark-wood@329,557": {
+      "hidden": true
+    },
+    "furn-dark-wood@352,557": {
+      "label": "Cama estreita 6"
+    },
+    "furn-dark-wood@386,545": {
+      "label": "Poltrona"
+    },
+    "furn-dark-wood@419,551": {
+      "label": "Cadeira"
+    },
+    "furn-dark-wood@389,576": {
+      "label": "Cadeira lateral 2"
+    },
+    "furn-dark-wood@424,576": {
+      "label": "Cadeira lateral 3"
+    },
+    "furn-dark-wood@482,552": {
+      "label": "Escrivaninha com cadeira"
+    },
+    "furn-dark-wood@0,627": {
+      "hidden": true
+    },
+    "furn-dark-wood@64,609": {
+      "label": "Penteadeira com espelho"
+    },
+    "furn-dark-wood@132,630": {
+      "hidden": true
+    },
+    "furn-dark-wood@170,610": {
+      "label": "Beliche"
+    },
+    "furn-dark-wood@297,613": {
+      "label": "Beliche com escada"
+    },
+    "furn-dark-wood@387,608": {
+      "label": "Cadeira de palha"
+    },
+    "furn-dark-wood@420,614": {
+      "label": "Criado-mudo 2"
+    },
+    "furn-dark-wood@483,614": {
+      "label": "Cadeira de costas"
+    },
+    "furn-dark-wood@389,641": {
+      "label": "Cadeira de palha 2"
+    },
+    "furn-dark-wood@423,641": {
+      "label": "Cadeira de palha 3"
+    },
+    "furn-dark-wood@135,677": {
+      "label": "Relógio de pé pequeno"
+    },
+    "furn-dark-wood@386,673": {
+      "label": "Cadeira de balanço"
+    },
+    "furn-dark-wood@419,679": {
+      "label": "Cadeira de balanço 2"
+    },
+    "furn-dark-wood@450,673": {
+      "label": "Poltrona 2"
+    },
+    "furn-dark-wood@483,679": {
+      "label": "Cadeira 2"
+    },
+    "furn-dark-wood@282,704": {
+      "label": "Aparador"
+    },
+    "furn-dark-wood@453,704": {
+      "label": "Cadeira lateral 4"
+    },
+    "furn-dark-wood@488,704": {
+      "label": "Cadeira lateral 5"
+    },
+    "furn-dark-wood@200,769": {
+      "label": "Gaveteiro estreito"
+    },
+    "furn-dark-wood@232,769": {
+      "label": "Gaveteiro estreito 2"
+    },
+    "furn-dark-wood@263,748": {
+      "label": "Relógio de pêndulo"
+    },
+    "furn-dark-wood@295,748": {
+      "label": "Relógio de pêndulo 2"
+    },
+    "furn-dark-wood@327,748": {
+      "label": "Relógio de pêndulo 3"
+    },
+    "furn-dark-wood@385,752": {
+      "label": "Lareira de madeira",
+      "light": {
+        "x": 0,
+        "y": -16,
+        "radius": 128,
+        "color": "#ff9a40",
+        "intensity": 1,
+        "flicker": 0.3
+      }
+    },
+    "furn-dark-wood@491,745": {
+      "label": "Coluna de madeira"
+    },
+    "furn-dark-wood@3,800": {
+      "label": "Banco longo"
+    },
+    "furn-dark-wood@99,803": {
+      "label": "Banco longo 2"
+    },
+    "furn-dark-wood@0,849": {
+      "label": "Piano de cauda"
+    },
+    "furn-dark-wood@80,843": {
+      "label": "Piano"
+    },
+    "furn-dark-wood@161,819": {
+      "label": "Órgão de tubos"
+    },
+    "furn-dark-wood@264,855": {
+      "label": "Mesa de jantar"
+    },
+    "furn-dark-wood@354,850": {
+      "label": "Biombo"
+    },
+    "furn-dark-wood@390,859": {
+      "label": "Biombo dobrado"
+    },
+    "furn-dark-wood@419,853": {
+      "label": "Biombo grande"
+    },
+    "furn-dark-wood@101,901": {
+      "label": "Banquinho baixo"
+    },
+    "furn-dark-wood@272,896": {
+      "label": "Mesa de trabalho"
+    },
+    "furn-dark-wood@0,928": {
+      "label": "Estante grande"
+    },
+    "furn-dark-wood@66,960": {
+      "label": "Estante baixa"
+    },
+    "furn-dark-wood@326,962": {
+      "label": "Cadeira gótica"
+    },
+    "furn-dark-wood@358,962": {
+      "label": "Cadeira gótica 2"
+    },
+    "furn-dark-wood@387,960": {
+      "label": "Cadeira gótica 3"
+    }
+  }
+}

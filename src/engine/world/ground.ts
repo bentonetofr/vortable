@@ -13,10 +13,15 @@
 //   9 borda-esq 10 miolo     11 borda-dir
 //  12 fora-BL  13 borda-baixo 14 fora-BR
 //  15,16,17 variações do miolo
+//
+// Terrenos de autotile do Tiled (wang: paredes, molduras, tapetes) têm
+// uma tabela máscara → tiles; máscara que falta é montada com pedaços.
+// A camada `overlay` (zone.overlay) é desenhada por cima do chão, com a
+// mesma regra; vértice vazio ('') não tem nada.
 // ────────────────────────────────────────────────────────
 
 import Phaser from 'phaser'
-import { TERRAINS, terrainById, terrainFrame, terrainTexture, type TerrainDef } from '../assets/terrains'
+import { TERRAINS, terrainById, terrainFrame, terrainTexture, wangFrame, type TerrainDef } from '../assets/terrains'
 import { TILE, type ZoneData } from '../types'
 import { hash2 } from '../rng'
 
@@ -28,9 +33,41 @@ export const MASK_FRAMES: Record<number, number[]> = {
 }
 /** Miolo: o quadro 10 na maioria das vezes, às vezes uma variação. */
 function fillFrame(t: TerrainDef, tx: number, ty: number) {
+  // textura de 64×64: o quadrante certo pra posição (emenda sem costura)
+  if (t.gen && 'size' in t.gen && t.gen.size === 64) return [10, 15, 16, 17][(tx & 1) + (ty & 1) * 2]
   const variants = t.fills ?? [15, 16, 17]
   const r = hash2(tx, ty) % 7
   return r < variants.length ? variants[r] : 10
+}
+
+/** Ordem de tentativa pra montar uma máscara que falta na tabela (maiores primeiro). */
+const WANG_PARTS = [7, 11, 13, 14, 3, 12, 5, 10, 1, 2, 4, 8]
+
+/** Tiles (wang) que desenham a máscara: o próprio, ou pedaços que somados a cobrem. */
+function wangTiles(t: TerrainDef, mask: number, tx: number, ty: number): [number, number][] {
+  const table = t.wang!
+  const pick = (m: number) => {
+    const list = table[m]
+    return list && list.length ? list[hash2(tx, ty) % list.length] : null
+  }
+  const exact = pick(mask)
+  if (exact) return [exact]
+  const out: [number, number][] = []
+  let covered = 0
+  for (const part of WANG_PARTS) {
+    if ((part & mask) !== part || (part & ~covered) === 0) continue
+    const tile = pick(part)
+    if (!tile) continue
+    out.push(tile)
+    covered |= part
+    if (covered === mask) break
+  }
+  return out
+}
+
+export function overlayTerrain(zone: ZoneData, vx: number, vy: number): TerrainDef | null {
+  const id = zone.overlay?.[vy * (zone.width + 1) + vx]
+  return (id && terrainById.get(id)) || null
 }
 
 export function cornerTerrain(zone: ZoneData, vx: number, vy: number): TerrainDef {
@@ -73,18 +110,34 @@ export class Ground {
 
   private drawTile(tx: number, ty: number) {
     const z = this.zone
+    const x = tx * TILE, y = ty * TILE
+    // máscara 15 = tile inteiro (miolo)
+    const draw = (t: TerrainDef, mask: number) => {
+      if (t.wang) {
+        for (const [fx, fy] of wangTiles(t, mask, tx, ty)) this.rt.batchDrawFrame(terrainTexture(t), wangFrame(fx, fy), x, y)
+        return
+      }
+      const frames = mask === 15 ? [fillFrame(t, tx, ty)] : MASK_FRAMES[mask] ?? []
+      for (const n of frames) this.rt.batchDrawFrame(terrainTexture(t), terrainFrame(t.id, n), x, y)
+    }
+
+    // chão: o de menor rank é o fundo inteiro; os outros por cima, só nos cantos deles
     const c = [cornerTerrain(z, tx, ty), cornerTerrain(z, tx + 1, ty), cornerTerrain(z, tx, ty + 1), cornerTerrain(z, tx + 1, ty + 1)]
     const present = [...new Set(c)].sort((a, b) => a.rank - b.rank)
-    const x = tx * TILE, y = ty * TILE
-    const draw = (t: TerrainDef, n: number) => this.rt.batchDrawFrame(terrainTexture(t), terrainFrame(t.id, n), x, y)
+    draw(present[0], 15)
+    for (let i = 1; i < present.length; i++) draw(present[i], cornerMask(c, present[i].rank))
 
-    draw(present[0], fillFrame(present[0], tx, ty))
-    for (let i = 1; i < present.length; i++) {
-      const r = present[i].rank
-      const mask = (c[0].rank >= r ? 1 : 0) | (c[1].rank >= r ? 2 : 0) | (c[2].rank >= r ? 4 : 0) | (c[3].rank >= r ? 8 : 0)
-      for (const n of MASK_FRAMES[mask] ?? []) draw(present[i], n)
-    }
+    // camada de cima: vértice vazio não tem nada
+    if (!z.overlay) return
+    const o = [overlayTerrain(z, tx, ty), overlayTerrain(z, tx + 1, ty), overlayTerrain(z, tx, ty + 1), overlayTerrain(z, tx + 1, ty + 1)]
+    const layers = [...new Set(o.filter((t): t is TerrainDef => !!t))].sort((a, b) => a.rank - b.rank)
+    for (const t of layers) draw(t, cornerMask(o, t.rank))
   }
+}
+
+/** Cantos (TL=1, TR=2, BL=4, BR=8) com terreno de rank ≥ r (vazio = nenhum). */
+function cornerMask(c: (TerrainDef | null)[], r: number) {
+  return (c[0] && c[0].rank >= r ? 1 : 0) | (c[1] && c[1].rank >= r ? 2 : 0) | (c[2] && c[2].rank >= r ? 4 : 0) | (c[3] && c[3].rank >= r ? 8 : 0)
 }
 
 /** Tiles bloqueados pelo terreno: 3+ cantos sólidos. Junta vizinhos na mesma linha. */

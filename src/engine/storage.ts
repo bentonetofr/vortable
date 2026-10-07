@@ -6,7 +6,7 @@
 //   • (M4) Supabase, pela ponte no Vorterium (um mundo por campanha)
 // ────────────────────────────────────────────────────────
 
-import { TILE, ZONE_MAX, ZONE_MIN, newId, type Portal, type WorldData, type ZoneData } from './types'
+import { TILE, ZONE_MAX, ZONE_MIN, Z_MAX, newId, type Portal, type WorldData, type ZoneData } from './types'
 
 export interface ZoneSummary {
   id: string
@@ -162,7 +162,18 @@ export function parseZone(json: unknown): ZoneData {
     height: height!,
     base: typeof z.base === 'string' ? z.base : 'grass',
     corners: z.corners.map((c) => (typeof c === 'string' ? c : '')),
-    objects: objects.map((o) => ({ kind: o.kind, x: Math.round(o.x), y: Math.round(o.y), ...(o.flip === true ? { flip: true } : {}) })),
+    // camada de cima com tamanho errado é descartada (não quebra a zona)
+    ...(Array.isArray(z.overlay) && z.overlay.length === z.corners.length && z.overlay.some((c) => c)
+      ? { overlay: z.overlay.map((c) => (typeof c === 'string' ? c : '')) }
+      : {}),
+    ...(Array.isArray(z.fences) && z.fences.length === width! * height! && z.fences.some((c) => c)
+      ? { fences: z.fences.map((c) => (typeof c === 'string' ? c : '')) }
+      : {}),
+    objects: objects.map((o) => ({
+      kind: o.kind, x: Math.round(o.x), y: Math.round(o.y),
+      ...(o.flip === true ? { flip: true } : {}),
+      ...(num(o.z) && o.z > 0 ? { z: Math.min(Z_MAX, Math.round(o.z)) } : {}),
+    })),
     portals: portals.map((p) => ({
       id: p.id,
       name: typeof p.name === 'string' ? p.name : 'Saída',
