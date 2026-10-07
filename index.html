@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vortable</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #12100e; color: #e8dcc4; font-family: system-ui, sans-serif; }
+      #app { position: fixed; inset: 0; }
+      #hud { position: fixed; left: 12px; bottom: 12px; padding: 8px 12px; background: rgba(18,16,14,.8);
+             border: 1px solid #4a3f30; border-radius: 6px; font-size: 13px; line-height: 1.5; pointer-events: none; }
+      kbd { background: #2c261e; border: 1px solid #5a4c38; border-radius: 3px; padding: 0 4px; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="hud">
+      <kbd>WASD</kbd>/<kbd>setas</kbd> andar · <kbd>Shift</kbd> correr ·
+      <kbd>R</kbd> aparência aleatória · <kbd>C</kbd> mostrar colisões
+    </div>
+    <script type="module" src="/src/dev/main.ts"></script>
+  </body>
+</html>
