@@ -2,6 +2,8 @@
 // Cena de jogo: desenha UMA zona (chão + objetos), coloca o jogador e
 // segue ele com a câmera. Pisar numa saída escurece a tela, carrega a
 // zona de destino e reinicia a cena lá — só a zona atual fica na memória.
+// A iluminação (lighting.ts) é desenhada depois que a câmera chega na
+// posição do quadro — por isso a câmera segue o jogador aqui, à mão.
 // ────────────────────────────────────────────────────────
 
 import Phaser from 'phaser'
@@ -10,6 +12,7 @@ import { Ground, solidTerrainRects } from '../world/ground'
 import { Occluders, addObjectSolids, createObjectSprite } from '../world/objects'
 import { FenceLayer, fenceSolids } from '../world/fences'
 import { Player, isTyping } from '../world/Player'
+import { BLOB, Lighting } from '../world/lighting'
 import { TILE, type Appearance, type Dir, type Portal, type ZoneData } from '../types'
 
 export interface WorldSceneData {
@@ -22,10 +25,17 @@ export interface WorldSceneData {
   arrival?: { portal: string; dir: Dir }
   /** Avisado a cada troca de zona (a interface mostra o nome). */
   onZone?: (zone: ZoneData) => void
+  /** Avisado de tempos em tempos com a hora da zona (0–24), pro relógio da interface. */
+  onClock?: (hour: number) => void
+  /** Deslocamento do relógio do mundo em ms (o teste do editor começa na hora da prévia). */
+  timeOffset?: number
 }
 
 const PLAYER_KEY = 'char:me'
 const FADE_MS = 220
+/** Quanto a câmera anda até o jogador por quadro (0–1). */
+const FOLLOW_LERP = 0.15
+const CLOCK_MS = 500
 
 export class WorldScene extends Phaser.Scene {
   private player?: Player
@@ -37,6 +47,9 @@ export class WorldScene extends Phaser.Scene {
   private armed = false
   private travelling = false
   private occluders = new Occluders()
+  private lighting?: Lighting
+  private blob?: Phaser.GameObjects.Image
+  private clockAt = 0
 
   constructor() {
     super('world')
@@ -48,6 +61,9 @@ export class WorldScene extends Phaser.Scene {
     this.armed = false
     this.travelling = false
     this.occluders = new Occluders()
+    this.lighting = undefined
+    this.blob = undefined
+    this.clockAt = 0
   }
 
   async create() {
@@ -57,6 +73,10 @@ export class WorldScene extends Phaser.Scene {
     new Ground(this, zone)
     for (const o of zone.objects) this.occluders.add(createObjectSprite(this, o), o)
     new FenceLayer(this, zone)
+    const lighting = (this.lighting = new Lighting(this, zone))
+    lighting.timeOffset = this.cfg.timeOffset ?? 0
+    this.events.on(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.events.off(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this))
 
     const solids = this.physics.add.staticGroup()
     for (const r of [...solidTerrainRects(zone), ...fenceSolids(zone)]) solids.add(this.add.zone(r.x + r.w / 2, r.y + r.h / 2, r.w, r.h))
@@ -86,8 +106,11 @@ export class WorldScene extends Phaser.Scene {
     const at = door ? { x: door.x + door.w / 2, y: door.y + door.h / 2 + 5 } : zone.spawn
     this.player = new Player(this, PLAYER_KEY, at.x, at.y, arrival?.dir ?? 'down')
     this.physics.add.collider(this.player.sprite, solids)
-    cam.startFollow(this.player.sprite, true, 0.15, 0.15)
     cam.centerOn(at.x, at.y)
+    // sombra macia sob os pés (o boneco LPC não tem) + a sombra comprida do sol
+    this.blob = this.add.image(at.x, at.y, BLOB).setScale(0.75, 0.6).setAlpha(0.32)
+    const sprite = this.player.sprite
+    lighting.extraCasters = () => [{ key: sprite.texture.key, frame: sprite.frame.name, x: sprite.x, y: sprite.y, originY: sprite.originY }]
 
     // setas e espaço não rolam a página enquanto se joga (sem prender WASD dos campos de texto)
     const noScroll = (e: KeyboardEvent) => {
@@ -113,6 +136,31 @@ export class WorldScene extends Phaser.Scene {
       this.player?.refresh()
     } catch (err) {
       console.error('[vortable] aparência não carregou', err)
+    }
+  }
+
+  /** Depois da física e antes de desenhar: câmera no jogador, sombra dos pés, luz. */
+  private preRender() {
+    const player = this.player
+    const cam = this.cameras.main
+    if (player) {
+      const s = player.sprite
+      let x = cam.scrollX + (s.x - cam.width / 2 - cam.scrollX) * FOLLOW_LERP
+      let y = cam.scrollY + (s.y - cam.height / 2 - cam.scrollY) * FOLLOW_LERP
+      if (cam.useBounds) {
+        x = cam.clampX(x)
+        y = cam.clampY(y)
+      }
+      cam.setScroll(x, y)
+      this.blob?.setPosition(s.x, s.y - 1).setDepth(s.depth - 0.5)
+    }
+    const lighting = this.lighting
+    if (!lighting) return
+    lighting.render(this.game.loop.delta)
+    const now = this.time.now
+    if (this.cfg.onClock && now - this.clockAt > CLOCK_MS) {
+      this.clockAt = now
+      this.cfg.onClock(lighting.hour)
     }
   }
 

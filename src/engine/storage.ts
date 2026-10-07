@@ -6,7 +6,7 @@
 //   • (M4) Supabase, pela ponte no Vorterium (um mundo por campanha)
 // ────────────────────────────────────────────────────────
 
-import { TILE, ZONE_MAX, ZONE_MIN, Z_MAX, newId, type Portal, type WorldData, type ZoneData } from './types'
+import { LIGHT_RADIUS_MAX, LIGHT_RADIUS_MIN, TILE, ZONE_MAX, ZONE_MIN, Z_MAX, newId, type Portal, type WorldData, type ZoneData, type ZoneLight, type ZoneLighting } from './types'
 
 export interface ZoneSummary {
   id: string
@@ -177,6 +177,8 @@ export function parseZone(json: unknown): ZoneData {
       ...(o.flip === true ? { flip: true } : {}),
       ...(num(o.z) && o.z > 0 ? { z: Math.min(Z_MAX, Math.round(o.z)) } : {}),
     })),
+    ...parseLighting(z.lighting),
+    ...(Array.isArray(z.lights) && z.lights.length ? { lights: parseLights(z.lights, W, H) } : {}),
     portals: portals.map((p) => ({
       id: p.id,
       name: typeof p.name === 'string' ? p.name : 'Saída',
@@ -185,6 +187,39 @@ export function parseZone(json: unknown): ZoneData {
     })),
     spawn: { x: Math.round(spawn.x), y: Math.round(spawn.y) },
   }
+}
+
+const COLOR = /^#[0-9a-f]{6}$/i
+const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n))
+
+function parseLighting(l: unknown): { lighting?: ZoneLighting } {
+  const v = l as Partial<ZoneLighting> | null
+  if (!v || typeof v !== 'object') return {}
+  const place = v.place === 'indoor' || v.place === 'underground' ? v.place : 'outdoor'
+  return {
+    lighting: {
+      place,
+      hour: num(v.hour) ? clamp(v.hour, 0, 24) % 24 : null,
+      ...(num(v.dayMinutes) && v.dayMinutes > 0 ? { dayMinutes: clamp(v.dayMinutes, 1, 24 * 60) } : {}),
+      ...(typeof v.tint === 'string' && COLOR.test(v.tint) ? { tint: v.tint } : {}),
+      ...(v.sunShadows === false ? { sunShadows: false } : {}),
+      ...(v.particles === false ? { particles: false } : {}),
+    },
+  }
+}
+
+function parseLights(list: unknown[], W: number, H: number): ZoneLight[] {
+  return list
+    .filter((l): l is ZoneLight => !!l && typeof l === 'object' && num((l as ZoneLight).x) && num((l as ZoneLight).y))
+    .map((l) => ({
+      id: typeof l.id === 'string' && l.id ? l.id : newId('luz'),
+      x: clamp(Math.round(l.x), 0, W),
+      y: clamp(Math.round(l.y), 0, H),
+      radius: num(l.radius) ? clamp(Math.round(l.radius), LIGHT_RADIUS_MIN, LIGHT_RADIUS_MAX) : 96,
+      color: typeof l.color === 'string' && COLOR.test(l.color) ? l.color : '#ffb060',
+      intensity: num(l.intensity) ? clamp(l.intensity, 0, 1) : 1,
+      flicker: num(l.flicker) ? clamp(l.flicker, 0, 1) : 0,
+    }))
 }
 
 export function parseWorld(json: unknown): WorldData {

@@ -36,6 +36,10 @@ export interface ZoneData {
    */
   rooms?: string[]
   objects: ZoneObject[]
+  /** Luz e hora da zona. Ausente = ao ar livre, seguindo o ciclo dia/noite. */
+  lighting?: ZoneLighting
+  /** Luzes soltas (ferramenta Luz), além das que os objetos já têm. */
+  lights?: ZoneLight[]
   /** Saídas: áreas que levam a outra zona (porta, escada, borda do mapa). */
   portals: Portal[]
   /** Onde o jogador aparece quando entra no mundo por esta zona, em pixels. */
@@ -56,6 +60,44 @@ export interface Portal {
   /** Pra onde leva (zona + saída de lá). null = ainda não ligada. */
   to: { zone: string; portal: string } | null
 }
+
+/**
+ * Onde a zona fica e que horas são lá.
+ *   outdoor     = ao ar livre: a cor do céu muda com a hora, o sol faz sombra
+ *   indoor      = interior: mais escuro que lá fora; de dia entra luz pelas janelas
+ *   underground = caverna/masmorra: nunca vê o sol; a escuridão tem a cor `tint`
+ */
+export interface ZoneLighting {
+  place: 'outdoor' | 'indoor' | 'underground'
+  /** null = ciclo dia/noite (segue o relógio do mundo); número = hora fixa (0–24). */
+  hour: number | null
+  /** Ciclo: quantos minutos reais dura um dia. */
+  dayMinutes?: number
+  /** Subterrâneo: a cor da escuridão (quanto mais escura, mais breu). */
+  tint?: string
+  /** Sombras do sol (ao ar livre). Padrão: ligadas. */
+  sunShadows?: boolean
+  /** Vaga-lumes, poeira, faíscas e fumaça. Padrão: ligados. */
+  particles?: boolean
+}
+
+export const DAY_MINUTES = 24
+
+/** Uma luz solta no mapa, em px; o brilho dos objetos vem do catálogo. */
+export interface ZoneLight {
+  id: string
+  x: number
+  y: number
+  radius: number
+  color: string
+  /** 0–1. */
+  intensity: number
+  /** 0 = parada; 1 = tremula muito (fogo). */
+  flicker: number
+}
+
+export const LIGHT_RADIUS_MIN = 16
+export const LIGHT_RADIUS_MAX = 512
 
 /** O mundo: as zonas de uma campanha e como elas aparecem no mapa do mundo. */
 export interface WorldData {

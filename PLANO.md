@@ -201,7 +201,7 @@ nova faz isso numa ação só, em qualquer forma:
   rodapé) e a borda em volta do cômodo também, em qualquer fundo (vale em zona de exterior)
 - ✅ *Montar o interior de uma casa como no Stardew leva um minuto*
 
-### M3.5 — Iluminação e atmosfera
+### M3.5 — Iluminação e atmosfera ✅ (concluído)
 - **Luz ambiente por zona**: cor + intensidade, com presets (Dia, Entardecer, Noite,
   Interior, Caverna, Masmorra)
 - **Fontes de luz**: objetos com luz própria (tocha, lampião, vela, lareira, janela acesa) e
@@ -214,6 +214,14 @@ nova faz isso numa ação só, em qualquer forma:
 - **Janelas que acendem** à noite; brilho da lava e da água venenosa
 - **Partículas leves**: fumaça de chaminé, faíscas de fogueira, vaga-lumes, poeira de masmorra
 - Editor: alternar "ver iluminação" e um controle de hora pra pré-visualizar
+- Feito, além do previsto:
+  - **Sombras do sol**: árvores, objetos altos e os bonecos deitam a silhueta no chão, longa de
+    manhã e à tarde, curta ao meio-dia, girando com o sol; somem à noite
+  - **A luz respeita as paredes** dos cômodos (polígono de visibilidade com penumbra suave)
+  - **Facho de sol pelas janelas** nos interiores de dia; sombra macia sob os pés do boneco
+  - Halo quente em volta do fogo quando escurece; o relógio aparece no teste
+- ⏳ Ficou pra depois: objetos barrando luz (na perspectiva ¾ o pé faria sombra no próprio
+  desenho); fumaça de chaminé (falta casa por fora); controle da hora pelo mestre (M4)
 - ✅ *Uma taverna à noite, com lareira e velas, parece aconchegante; uma masmorra, ameaçadora*
 
 ### M4 — Integração Vorterium + multiplayer

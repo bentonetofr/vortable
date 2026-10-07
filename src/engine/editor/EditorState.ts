@@ -4,11 +4,14 @@
 // escutam as mudanças por aqui — nenhuma fala direto com a outra.
 // ────────────────────────────────────────────────────────
 
-import type { WorldData, ZoneData, ZoneObject } from '../types'
+import type { WorldData, ZoneData, ZoneLight, ZoneObject } from '../types'
 import { ROOM_PRESETS, type RoomStyle } from '../world/rooms'
 import type { ZoneSummary } from '../storage'
 
-export type Tool = 'brush' | 'fill' | 'erase' | 'object' | 'select' | 'room' | 'portal' | 'spawn'
+export type Tool = 'brush' | 'fill' | 'erase' | 'object' | 'select' | 'room' | 'light' | 'portal' | 'spawn'
+
+/** Jeito de uma luz solta (o que a ferramenta Luz põe; a selecionada é editada no lugar). */
+export type LightLook = Pick<ZoneLight, 'radius' | 'color' | 'intensity' | 'flicker'>
 
 /**
  * zone   = a zona inteira mudou (desfazer, abrir, nova) → redesenhar tudo
@@ -47,6 +50,14 @@ export class EditorState {
   modalOpen = false
   /** Id da saída selecionada (ferramenta de saída). */
   selectedPortal: string | null = null
+  /** Id da luz solta selecionada (ferramenta Luz). */
+  selectedLight: string | null = null
+  /** Como sai a próxima luz solta. */
+  lightLook: LightLook = { radius: 112, color: '#ffa050', intensity: 1, flicker: 0.25 }
+  /** Mostrar a iluminação no editor (escuro da hora, luzes, sombras). */
+  lightPreview = true
+  /** Zona em ciclo dia/noite: que hora mostrar no editor (só prévia, não é salva). */
+  previewHour = 12
   /** O mundo e as zonas salvas nele (pro mapa do mundo e destinos das saídas). */
   world: WorldData | null = null
   zones: ZoneSummary[] = []
@@ -74,10 +85,11 @@ export class EditorState {
     for (const fn of this.listeners) fn(c)
   }
 
-  set(patch: Partial<Pick<EditorState, 'tool' | 'terrain' | 'brush' | 'objectKind' | 'flip' | 'roomStyle' | 'roomMode' | 'snap' | 'showGrid' | 'showCollision' | 'selected' | 'selectedPortal' | 'zoom'>>) {
+  set(patch: Partial<Pick<EditorState, 'tool' | 'terrain' | 'brush' | 'objectKind' | 'flip' | 'roomStyle' | 'roomMode' | 'snap' | 'showGrid' | 'showCollision' | 'selected' | 'selectedPortal' | 'selectedLight' | 'lightLook' | 'lightPreview' | 'previewHour' | 'zoom'>>) {
     Object.assign(this, patch)
     if (patch.tool && patch.tool !== 'select') this.selected = []
     if (patch.tool && patch.tool !== 'portal') this.selectedPortal = null
+    if (patch.tool && patch.tool !== 'light') this.selectedLight = null
     this.emit('ui')
   }
 
@@ -123,6 +135,7 @@ export class EditorState {
     this.zone = zone
     this.selected = []
     this.selectedPortal = null
+    this.selectedLight = null
     this.dirty = dirty
     this.emit('zone')
   }
@@ -135,6 +148,10 @@ export class EditorState {
   /** O objeto selecionado, quando é um só. */
   get single() {
     return this.selected.length === 1 ? this.zone.objects[this.selected[0]] ?? null : null
+  }
+
+  get light() {
+    return this.zone.lights?.find((l) => l.id === this.selectedLight) ?? null
   }
 
   get portal() {

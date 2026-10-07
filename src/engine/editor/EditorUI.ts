@@ -17,7 +17,12 @@ import { KIND_LABELS, objectCatalog, objectDef, objectSolids, paletteObjects, sh
 import { curateForm, type CurateOverride } from './curate'
 import { readList, writeList } from './prefs'
 import { parseZone, summarize, type WorldStorage, type ZoneSummary } from '../storage'
-import { TILE, ZONE_MAX, ZONE_MIN, Z_MAX, clampZoneSize, newId, newZone, type Portal, type ZoneData, type ZoneObject } from '../types'
+import {
+  DAY_MINUTES, LIGHT_RADIUS_MAX, LIGHT_RADIUS_MIN, TILE, ZONE_MAX, ZONE_MIN, Z_MAX, clampZoneSize, newId, newZone,
+  type Portal, type ZoneData, type ZoneLighting, type ZoneObject,
+} from '../types'
+import { LIGHT_PRESETS, UNDERGROUND_TINT, ambientAt, daylight, formatHour, lightingOf, rgbToInt } from '../world/daylight'
+import type { LightLook } from './EditorState'
 import { solidTerrainRects } from '../world/ground'
 import { fenceSolids } from '../world/fences'
 
@@ -45,6 +50,7 @@ const TOOLS: { id: Tool; label: string; key: string }[] = [
   { id: 'object', label: 'Colocar objeto', key: 'O' },
   { id: 'select', label: 'Selecionar / mover objeto', key: 'V' },
   { id: 'room', label: 'Cômodo: arraste um retângulo (piso, parede e moldura prontos)', key: 'C' },
+  { id: 'light', label: 'Luz solta: clique pra pôr, arraste pra mover', key: 'L' },
   { id: 'portal', label: 'Saída para outra zona (porta, borda, escada)', key: 'X' },
   { id: 'spawn', label: 'Ponto de início do jogador', key: 'P' },
 ]
@@ -53,6 +59,13 @@ const BRUSH_MAX = 8
 const FAV_KEY = 'vortable:objects:favorites'
 const RECENT_KEY = 'vortable:objects:recent'
 const RECENT_MAX = 24
+/** Cores prontas das luzes soltas: [nome, cor, tremulação]. */
+const LIGHT_COLORS: [string, string, number][] = [
+  ['Fogo', '#ffa050', 0.3], ['Vela', '#ffd080', 0.15], ['Lampião', '#ffe0a0', 0.05], ['Luar', '#9fb8ff', 0],
+  ['Magia', '#a07dff', 0.1], ['Veneno', '#7dff5a', 0.1], ['Sangue', '#ff4848', 0.2], ['Gelo', '#8ae8ff', 0],
+]
+const DAY_LENGTHS = [12, 24, 48, 96]
+
 /** Seções especiais da lista de objetos. */
 const FAV = '★', RECENT = '⟲'
 
@@ -66,7 +79,10 @@ export class EditorUI {
   private undoBtn!: HTMLButtonElement
   private redoBtn!: HTMLButtonElement
   private statusEl!: HTMLElement
-  private tab: 'terrains' | 'objects' | 'rooms' = 'terrains'
+  private tab: 'terrains' | 'objects' | 'rooms' | 'light' = 'terrains'
+  /** Qual luz solta o painel Luz está mostrando (só redesenha quando troca). */
+  private shownLight: string | null = null
+  private testClockEl!: HTMLElement
   /** Seção aberta de cada lista (só uma por vez). */
   private openSection = { terrains: 'Grama', objects: 'Árvores' }
   private tabButtons = new Map<string, HTMLButtonElement>()
@@ -107,6 +123,7 @@ export class EditorUI {
       this.buildStatus(),
       h('div', { class: 'vt-testbar' },
         this.testZoneEl = h('b', { class: 'vt-testzone' }),
+        this.testClockEl = h('span', { class: 'vt-testclock' }),
         h('span', {}, h('kbd', {}, 'WASD'), ' anda, ', h('kbd', {}, 'Shift'), ' corre, ', h('kbd', {}, 'C'), ' colisões'),
         h('button', { class: 'vt-btn vt-primary', html: `${ICONS.stop}<span>Voltar ao editor</span>`, onclick: () => this.stopTest() }),
       ),
@@ -123,6 +140,8 @@ export class EditorUI {
       if (c === 'zone') this.nameInput.value = state.zone.name
       if (c === 'zone' || c === 'edit') this.renderZoneProps()
       if (c === 'zone' || c === 'world' || state.selectedPortal !== this.shownPortal) this.renderPortal()
+      // painel Luz: zona nova/desfeita (outra luz) ou outra luz selecionada
+      if (this.tab === 'light' && (c === 'zone' || state.selectedLight !== this.shownLight)) this.renderPane()
       if (c === 'catalog') {
         this.catalogVersion++
         this.renderPane()
@@ -156,6 +175,12 @@ export class EditorUI {
   /** Nome da zona onde o teste está agora (muda ao atravessar saídas). */
   showTestZone(name: string) {
     this.testZoneEl.textContent = name
+  }
+
+  /** Relógio do teste (hora da zona). */
+  showTestClock(hour: number) {
+    const day = daylight(hour) > 0.5
+    this.testClockEl.innerHTML = `${day ? ICONS.sun : ICONS.moon}<span>${formatHour(hour)}</span>`
   }
 
   destroy() {
@@ -234,6 +259,7 @@ export class EditorUI {
     }
     toggle(ICONS.grid, 'Mostrar grade (H)', () => this.state.showGrid, () => this.state.set({ showGrid: !this.state.showGrid }))
     toggle(ICONS.collision, 'Mostrar colisões (K)', () => this.state.showCollision, () => this.state.set({ showCollision: !this.state.showCollision }))
+    toggle(ICONS.sun, 'Ver iluminação: hora, luzes e sombras (I)', () => this.state.lightPreview, () => this.state.set({ lightPreview: !this.state.lightPreview }))
     toggle(ICONS.snap, 'Encaixar objetos na grade (N)', () => this.state.snap, () => this.state.set({ snap: !this.state.snap }))
     el.append(h('button', { class: 'vt-tool', title: 'Centralizar a zona (Home)', html: ICONS.center, onclick: () => this.hooks.centerOnZone() }))
     return el
@@ -273,12 +299,13 @@ export class EditorUI {
 
   private buildPanel() {
     const tabs = h('div', { class: 'vt-tabs' })
-    for (const [id, label] of [['terrains', 'Terrenos'], ['objects', 'Objetos'], ['rooms', 'Cômodos']] as const) {
+    for (const [id, label] of [['terrains', 'Terrenos'], ['objects', 'Objetos'], ['rooms', 'Cômodos'], ['light', 'Luz']] as const) {
       const b = h('button', {
         class: 'vt-tab',
         onclick: () => {
           this.tab = id
           if (id === 'rooms') this.state.set({ tool: 'room' })
+          if (id === 'light') this.state.set({ tool: 'light' })
           this.renderPane()
           this.refresh()
         },
@@ -306,6 +333,7 @@ export class EditorUI {
     this.objectCells.clear()
     if (this.tab === 'terrains') this.renderTerrains()
     else if (this.tab === 'objects') this.renderObjects()
+    else if (this.tab === 'light') this.renderLight()
     else this.renderRooms()
   }
 
@@ -524,6 +552,168 @@ export class EditorUI {
           h('li', {}, 'Depois, decore com ', h('b', {}, 'Objetos'), ': janelas e quadros na parede, móveis no piso.'),
         ),
       ),
+    )
+  }
+
+  // ── Painel: luz ────────────────────────────────────
+
+  /**
+   * Clima da zona (presets, lugar, hora fixa ou ciclo) e as luzes soltas:
+   * a selecionada é editada no lugar; sem seleção, o painel ajusta como
+   * sai a próxima.
+   */
+  private renderLight() {
+    const s = this.state
+    const z = s.zone
+    const cur = lightingOf(z)
+    this.shownLight = s.selectedLight
+    const setLighting = (patch: Partial<ZoneLighting>) => {
+      s.checkpoint()
+      z.lighting = { ...lightingOf(z), ...patch }
+      for (const k of Object.keys(z.lighting) as (keyof ZoneLighting)[]) if (z.lighting[k] === undefined) delete z.lighting[k]
+      s.edited()
+      this.renderPane()
+    }
+
+    // presets: a amostra é a cor do céu (dois tons no ciclo: dia e noite)
+    const sky = (l: ZoneLighting) => {
+      const css = (hour: number) => `#${rgbToInt(ambientAt(l, hour)).toString(16).padStart(6, '0')}`
+      return l.hour === null && l.place !== 'underground' ? `linear-gradient(135deg, ${css(12)} 0 50%, ${css(23)} 50% 100%)` : css(l.hour ?? 12)
+    }
+    const same = (a: ZoneLighting, b: ZoneLighting) =>
+      a.place === b.place && a.hour === b.hour && (a.place !== 'underground' || (a.tint ?? UNDERGROUND_TINT) === (b.tint ?? UNDERGROUND_TINT))
+    const presets = h('div', { class: 'vt-climates' }, ...LIGHT_PRESETS.map((p) => h('button', {
+      class: `vt-climate${same(cur, p.lighting) ? ' vt-on' : ''}`,
+      onclick: () => setLighting({ ...p.lighting, tint: p.lighting.tint }),
+    }, h('span', { class: 'vt-climate-sw', style: `background:${sky(p.lighting)}` }), h('span', {}, p.label))))
+
+    const seg = <T extends string>(items: [T, string, string][], on: T, pick: (v: T) => void) =>
+      h('div', { class: 'vt-segmented' }, ...items.map(([id, label, title]) => h('button', {
+        class: `vt-seg${on === id ? ' vt-on' : ''}`, title, onclick: () => on !== id && pick(id),
+      }, label)))
+    const place = seg([
+      ['outdoor', 'Ar livre', 'Céu muda com a hora; o sol faz sombra'],
+      ['indoor', 'Interior', 'Mais escuro; de dia entra sol pelas janelas'],
+      ['underground', 'Subterrâneo', 'Nunca vê o sol: só as luzes clareiam'],
+    ], cur.place, (v) => setLighting({ place: v }))
+
+    // hora: slider que mexe ao vivo e vira UM passo de desfazer ao soltar
+    const hourSlider = (value: number, onLive: (h: number) => void, onDone?: () => void) => {
+      const out = h('b', { class: 'vt-hourout' })
+      const show = (hr: number) => { out.innerHTML = `${daylight(hr) > 0.5 ? ICONS.sun : ICONS.moon}<span>${formatHour(hr)}</span>` }
+      const input = h('input', { type: 'range', min: 0, max: 23.75, step: 0.25, value, class: 'vt-range' }) as HTMLInputElement
+      input.addEventListener('input', () => { show(Number(input.value)); onLive(Number(input.value)) })
+      if (onDone) input.addEventListener('change', onDone)
+      show(value)
+      return h('div', { class: 'vt-row vt-hourrow' }, input, out)
+    }
+
+    const timeBlock: Node[] = []
+    if (cur.place === 'underground') {
+      const tint = h('input', { type: 'color', value: cur.tint ?? UNDERGROUND_TINT, class: 'vt-color' }) as HTMLInputElement
+      let saved = false
+      tint.addEventListener('input', () => {
+        if (!saved) { s.checkpoint(); saved = true }
+        z.lighting = { ...lightingOf(z), tint: tint.value }
+        s.edited()
+      })
+      tint.addEventListener('change', () => { saved = false; this.renderPane() })
+      timeBlock.push(
+        h('div', { class: 'vt-row' }, h('label', {}, 'Cor do escuro'), tint),
+        h('small', { class: 'vt-note' }, 'Sem sol: a hora não muda nada aqui. Quanto mais escura a cor, mais breu — só tochas e velas clareiam.'),
+      )
+    } else {
+      timeBlock.push(seg([
+        ['cycle', 'Ciclo dia/noite', 'A hora corre sozinha (o mesmo relógio pra todo o mundo)'],
+        ['fixed', 'Hora fixa', 'Sempre a mesma hora (a taverna é sempre noite)'],
+      ], cur.hour === null ? 'cycle' : 'fixed', (v) => setLighting({ hour: v === 'cycle' ? null : s.previewHour })))
+      if (cur.hour === null) {
+        const len = h('select', { class: 'vt-select' }, ...DAY_LENGTHS.map((m) => h('option', { value: m, selected: (cur.dayMinutes ?? DAY_MINUTES) === m }, `${m} min`))) as HTMLSelectElement
+        len.addEventListener('change', () => setLighting({ dayMinutes: Number(len.value) === DAY_MINUTES ? undefined : Number(len.value) }))
+        timeBlock.push(
+          h('div', { class: 'vt-row' }, h('label', {}, 'Um dia dura'), len),
+          h('label', { class: 'vt-sublabel' }, 'Ver no editor às'),
+          hourSlider(s.previewHour, (hr) => s.set({ previewHour: hr })),
+        )
+      } else {
+        let saved = false
+        timeBlock.push(hourSlider(cur.hour, (hr) => {
+          if (!saved) { s.checkpoint(); saved = true }
+          z.lighting = { ...lightingOf(z), hour: hr }
+          s.previewHour = hr
+          s.edited()
+        }, () => { saved = false; this.renderPane() }))
+      }
+    }
+
+    const check = (label: string, on: boolean, flip: (v: boolean) => void, title = '') => {
+      const box = h('input', { type: 'checkbox', checked: on }) as HTMLInputElement
+      box.addEventListener('change', () => flip(box.checked))
+      return h('label', { class: 'vt-check', title }, box, h('span', {}, label))
+    }
+    const extras = h('div', { class: 'vt-checks' },
+      cur.place === 'outdoor' ? check('Sombras do sol', cur.sunShadows !== false, (v) => setLighting({ sunShadows: v ? undefined : false }), 'Árvores e bonecos fazem sombra; o tamanho e a direção mudam com a hora') : null,
+      check('Partículas', cur.particles !== false, (v) => setLighting({ particles: v ? undefined : false }), 'Vaga-lumes à noite, poeira no ar, faíscas e fumaça das fogueiras'),
+    )
+
+    this.paneEl.append(
+      h('div', { class: 'vt-group' }, h('h4', {}, 'Clima'), presets),
+      h('div', { class: 'vt-group' }, h('h4', {}, 'Onde fica'), place),
+      h('div', { class: 'vt-group' }, h('h4', {}, cur.place === 'underground' ? 'Escuridão' : 'Hora'), ...timeBlock),
+      h('div', { class: 'vt-group' }, extras),
+      this.lightLookGroup(),
+      ...(s.lightPreview ? [] : [h('small', { class: 'vt-note' }, 'A prévia da iluminação está desligada (I ou o sol na barra da esquerda).')]),
+    )
+  }
+
+  /** Cor, alcance, força e tremulação: da luz selecionada, ou de como sai a próxima. */
+  private lightLookGroup() {
+    const s = this.state
+    const sel = s.light
+    const look: LightLook = sel ?? s.lightLook
+    const objLights = s.zone.objects.filter((o) => objectDef(o.kind)?.light).length
+    const total = s.zone.lights?.length ?? 0
+    let saved = false
+    const apply = (patch: Partial<LightLook>, live = false) => {
+      if (sel) {
+        if (!saved) { s.checkpoint(); saved = true }
+        Object.assign(sel, patch)
+        s.edited()
+      }
+      // a próxima luz sai igual à última ajustada
+      s.lightLook = { radius: look.radius, color: look.color, intensity: look.intensity, flicker: look.flicker, ...patch }
+      if (!live) { saved = false; this.renderPane() }
+    }
+    const slider = (label: string, min: number, max: number, step: number, value: number, fmt: (v: number) => string, key: keyof LightLook, scale = 1) => {
+      const out = h('b', {}, fmt(value))
+      const input = h('input', { type: 'range', min, max, step, value: value * scale, class: 'vt-range' }) as HTMLInputElement
+      input.addEventListener('input', () => { out.textContent = fmt(Number(input.value) / scale); apply({ [key]: Number(input.value) / scale }, true) })
+      input.addEventListener('change', () => apply({ [key]: Number(input.value) / scale }))
+      return h('div', { class: 'vt-row vt-lightrow' }, h('label', {}, label), input, out)
+    }
+    const color = h('input', { type: 'color', value: look.color, class: 'vt-color', title: 'Outra cor' }) as HTMLInputElement
+    color.addEventListener('input', () => apply({ color: color.value }, true))
+    color.addEventListener('change', () => apply({ color: color.value }))
+    const swatches = h('div', { class: 'vt-lightcolors' },
+      ...LIGHT_COLORS.map(([name, c, flicker]) => h('button', {
+        class: `vt-lightcolor${look.color.toLowerCase() === c ? ' vt-on' : ''}`, title: name, style: `--c:${c}`,
+        onclick: () => apply({ color: c, flicker }),
+      })),
+      color,
+    )
+    return h('div', { class: 'vt-group' },
+      h('h4', {}, sel ? 'Luz selecionada' : 'Luzes soltas', h('span', { class: 'vt-acc-count' }, ` ${total} solta${total === 1 ? '' : 's'} · ${objLights} em objetos`)),
+      h('small', { class: 'vt-note vt-modehelp' }, sel
+        ? 'Arraste a luz no mapa pra mover · Del apaga.'
+        : 'Ferramenta Luz (L): clique no mapa pra pôr uma luz assim. Tochas, velas e lareiras dos Objetos já vêm acesas.'),
+      swatches,
+      slider('Alcance', LIGHT_RADIUS_MIN, LIGHT_RADIUS_MAX, 8, look.radius, (v) => `${(v / TILE).toFixed(1).replace('.0', '')} tiles`, 'radius'),
+      slider('Força', 0, 100, 5, look.intensity, (v) => `${Math.round(v * 100)}%`, 'intensity', 100),
+      slider('Tremor', 0, 100, 5, look.flicker, (v) => (v === 0 ? 'parada' : `${Math.round(v * 100)}%`), 'flicker', 100),
+      sel ? h('div', { class: 'vt-row' },
+        h('button', { class: 'vt-btn', style: 'flex:1', onclick: () => s.set({ selectedLight: null }) }, 'Soltar seleção'),
+        h('button', { class: 'vt-btn vt-danger', title: 'Apagar luz (Del)', html: ICONS.trash, onclick: () => this.hooks.deleteSelected() }),
+      ) : null,
     )
   }
 
@@ -900,6 +1090,7 @@ export class EditorUI {
       select: s.selected.length ? 'Arraste pra mover · setas empurram · F espelha · Ctrl D duplica · Del apaga' : 'Clique num objeto (Shift soma) ou arraste um retângulo pra selecionar',
       portal: s.selectedPortal ? 'Escolha o destino no painel · arraste pra mover · Del apaga' : 'Arraste pra desenhar uma saída · clique numa saída pra editar',
       spawn: 'Clique onde o jogador deve aparecer',
+      light: s.selectedLight ? 'Arraste a luz pra mover · ajuste no painel · Del apaga' : 'Clique pra pôr uma luz · clique numa luz pra editar · I liga/desliga a prévia',
       room: { room: 'Cômodo: arraste pra criar · clique aplica o estilo · Alt + clique copia · Ctrl + arrastar apaga', wall: 'Parede interna: risque uma linha dentro do cômodo', door: 'Porta: arraste sobre uma parede pra abrir um vão' }[s.roomMode],
     }[s.tool]
     parts.push(h('span', { class: 'vt-hint' }, `${hint} · Espaço + arrastar move a tela · roda dá zoom`))
@@ -921,6 +1112,10 @@ export class EditorUI {
     }
     if (tool === 'room' && this.tab !== 'rooms') {
       this.tab = 'rooms'
+      this.renderPane()
+    }
+    if (tool === 'light' && this.tab !== 'light') {
+      this.tab = 'light'
       this.renderPane()
     }
     this.state.set({ tool })
@@ -1066,11 +1261,13 @@ export class EditorUI {
         ['B · G · E', 'Pincel · balde · borracha'],
         ['O · V', 'Colocar objeto · selecionar'],
         ['C', 'Cômodo (arraste; Ctrl apaga)'],
+        ['L', 'Luz solta (clique põe; arraste move)'],
         ['X · P', 'Saída · ponto de início'],
         ['[ · ] ou Alt + roda', 'Tamanho do pincel'],
         ['Shift + clique', 'Pincel: linha reta desde o último ponto'],
         ['Alt + clique', 'Conta-gotas (copia terreno ou objeto)'],
         ['H · K · N', 'Grade · colisões · encaixe na grade'],
+        ['I', 'Ver iluminação (hora, luzes, sombras)'],
       ],
       [
         ['Arrastar (objeto)', 'Carimba vários seguidos; com Shift, variantes e espelho sorteados'],
@@ -1455,6 +1652,7 @@ export class EditorUI {
     else if (k === 'h') this.state.set({ showGrid: !this.state.showGrid })
     else if (k === 'k') this.state.set({ showCollision: !this.state.showCollision })
     else if (k === 'n') this.state.set({ snap: !this.state.snap })
+    else if (k === 'i') this.state.set({ lightPreview: !this.state.lightPreview })
     else if (k === 'f') this.flip()
     else if (e.key === ',' || e.key === '<') scene?.cycleVariant(-1)
     else if (e.key === '.' || e.key === '>') scene?.cycleVariant(1)

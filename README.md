@@ -32,6 +32,8 @@ npm run dev
 | `B` / `G` / `E` | pincel / balde / borracha |
 | `O` / `V` / `P` | colocar objeto / selecionar e mover / ponto de início |
 | `C` | cômodo (arraste; `Ctrl` apaga) |
+| `L` | luz solta: clique põe, arraste move; cor, alcance, força e tremor no painel **Luz** |
+| `I` | ver iluminação no editor (hora, luzes, sombras) |
 | `X` | saída: arraste pra desenhar a área que leva a outra zona; o destino se escolhe no painel |
 | `[` `]` ou `Alt`+roda | tamanho do pincel |
 | `Shift`+clique (pincel) | linha reta desde o último ponto |
@@ -70,6 +72,23 @@ Aba **Cômodos** (ou tecla `C`) — funciona em zona de interior (fundo *Vazio*)
   arrastar** apaga.
 - Estilo = parede (252) + piso + moldura (32) + altura da parede (0 = só a borda, pra
   corredores de castelo/masmorra). Há estilos prontos (casa de fazenda, taverna, castelo...).
+
+### Luz, hora e sombras
+
+Aba **Luz**:
+- **Clima**: Ciclo dia/noite, Dia, Entardecer, Noite, Interior, Taverna à noite, Caverna, Masmorra.
+- **Onde fica**: *ar livre* (o céu muda de cor com a hora e o sol faz sombra), *interior* (mais
+  escuro; de dia entra um facho de sol pelas janelas) ou *subterrâneo* (nunca vê o sol; escolha a
+  cor do escuro).
+- **Hora**: *ciclo* (corre sozinha, mesmo relógio pro mundo todo; um dia dura 12–96 min) ou
+  *fixa* (a taverna é sempre noite). No ciclo, a régua escolhe que hora ver no editor — e o teste
+  começa nela.
+- **Luzes**: tochas, velas, lampiões, lareiras e fogueiras dos Objetos já vêm acesos. A ferramenta
+  `L` põe luz solta (cores prontas: fogo, vela, luar, magia, veneno...).
+- As paredes dos cômodos **barram a luz** (uma tocha não clareia o cômodo vizinho; passa pela
+  porta). Janelas acendem à noite vistas de fora; lava e água venenosa brilham no escuro.
+- Partículas: faíscas e fumaça das fogueiras, vaga-lumes à noite, poeira no ar dos interiores.
+- No editor, `I` liga/desliga a prévia (pra pintar no claro).
 
 ### Terrenos, paredes, tapetes e cercas
 

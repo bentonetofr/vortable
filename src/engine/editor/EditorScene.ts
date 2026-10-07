@@ -11,6 +11,7 @@
 //          selecionar/arrastar; Del apaga (o destino se escolhe no painel)
 //   cômodo: arraste um retângulo → piso, parede e moldura prontos (Ctrl:
 //           apaga); clique num cômodo troca o estilo dele; Alt+clique copia
+//   luz: clique põe uma luz solta; clique numa luz seleciona/arrasta; Del apaga
 //   início: onde o jogador aparece
 //   Alt+clique: conta-gotas (copia terreno ou objeto)
 // Câmera: roda dá zoom suave (no cursor); Espaço + arrastar, botão do
@@ -24,7 +25,9 @@ import { FenceLayer, fenceAt, fenceSolids } from '../world/fences'
 import { Ground, cornerTerrain, overlayTerrain, solidTerrainRects } from '../world/ground'
 import { createObjectSprite, updateObjectSprite, type ObjectSprite } from '../world/objects'
 import { isTyping } from '../world/Player'
-import { TILE, newId, type Portal, type ZoneObject } from '../types'
+import { TILE, newId, type Portal, type ZoneLight, type ZoneObject } from '../types'
+import { Lighting } from '../world/lighting'
+import { lightingOf } from '../world/daylight'
 import type { EditorState } from './EditorState'
 import { applyRooms, connectedRoom, decodeRoom, encodeRoom, roomRoles } from '../world/rooms'
 
@@ -38,6 +41,8 @@ const ZOOM_EASE = 18
 const PAN_SPEED = 700
 const SELECT_TINT = 0x9fd3ff
 const BRUSH_MAX = 8
+/** Espera depois da última edição pra recortar as luzes pelas paredes de novo. */
+const LIGHT_REBUILD_MS = 180
 
 type Keys = Record<'up' | 'down' | 'left' | 'right' | 'w' | 'a' | 's' | 'd' | 'shift', Phaser.Input.Keyboard.Key>
 
@@ -53,6 +58,10 @@ export class EditorScene extends Phaser.Scene {
   private portalGfx!: Phaser.GameObjects.Graphics
   private portalLabels: Phaser.GameObjects.Text[] = []
   private spawnMarker!: Phaser.GameObjects.Container
+  private lighting!: Lighting
+  private lightGfx!: Phaser.GameObjects.Graphics
+  private lightTimer?: Phaser.Time.TimerEvent
+  private movingLight: { id: string; dx: number; dy: number; moved: boolean } | null = null
   private ghost!: Phaser.GameObjects.Image
 
   private painting = false
@@ -108,7 +117,10 @@ export class EditorScene extends Phaser.Scene {
     this.portalGfx = this.add.graphics().setDepth(1e8 + 1)
     this.ghost = this.add.image(0, 0, '__WHITE').setOrigin(0.5, 1).setAlpha(0.6).setDepth(1e8 + 3).setVisible(false)
     this.spawnMarker = this.makeSpawnMarker()
+    this.lightGfx = this.add.graphics().setDepth(1e8 + 1)
     this.rebuildObjects()
+    this.lighting = new Lighting(this, this.state.zone)
+    this.events.on(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
     this.refreshOverlays()
 
     const cam = this.cameras.main
@@ -141,7 +153,9 @@ export class EditorScene extends Phaser.Scene {
       if (c === 'zone') this.reloadZone()
       if (c === 'ui') this.onUiChange()
       if (c === 'world' || c === 'edit') this.drawPortals()
+      if (c === 'edit') this.drawLights()
       if (c === 'objects') this.syncObjects()
+      if (c === 'edit' || c === 'objects' || c === 'catalog') this.scheduleLights()
       if (c === 'catalog') {
         this.rebuildObjects()
         this.refreshOverlays()
@@ -150,6 +164,8 @@ export class EditorScene extends Phaser.Scene {
     })
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       off()
+      this.events.off(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
+      this.lightTimer?.remove()
       this.input.setDefaultCursor('')
       this.state.view = { x: cam.midPoint.x, y: cam.midPoint.y }
     })
@@ -184,6 +200,21 @@ export class EditorScene extends Phaser.Scene {
         this.panBy(dx * speed, dy * speed)
       }
     }
+  }
+
+  /** Antes de desenhar (a câmera já está no lugar): a iluminação da prévia. */
+  private preRender() {
+    const l = this.lighting
+    l.enabled = this.state.lightPreview
+    // hora fixa da zona, ou a hora escolhida pra prévia (zona em ciclo)
+    l.hourOverride = lightingOf(this.state.zone).hour ?? this.state.previewHour
+    l.render(this.game.loop.delta)
+  }
+
+  /** Luzes refeitas um pouco depois da última edição (recortar pelas paredes custa). */
+  private scheduleLights() {
+    this.lightTimer?.remove()
+    this.lightTimer = this.time.delayedCall(LIGHT_REBUILD_MS, () => this.lighting.rebuild())
   }
 
   /** Teclas de câmera só valem fora de campos de texto e janelas. */
@@ -224,6 +255,7 @@ export class EditorScene extends Phaser.Scene {
   private afterView() {
     this.drawSelection()
     this.drawPortals()
+    this.drawLights()
     this.drawCursor(this.input.activePointer)
   }
 
@@ -264,6 +296,7 @@ export class EditorScene extends Phaser.Scene {
     this.fences.setZone(this.state.zone)
     this.lastStrokeEnd = null
     this.rebuildObjects()
+    this.lighting.setZone(this.state.zone)
     this.fitBounds()
     this.refreshOverlays()
   }
@@ -323,6 +356,7 @@ export class EditorScene extends Phaser.Scene {
     const z = this.state.zone
     this.spawnMarker.setPosition(z.spawn.x, z.spawn.y)
     this.drawPortals()
+    this.drawLights()
 
     this.gridGfx.clear()
     if (this.state.showGrid) {
@@ -374,6 +408,34 @@ export class EditorScene extends Phaser.Scene {
       }).setOrigin(0.5, 1).setResolution(4).setScale(Math.min(2, px * 2)).setDepth(1e8 + 4)
       this.portalLabels.push(t)
     }
+  }
+
+  /**
+   * Luzes soltas: um ponto com a cor dela (sempre, pra saber que existe);
+   * com a ferramenta Luz, também o alcance — a selecionada em dourado.
+   */
+  private drawLights() {
+    const g = this.lightGfx
+    g.clear()
+    const px = 1 / this.cameras.main.zoom
+    const tool = this.state.tool === 'light'
+    for (const l of this.state.zone.lights ?? []) {
+      const selected = l.id === this.state.selectedLight
+      const color = Phaser.Display.Color.HexStringToColor(l.color).color
+      if (tool) {
+        g.lineStyle(px * (selected ? 2 : 1), selected ? 0xffc174 : color, selected ? 0.9 : 0.45).strokeCircle(l.x, l.y, l.radius)
+      }
+      g.fillStyle(0x000000, 0.6).fillCircle(l.x, l.y, px * 8)
+      g.fillStyle(color, 1).fillCircle(l.x, l.y, px * 6)
+      g.lineStyle(px * 2, selected ? 0xffc174 : 0xffffff, selected ? 1 : 0.8).strokeCircle(l.x, l.y, px * 8)
+    }
+  }
+
+  private lightAt(wx: number, wy: number): ZoneLight | null {
+    const list = this.state.zone.lights ?? []
+    const reach = Math.max(10 / this.cameras.main.zoom, 4)
+    for (let i = list.length - 1; i >= 0; i--) if (Math.hypot(list[i].x - wx, list[i].y - wy) <= reach) return list[i]
+    return null
   }
 
   private portalRect(d: { x0: number; y0: number; x1: number; y1: number }) {
@@ -468,6 +530,12 @@ export class EditorScene extends Phaser.Scene {
       }
     } else if (tool === 'spawn') {
       g.lineStyle(px * 2, 0xffc174, 0.9).strokeEllipse(wx, wy, 26, 12)
+    } else if (tool === 'light' && !this.movingLight && !this.lightAt(wx, wy) && this.inside(wx, wy)) {
+      // onde a luz nova vai cair e até onde ela vai
+      const look = this.state.lightLook
+      const color = Phaser.Display.Color.HexStringToColor(look.color).color
+      g.lineStyle(px, color, 0.6).strokeCircle(wx, wy, look.radius)
+      g.fillStyle(color, 0.9).fillCircle(wx, wy, px * 5)
     }
     if (tool === 'object' && this.state.objectKind) {
       const { x, y } = this.snapped(wx, wy)
@@ -538,6 +606,20 @@ export class EditorScene extends Phaser.Scene {
         this.state.set({ selectedPortal: null })
         this.drawingPortal = { x0: wx, y0: wy, x1: wx, y1: wy }
       }
+    } else if (tool === 'light') {
+      const hit = this.lightAt(wx, wy)
+      if (hit) {
+        this.state.set({ selectedLight: hit.id })
+        this.movingLight = { id: hit.id, dx: hit.x - wx, dy: hit.y - wy, moved: false }
+      } else if (this.inside(wx, wy)) {
+        this.state.checkpoint()
+        const light: ZoneLight = { id: newId('luz'), x: Math.round(wx), y: Math.round(wy), ...this.state.lightLook }
+        this.state.zone.lights = [...(this.state.zone.lights ?? []), light]
+        this.state.edited()
+        this.state.set({ selectedLight: light.id })
+      } else {
+        this.state.set({ selectedLight: null })
+      }
     } else if (tool === 'spawn') {
       if (!this.inside(wx, wy)) return
       if (Math.round(wx) === this.state.zone.spawn.x && Math.round(wy) === this.state.zone.spawn.y) return
@@ -601,6 +683,22 @@ export class EditorScene extends Phaser.Scene {
         portal.x = Phaser.Math.Clamp(Math.round((p.worldX + m.dx) / g) * g, 0, z.width * TILE - portal.w)
         portal.y = Phaser.Math.Clamp(Math.round((p.worldY + m.dy) / g) * g, 0, z.height * TILE - portal.h)
         this.drawPortals()
+      }
+    }
+    if (this.movingLight) {
+      const m = this.movingLight
+      const light = this.state.zone.lights?.find((q) => q.id === m.id)
+      if (light) {
+        if (!m.moved) {
+          this.state.checkpoint()
+          m.moved = true
+        }
+        const z = this.state.zone
+        light.x = Phaser.Math.Clamp(Math.round(p.worldX + m.dx), 0, z.width * TILE)
+        light.y = Phaser.Math.Clamp(Math.round(p.worldY + m.dy), 0, z.height * TILE)
+        // arrastando: a luz acompanha sem recortar pelas paredes (rápido); solta, recorta
+        this.lighting.rebuild(false)
+        this.drawLights()
       }
     }
     if (this.dragging) {
@@ -694,6 +792,8 @@ export class EditorScene extends Phaser.Scene {
     }
     if (this.movingPortal?.moved) this.state.edited()
     this.movingPortal = null
+    if (this.movingLight?.moved) this.state.edited()
+    this.movingLight = null
     this.dragging = null
     this.panning = null
     this.updateCursorStyle()
@@ -1028,6 +1128,16 @@ export class EditorScene extends Phaser.Scene {
   // ── Ações chamadas pela interface ──────────────────────
 
   deleteSelected() {
+    const light = this.state.light
+    if (light) {
+      this.state.checkpoint()
+      this.state.zone.lights = this.state.zone.lights!.filter((l) => l !== light)
+      if (!this.state.zone.lights.length) delete this.state.zone.lights
+      this.state.selectedLight = null
+      this.state.edited()
+      this.state.emit('ui')
+      return
+    }
     const portal = this.state.portal
     if (portal) {
       this.state.checkpoint()

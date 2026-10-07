@@ -54,6 +54,8 @@ export interface TerrainDef {
   /** Tile da miniatura (wang, cerca). */
   thumb?: [number, number]
   layer?: 'ground' | 'overlay' | 'fence'
+  /** Brilha no escuro (lava, água venenosa): cor e força do brilho. */
+  glow?: { color: string; intensity: number }
 }
 
 export interface TerrainCatalog {
@@ -102,8 +104,8 @@ export const TERRAINS: TerrainDef[] = [
   { id: 'water-light',  label: 'Água rasa',        category: 'Água',    block: [2, 0], rank: 71, solid: true },
   { id: 'water',        label: 'Água',             category: 'Água',    block: [2, 1], rank: 72, solid: true },
   { id: 'water-deep',   label: 'Água funda',       category: 'Água',    block: [2, 2], rank: 73, solid: true },
-  { id: 'water-poison', label: 'Água venenosa',    category: 'Água',    block: [2, 3], rank: 74, solid: true },
-  { id: 'lava',         label: 'Lava',             category: 'Água',    block: [2, 5], rank: 75, solid: true },
+  { id: 'water-poison', label: 'Água venenosa',    category: 'Água',    block: [2, 3], rank: 74, solid: true, glow: { color: '#7dff5a', intensity: 0.45 } },
+  { id: 'lava',         label: 'Lava',             category: 'Água',    block: [2, 5], rank: 75, solid: true, glow: { color: '#ff7a1c', intensity: 0.95 } },
   // Buracos
   { id: 'hole',         label: 'Buraco',           category: 'Buracos', block: [0, 7], rank: 80, solid: true, fills: [] },
   { id: 'pit',          label: 'Abismo',           category: 'Buracos', block: [0, 8], rank: 81, solid: true, fills: [] },

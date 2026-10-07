@@ -17,6 +17,8 @@ import { LocalWorldStorage, type WorldStorage } from './storage'
 import { newZone, type Appearance, type ZoneData } from './types'
 import { setObjectCatalog, type ObjectCatalog } from './assets/objects'
 import { registerObjectArt } from './world/objects'
+import { lightingOf, worldHour } from './world/daylight'
+import { DAY_MINUTES } from './types'
 
 import { CreatorUI } from './character/CreatorUI'
 import { LocalCharacterStorage, type CharacterStorage } from './character/storage'
@@ -65,13 +67,26 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
   let state: EditorState | null = null
   let host = parent
 
-  const worldData = (zone: ZoneData, loadZone: WorldSceneData['loadZone']): WorldSceneData => ({
+  const worldData = (zone: ZoneData, loadZone: WorldSceneData['loadZone'], timeOffset = 0): WorldSceneData => ({
     zone,
     appearance,
     assetBase,
     loadZone,
+    timeOffset,
     onZone: (z) => ui?.showTestZone(z.name),
+    onClock: (hour) => ui?.showTestClock(hour),
   })
+
+  /**
+   * Teste do editor numa zona em ciclo: o relógio começa na hora da prévia
+   * (quem estava vendo a noite no editor testa à noite) e corre dali.
+   */
+  const previewOffset = (zone: ZoneData, hour: number) => {
+    const day = (lightingOf(zone).dayMinutes ?? DAY_MINUTES) * 60_000
+    const now = Date.now()
+    const diff = (((hour - worldHour(lightingOf(zone).dayMinutes, now)) % 24) + 24) % 24
+    return (diff / 24) * day
+  }
 
   if (mode === 'edit') {
     state = new EditorState(opts.zone ?? newZone('Nova zona', 40, 30))
@@ -82,7 +97,7 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
         game.scene.stop('editor')
         // a zona aberta entra com as mudanças não salvas; as outras vêm do armazenamento
         const loadZone = async (id: string) => (id === state!.zone.id ? structuredClone(state!.zone) : storage.load(id))
-        game.scene.start('world', worldData(structuredClone(state!.zone), loadZone))
+        game.scene.start('world', worldData(structuredClone(state!.zone), loadZone, previewOffset(state!.zone, state!.previewHour)))
       },
       stopTest: () => {
         game.scene.stop('world')

@@ -615,3 +615,38 @@
 .vt-seg:hover { color: var(--vt-text); background: var(--vt-overlay); }
 .vt-seg.vt-on { background: var(--vt-accent); color: #2a1700; }
 .vt-modehelp { display: block; margin-top: 6px; }
+
+/* ── Luz ────────────────────────────────────────── */
+.vt-climates { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.vt-climate {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 7px; border-radius: 7px;
+  border: 1px solid var(--vt-border-dim); background: var(--vt-bg);
+  color: var(--vt-text); font: inherit; font-size: 12px; text-align: left; cursor: pointer;
+}
+.vt-climate:hover { border-color: var(--vt-border); }
+.vt-climate.vt-on { border-color: var(--vt-accent); background: var(--vt-accent-glow); color: var(--vt-accent-bright); }
+.vt-climate-sw { width: 18px; height: 18px; flex: none; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.5); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
+.vt-hourrow { margin-top: 8px; }
+.vt-hourrow .vt-range, .vt-lightrow .vt-range { flex: 1; min-width: 0; accent-color: var(--vt-accent); }
+.vt-hourout { display: flex; align-items: center; gap: 4px; min-width: 62px; font-variant-numeric: tabular-nums; color: var(--vt-accent-bright); }
+.vt-hourout svg, .vt-testclock svg { width: 14px; height: 14px; }
+.vt-sublabel { display: block; margin-top: 8px; color: var(--vt-muted); font-size: 11px; }
+.vt-group > .vt-row + .vt-sublabel { margin-top: 10px; }
+.vt-group > .vt-segmented + .vt-row { margin-top: 8px; }
+.vt-checks { display: grid; gap: 6px; }
+.vt-check { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--vt-text-2); cursor: pointer; }
+.vt-check input { accent-color: var(--vt-accent); margin: 0; }
+.vt-lightrow label { min-width: 56px; flex: none; }
+.vt-lightrow b { min-width: 52px; text-align: right; font-size: 11px; font-weight: 600; color: var(--vt-text-2); font-variant-numeric: tabular-nums; }
+.vt-lightcolors { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 8px 0 6px; }
+.vt-lightcolor {
+  width: 22px; height: 22px; padding: 0; border-radius: 50%; cursor: pointer;
+  border: 2px solid var(--vt-bg); background: radial-gradient(circle at 50% 45%, #fff 0 12%, var(--c) 45%, color-mix(in srgb, var(--c) 40%, #000) 100%);
+  box-shadow: 0 0 0 1px var(--vt-border-dim);
+}
+.vt-lightcolor:hover { box-shadow: 0 0 0 1px var(--vt-border), 0 0 10px var(--c); }
+.vt-lightcolor.vt-on { box-shadow: 0 0 0 2px var(--vt-accent), 0 0 12px var(--c); }
+.vt-color { width: 30px; height: 24px; padding: 0 2px; border: 1px solid var(--vt-border-dim); border-radius: 6px; background: var(--vt-bg); cursor: pointer; }
+.vt-testclock { display: inline-flex; align-items: center; gap: 4px; color: var(--vt-text-2); font-variant-numeric: tabular-nums; }
+.vt-testclock:empty { display: none; }
