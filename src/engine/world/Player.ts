@@ -43,9 +43,12 @@ export class Player {
 
   update() {
     const k = this.keys
-    const vx = (k.right.isDown || k.d.isDown ? 1 : 0) - (k.left.isDown || k.a.isDown ? 1 : 0)
-    const vy = (k.down.isDown || k.s.isDown ? 1 : 0) - (k.up.isDown || k.w.isDown ? 1 : 0)
-    const running = k.shift.isDown
+    // digitando num campo de texto da página (ex.: chat do Vorterium): o boneco não anda
+    const typing = isTyping()
+    const on = (key: Phaser.Input.Keyboard.Key) => !typing && key.isDown
+    const vx = (on(k.right) || on(k.d) ? 1 : 0) - (on(k.left) || on(k.a) ? 1 : 0)
+    const vy = (on(k.down) || on(k.s) ? 1 : 0) - (on(k.up) || on(k.w) ? 1 : 0)
+    const running = on(k.shift)
     const speed = running ? RUN_SPEED : WALK_SPEED
     const v = new Phaser.Math.Vector2(vx, vy).normalize().scale(speed)
     this.sprite.setVelocity(v.x, v.y)
@@ -67,4 +70,10 @@ export class Player {
   private play(anim: 'walk' | 'run' | 'idle') {
     this.sprite.anims.play(`${this.charKey}:${anim}:${this.dir}`, true)
   }
+}
+
+/** O foco está num campo de texto? */
+export function isTyping() {
+  const el = document.activeElement as HTMLElement | null
+  return !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
 }

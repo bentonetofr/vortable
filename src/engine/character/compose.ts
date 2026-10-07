@@ -14,6 +14,8 @@ type Palettes = Record<string, Record<string, string[]>>
 
 const imageCache = new Map<string, Promise<HTMLImageElement>>()
 let palettesPromise: Promise<Palettes> | null = null
+/** De qual pasta de assets as paletas em cache vieram. */
+let palettesBase = ''
 
 function loadImage(url: string): Promise<HTMLImageElement> {
   let p = imageCache.get(url)
@@ -21,7 +23,10 @@ function loadImage(url: string): Promise<HTMLImageElement> {
     p = new Promise((resolve, reject) => {
       const img = new Image()
       img.onload = () => resolve(img)
-      img.onerror = () => reject(new Error(`não carregou ${url}`))
+      img.onerror = () => {
+        imageCache.delete(url) // deixa tentar de novo depois
+        reject(new Error(`não carregou ${url}`))
+      }
       img.src = url
     })
     imageCache.set(url, p)
@@ -30,12 +35,22 @@ function loadImage(url: string): Promise<HTMLImageElement> {
 }
 
 function loadPalettes(assetBase: string): Promise<Palettes> {
+  if (palettesBase !== assetBase) {
+    palettesPromise = null
+    palettesBase = assetBase
+  }
   palettesPromise ??= Promise.all(
     Object.entries(PALETTES).map(async ([material, def]) => {
       const res = await fetch(assetBase + def.url)
+      if (!res.ok) throw new Error(`não carregou ${def.url} (${res.status})`)
       return [material, (await res.json()) as Record<string, string[]>] as const
     }),
-  ).then((entries) => Object.fromEntries(entries))
+  )
+    .then((entries) => Object.fromEntries(entries))
+    .catch((err) => {
+      palettesPromise = null // deixa tentar de novo depois
+      throw err
+    })
   return palettesPromise
 }
 
@@ -83,11 +98,12 @@ async function composeAnim(assetBase: string, appearance: Appearance, anim: Anim
   layers.forEach(({ layer, def }, i) => {
     const img = images[i]
     if (!img) return
+    // a folha foi desenhada na paleta base do material DELA; a cor escolhida
+    // pode vir de outro material (ex.: cabelo com cor de tecido)
+    const from = palettes[def!.material]?.[PALETTES[def!.material]?.base]
     const choice = layer.palette
-    const material = choice?.material ?? def!.material
-    const base = palettes[material]?.[PALETTES[material]?.base]
-    const target = choice ? palettes[material]?.[choice.color] : undefined
-    if (!base || !target || choice!.color === PALETTES[material].base) {
+    const target = choice ? palettes[choice.material]?.[choice.color] : undefined
+    if (!from || !target || from === target) {
       octx.drawImage(img, 0, 0)
       return
     }
@@ -96,7 +112,7 @@ async function composeAnim(assetBase: string, appearance: Appearance, anim: Anim
     tmp.height = img.height
     const tctx = tmp.getContext('2d', { willReadFrequently: true })!
     tctx.drawImage(img, 0, 0)
-    recolor(tctx, tmp.width, tmp.height, base, target)
+    recolor(tctx, tmp.width, tmp.height, from, target)
     octx.drawImage(tmp, 0, 0)
   })
   return out

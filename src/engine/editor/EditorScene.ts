@@ -5,6 +5,7 @@
 //   objeto: carimba o objeto escolhido (fantasma segue o mouse)
 //   selecionar: clica num objeto pra selecionar/arrastar; Del apaga
 //   início: onde o jogador aparece
+//   Alt+clique: conta-gotas (copia terreno ou objeto)
 // Câmera: botão do meio/direito (ou Espaço + arrastar) move, roda dá zoom.
 // ────────────────────────────────────────────────────────
 
@@ -12,7 +13,7 @@ import Phaser from 'phaser'
 import { footRect, objectDef, sheetTexture } from '../assets/objects'
 import { terrainById } from '../assets/terrains'
 import { Ground, cornerTerrain, solidTerrainRects } from '../world/ground'
-import { createObjectSprite } from '../world/objects'
+import { createObjectSprite, moveObjectSprite } from '../world/objects'
 import { TILE } from '../types'
 import type { EditorState } from './EditorState'
 
@@ -32,6 +33,8 @@ export class EditorScene extends Phaser.Scene {
   private ghost!: Phaser.GameObjects.Image
 
   private painting = false
+  /** A pincelada atual já guardou o passo de desfazer? (só guarda se mudar algo) */
+  private strokeSaved = false
   private lastPaint: { tx: number; ty: number } | null = null
   private panning: { x: number; y: number } | null = null
   private dragging: { index: number; dx: number; dy: number; moved: boolean } | null = null
@@ -102,7 +105,7 @@ export class EditorScene extends Phaser.Scene {
   }
 
   private makeSprite(o: { kind: string; x: number; y: number }) {
-    const s = createObjectSprite(this, o)
+    const s = createObjectSprite(this, o, 'placeholder')
     s?.setInteractive({ pixelPerfect: true, alphaTolerance: 1 })
     return s
   }
@@ -184,14 +187,16 @@ export class EditorScene extends Phaser.Scene {
     g.clear()
     const { tool } = this.state
     const wx = p.worldX, wy = p.worldY
+    /** 1 pixel de tela, em unidades do mundo (linhas com a mesma espessura em qualquer zoom). */
+    const px = 1 / this.cameras.main.zoom
     if (tool === 'brush' || tool === 'erase') {
       const { tx0, ty0, n } = this.brushTiles(wx, wy)
-      g.lineStyle(2, tool === 'erase' ? 0xef4444 : 0xffc174, 0.9).strokeRect(tx0 * TILE, ty0 * TILE, n * TILE, n * TILE)
+      g.lineStyle(px * 2, tool === 'erase' ? 0xef4444 : 0xffc174, 0.9).strokeRect(tx0 * TILE, ty0 * TILE, n * TILE, n * TILE)
     } else if (tool === 'fill') {
       const vx = Math.round(wx / TILE), vy = Math.round(wy / TILE)
-      g.fillStyle(0xffc174, 0.9).fillCircle(vx * TILE, vy * TILE, 4)
+      g.fillStyle(0xffc174, 0.9).fillCircle(vx * TILE, vy * TILE, px * 4)
     } else if (tool === 'spawn') {
-      g.lineStyle(2, 0xffc174, 0.9).strokeEllipse(wx, wy, 26, 12)
+      g.lineStyle(px * 2, 0xffc174, 0.9).strokeEllipse(wx, wy, 26, 12)
     }
     if (tool === 'object' && this.state.objectKind) {
       const { x, y } = this.snapped(wx, wy)
@@ -209,8 +214,12 @@ export class EditorScene extends Phaser.Scene {
     const { tool } = this.state
     const wx = p.worldX, wy = p.worldY
 
+    if ((p.event as MouseEvent).altKey) {
+      this.eyedropper(p)
+      return
+    }
     if (tool === 'brush' || tool === 'erase') {
-      this.state.checkpoint()
+      this.strokeSaved = false
       this.painting = true
       this.lastPaint = null
       this.paintAt(wx, wy)
@@ -236,6 +245,7 @@ export class EditorScene extends Phaser.Scene {
       }
     } else if (tool === 'spawn') {
       if (!this.inside(wx, wy)) return
+      if (Math.round(wx) === this.state.zone.spawn.x && Math.round(wy) === this.state.zone.spawn.y) return
       this.state.checkpoint()
       this.state.zone.spawn = { x: Math.round(wx), y: Math.round(wy) }
       this.refreshOverlays()
@@ -268,7 +278,8 @@ export class EditorScene extends Phaser.Scene {
       const { x, y } = this.snapped(p.worldX + d.dx, p.worldY + d.dy)
       o.x = x
       o.y = y
-      this.sprites[d.index]?.setPosition(x, y).setDepth(y)
+      const s = this.sprites[d.index]
+      if (s) moveObjectSprite(s, o)
       this.drawSelection()
     }
     this.drawCursor(p)
@@ -277,8 +288,11 @@ export class EditorScene extends Phaser.Scene {
   private onUp() {
     if (this.painting) {
       this.painting = false
-      this.refreshOverlays()
-      this.state.edited()
+      // pincelada que não mudou nada (fora da zona, mesmo terreno) não vira passo
+      if (this.strokeSaved) {
+        this.refreshOverlays()
+        this.state.edited()
+      }
     }
     if (this.dragging?.moved) {
       this.refreshOverlays()
@@ -321,16 +335,32 @@ export class EditorScene extends Phaser.Scene {
     this.lastPaint = { tx, ty }
   }
 
+  /**
+   * Pinta os vértices do quadrado do pincel. O pincel grava o terreno
+   * explicitamente; a borracha grava '' (= o fundo da zona, que pode mudar).
+   */
   private stamp(wx: number, wy: number) {
     const z = this.state.zone
-    const value = this.state.tool === 'erase' || this.state.terrain === z.base ? '' : this.state.terrain
+    const value = this.state.tool === 'erase' ? '' : this.state.terrain
     const { tx0, ty0, n } = this.brushTiles(wx, wy)
     const vx0 = Math.max(0, tx0), vy0 = Math.max(0, ty0)
     const vx1 = Math.min(z.width, tx0 + n), vy1 = Math.min(z.height, ty0 + n)
     if (vx0 > vx1 || vy0 > vy1) return
     const W = z.width + 1
-    for (let vy = vy0; vy <= vy1; vy++) for (let vx = vx0; vx <= vx1; vx++) z.corners[vy * W + vx] = value
-    this.ground.redrawVertices(vx0, vy0, vx1, vy1)
+    let changed = false
+    for (let vy = vy0; vy <= vy1; vy++) {
+      for (let vx = vx0; vx <= vx1; vx++) {
+        const i = vy * W + vx
+        if (z.corners[i] === value) continue
+        if (!this.strokeSaved) {
+          this.state.checkpoint()
+          this.strokeSaved = true
+        }
+        z.corners[i] = value
+        changed = true
+      }
+    }
+    if (changed) this.ground.redrawVertices(vx0, vy0, vx1, vy1)
   }
 
   private fillAt(wx: number, wy: number) {
@@ -339,9 +369,8 @@ export class EditorScene extends Phaser.Scene {
     if (vx < 0 || vy < 0 || vx > z.width || vy > z.height) return
     const W = z.width + 1, H = z.height + 1
     const target = cornerTerrain(z, vx, vy).id
-    const value = this.state.terrain === z.base ? '' : this.state.terrain
-    if (target === (value || z.base)) return
-    if (!terrainById.has(this.state.terrain)) return
+    const value = this.state.terrain
+    if (target === value || !terrainById.has(value)) return
 
     this.state.checkpoint()
     const seen = new Uint8Array(W * H)
@@ -383,6 +412,23 @@ export class EditorScene extends Phaser.Scene {
     let best: Phaser.GameObjects.Image | null = null
     for (const h of hits) if (this.sprites.includes(h) && (!best || h.depth > best.depth)) best = h
     return best ? this.sprites.indexOf(best) : null
+  }
+
+  /**
+   * Conta-gotas (Alt+clique): com ferramenta de objeto/seleção copia o
+   * objeto sob o mouse; senão copia o terreno do vértice mais próximo.
+   */
+  private eyedropper(p: Phaser.Input.Pointer) {
+    const { tool } = this.state
+    if (tool === 'object' || tool === 'select') {
+      const i = this.objectAt(p)
+      if (i !== null) this.state.set({ objectKind: this.state.zone.objects[i].kind, tool: 'object' })
+      return
+    }
+    const z = this.state.zone
+    const vx = Phaser.Math.Clamp(Math.round(p.worldX / TILE), 0, z.width)
+    const vy = Phaser.Math.Clamp(Math.round(p.worldY / TILE), 0, z.height)
+    this.state.set({ terrain: cornerTerrain(z, vx, vy).id, tool: tool === 'fill' ? 'fill' : 'brush' })
   }
 
   // ── Ações chamadas pela interface ──────────────────────

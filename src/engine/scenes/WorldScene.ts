@@ -7,7 +7,7 @@ import Phaser from 'phaser'
 import { buildCharacter } from '../character/compose'
 import { Ground, solidTerrainRects } from '../world/ground'
 import { addObjectSolids, createObjectSprite } from '../world/objects'
-import { Player } from '../world/Player'
+import { Player, isTyping } from '../world/Player'
 import { TILE, type Appearance, type ZoneData } from '../types'
 
 export interface WorldSceneData {
@@ -48,13 +48,29 @@ export class WorldScene extends Phaser.Scene {
     // zona menor que a tela: centraliza em vez de grudar no canto
     if (W * 2 < cam.width || H * 2 < cam.height) cam.removeBounds()
 
-    await buildCharacter(this, PLAYER_KEY, assetBase, appearance)
+    try {
+      await buildCharacter(this, PLAYER_KEY, assetBase, appearance)
+    } catch (err) {
+      console.error('[vortable] boneco não carregou', err)
+      this.add.text(cam.midPoint.x, cam.midPoint.y, 'Não deu pra carregar o boneco.\nConfira a conexão e recarregue.', {
+        fontFamily: 'system-ui', fontSize: '12px', color: '#ffc174', align: 'center', stroke: '#000', strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(1e9).setResolution(4)
+      return
+    }
     if (!this.sys.isActive()) return
     this.player = new Player(this, PLAYER_KEY, zone.spawn.x, zone.spawn.y)
     this.physics.add.collider(this.player.sprite, solids)
     cam.startFollow(this.player.sprite, true, 0.15, 0.15)
 
+    // setas e espaço não rolam a página enquanto se joga (sem prender WASD dos campos de texto)
+    const noScroll = (e: KeyboardEvent) => {
+      if (!isTyping() && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault()
+    }
+    window.addEventListener('keydown', noScroll)
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => window.removeEventListener('keydown', noScroll))
+
     this.input.keyboard!.on('keydown-C', () => {
+      if (isTyping()) return
       const w = this.physics.world
       w.drawDebug = !w.drawDebug
       if (!w.debugGraphic) w.createDebugGraphic()
@@ -65,8 +81,12 @@ export class WorldScene extends Phaser.Scene {
   /** Troca a aparência do jogador sem recarregar a cena. */
   async setAppearance(appearance: Appearance) {
     this.cfg.appearance = appearance
-    await buildCharacter(this, PLAYER_KEY, this.cfg.assetBase, appearance)
-    this.player?.refresh()
+    try {
+      await buildCharacter(this, PLAYER_KEY, this.cfg.assetBase, appearance)
+      this.player?.refresh()
+    } catch (err) {
+      console.error('[vortable] aparência não carregou', err)
+    }
   }
 
   update() {

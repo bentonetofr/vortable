@@ -62,11 +62,13 @@ scripts/      ferramentas de assets
 - ✅ *"Já parece um joguinho"*
 
 ### M1 — Editor de zonas ✅ (concluído)
-- Camadas: chão, decoração, objetos, acima-do-jogador (telhados, copas)
-- **Autotile** de terrenos (grama, terra, água, areia...)
-- Paleta de objetos com busca e categorias
-- Pintura de colisão, borracha, conta-gotas, desfazer/refazer
-- Salvar/carregar zona (JSON) + botão **Testar**
+- Chão com **autotile** de 30 terrenos (grama, terra, areia, neve, pedra, água, lava, buracos)
+- Objetos com y-sort pelo pé; paleta com busca e categorias (247 árvores por enquanto)
+- Pincel, balde, borracha, conta-gotas (Alt+clique), selecionar/mover/apagar, ponto de início
+- Desfazer/refazer, grade, ver colisões, encaixe, zoom e arrastar a tela
+- Salvar/abrir (contrato `ZoneStorage`), exportar/importar JSON + botão **Testar**
+- ⏳ Pendente (vai junto da leva de arte): camada "acima do jogador" (telhados), áreas de
+  colisão pintadas à mão, ajuste fino do pé de cada objeto
 - ✅ *Mestre cria uma zona e anda nela*
 
 ### M2 — Mundo e zonas conectadas

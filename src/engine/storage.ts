@@ -5,7 +5,7 @@
 //   • (M4) Supabase, pela ponte no Vorterium
 // ────────────────────────────────────────────────────────
 
-import type { ZoneData } from './types'
+import { TILE, ZONE_MAX, ZONE_MIN, type ZoneData } from './types'
 
 export interface ZoneSummary {
   id: string
@@ -46,7 +46,7 @@ export class LocalZoneStorage implements ZoneStorage {
   async load(id: string) {
     try {
       const raw = localStorage.getItem(PREFIX + id)
-      return raw ? (JSON.parse(raw) as ZoneData) : null
+      return raw ? parseZone(JSON.parse(raw)) : null
     } catch {
       return null
     }
@@ -64,14 +64,50 @@ export class LocalZoneStorage implements ZoneStorage {
   }
 }
 
-/** Confere se um JSON importado parece uma zona válida. */
-export function parseZone(json: unknown): ZoneData {
-  const z = json as ZoneData
-  if (!z || z.version !== 1 || typeof z.width !== 'number' || typeof z.height !== 'number' || !Array.isArray(z.corners)) {
-    throw new Error('Arquivo não é uma zona do Vortable.')
+/** localStorage pode estar bloqueado (aba anônima, cookies desligados). */
+export function localStorageAvailable() {
+  try {
+    const k = 'vortable:teste'
+    localStorage.setItem(k, '1')
+    localStorage.removeItem(k)
+    return true
+  } catch {
+    return false
   }
-  if (z.corners.length !== (z.width + 1) * (z.height + 1)) throw new Error('Zona corrompida: tamanho da grade não bate.')
-  z.objects ??= []
-  z.spawn ??= { x: (z.width * 32) / 2, y: (z.height * 32) / 2 }
-  return z
+}
+
+/**
+ * Confere um JSON importado e devolve uma zona utilizável. Recusa o que
+ * quebraria o motor (tamanho fora do limite, grade com tamanho errado);
+ * conserta o que dá (objetos malformados são descartados, início fora da
+ * zona volta pro meio).
+ */
+export function parseZone(json: unknown): ZoneData {
+  const z = json as Partial<ZoneData> | null
+  if (!z || typeof z !== 'object' || z.version !== 1) throw new Error('Arquivo não é uma zona do Vortable.')
+  const { width, height } = z
+  const okSize = (n: unknown) => typeof n === 'number' && Number.isInteger(n) && n >= ZONE_MIN && n <= ZONE_MAX
+  if (!okSize(width) || !okSize(height)) throw new Error(`Tamanho de zona inválido (precisa ser de ${ZONE_MIN} a ${ZONE_MAX} tiles).`)
+  if (!Array.isArray(z.corners) || z.corners.length !== (width! + 1) * (height! + 1)) {
+    throw new Error('Zona corrompida: a grade de terrenos não bate com o tamanho.')
+  }
+  const W = width! * TILE, H = height! * TILE
+  const num = (n: unknown) => typeof n === 'number' && Number.isFinite(n)
+  const objects = (Array.isArray(z.objects) ? z.objects : []).filter(
+    (o) => o && typeof o.kind === 'string' && num(o.x) && num(o.y),
+  )
+  const spawn = z.spawn && num(z.spawn.x) && num(z.spawn.y) && z.spawn.x >= 0 && z.spawn.y >= 0 && z.spawn.x <= W && z.spawn.y <= H
+    ? z.spawn
+    : { x: W / 2, y: H / 2 }
+  return {
+    version: 1,
+    id: typeof z.id === 'string' && z.id ? z.id : `zona-${Date.now().toString(36)}`,
+    name: typeof z.name === 'string' ? z.name : 'Zona importada',
+    width: width!,
+    height: height!,
+    base: typeof z.base === 'string' ? z.base : 'grass',
+    corners: z.corners.map((c) => (typeof c === 'string' ? c : '')),
+    objects: objects.map((o) => ({ kind: o.kind, x: Math.round(o.x), y: Math.round(o.y) })),
+    spawn: { x: Math.round(spawn.x), y: Math.round(spawn.y) },
+  }
 }

@@ -37,9 +37,15 @@ export interface ZoneObject {
 export const ZONE_MIN = 8
 export const ZONE_MAX = 128
 
+/** Tamanho válido de zona: inteiro entre ZONE_MIN e ZONE_MAX (vazio/inválido → `fallback`). */
+export function clampZoneSize(n: number, fallback: number) {
+  const v = Math.round(n)
+  return Number.isFinite(v) && v > 0 ? Math.max(ZONE_MIN, Math.min(ZONE_MAX, v)) : fallback
+}
+
 export function newZone(name: string, width: number, height: number, base = 'grass'): ZoneData {
-  width = Math.max(ZONE_MIN, Math.min(ZONE_MAX, Math.round(width)))
-  height = Math.max(ZONE_MIN, Math.min(ZONE_MAX, Math.round(height)))
+  width = clampZoneSize(width, 40)
+  height = clampZoneSize(height, 30)
   return {
     version: 1,
     id: `zona-${Date.now().toString(36)}`,

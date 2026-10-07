@@ -15,7 +15,7 @@ npm run dev
 ```
 
 - http://localhost:5180 — **editor de zonas**
-- http://localhost:5180/?jogar — só o jogo, na zona de demonstração
+- http://localhost:5180/?jogar — só o jogo, na última zona salva
 
 ### Atalhos do editor
 
@@ -30,6 +30,7 @@ npm run dev
 | `Del` | apagar objeto selecionado |
 | botão direito ou do meio, `Espaço`+arrastar | mover a tela |
 | roda do mouse | zoom |
+| `Alt`+clique | conta-gotas: copia o terreno ou o objeto sob o mouse |
 | `Esc` | sair do teste / soltar ferramenta |
 
 No jogo: `WASD`/setas andam, `Shift` corre, `C` mostra colisões, `R` sorteia a aparência.
@@ -39,7 +40,8 @@ No jogo: `WASD`/setas andam, `Shift` corre, `C` mostra colisões, `R` sorteia a 
 - `src/engine/` — o motor (Phaser). Não depende de React, Supabase nem do Vorterium.
   Entrada: `mountVortable(div, opções)`.
 - `src/dev/` — harness para rodar o motor sozinho.
-- `public/assets/lpc/` — arte LPC (personagem em camadas + paletas, terrenos, árvores).
+- `public/assets/lpc/` — arte LPC usada direto (personagem em camadas + paletas, terrenos).
+- `public/assets/catalog/` — objetos recortados pelo script de catálogo (não editar à mão).
 - `assets-src/` — arte original. `node scripts/build-catalog.mjs` recorta os objetos, calcula a
   colisão de cada um e gera `public/assets/catalog/objects.json`.
 

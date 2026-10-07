@@ -1,8 +1,8 @@
 // Harness de desenvolvimento: roda o Vortable sozinho, sem o Vorterium.
 //   /            → editor de zonas
-//   /?jogar      → só o jogo, na zona de demonstração
+//   /?jogar      → só o jogo, na última zona salva
 
-import { mountVortable, paletteNames, type Appearance } from '../engine'
+import { LocalZoneStorage, mountVortable, paletteNames, type Appearance, type ZoneData } from '../engine'
 import { makeDemoZone } from './demoZone'
 
 const assetBase = './assets/'
@@ -22,11 +22,19 @@ const appearance: Appearance = {
 
 document.getElementById('hud')!.hidden = !play
 
+// abre a última zona salva (ou a demonstração, na primeira vez)
+const storage = new LocalZoneStorage()
+async function startZone(): Promise<ZoneData> {
+  const [last] = await storage.list().catch(() => [])
+  return (last && (await storage.load(last.id))) || makeDemoZone()
+}
+
 const vortable = mountVortable(document.getElementById('app')!, {
   mode: play ? 'play' : 'edit',
-  zone: makeDemoZone(),
+  zone: await startZone(),
   appearance,
   assetBase,
+  storage,
 })
 
 const pick = <T,>(list: T[]) => list[Math.floor(Math.random() * list.length)]

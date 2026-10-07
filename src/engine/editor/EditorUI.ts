@@ -8,9 +8,10 @@ import css from './editor.css?inline'
 import { ICONS } from './icons'
 import type { EditorState, Tool } from './EditorState'
 import { TERRAINS, TERRAIN_TEXTURE, terrainFrameRect, terrainById } from '../assets/terrains'
-import { objectCatalog, sheetTexture } from '../assets/objects'
+import { footRect, objectCatalog, objectDef, sheetTexture } from '../assets/objects'
 import { parseZone, type ZoneStorage } from '../storage'
-import { TILE, ZONE_MAX, ZONE_MIN, newZone, type ZoneData } from '../types'
+import { TILE, ZONE_MAX, ZONE_MIN, clampZoneSize, newZone, type ZoneData } from '../types'
+import { solidTerrainRects } from '../world/ground'
 
 export interface EditorHooks {
   /** Imagem de uma textura carregada no Phaser (pra desenhar miniaturas). */
@@ -92,6 +93,8 @@ export class EditorUI {
         h('button', { class: 'vt-btn vt-primary', html: `${ICONS.stop}<span>Voltar ao editor</span>`, onclick: () => this.stopTest() }),
       ),
     )
+    // a interface é posicionada por cima do container: ele precisa ser referência
+    if (getComputedStyle(parent).position === 'static') parent.style.position = 'relative'
     parent.append(this.root)
     // botão clicado perde o foco: senão Espaço (arrastar a tela) "clica" nele de novo
     this.root.addEventListener('click', (e) => (e.target as HTMLElement).closest('button')?.blur())
@@ -342,7 +345,7 @@ export class EditorUI {
       select: s.selected !== null ? 'Arraste pra mover · Del apaga' : 'Clique num objeto pra selecionar',
       spawn: 'Clique onde o jogador deve aparecer',
     }[s.tool]
-    parts.push(h('span', { class: 'vt-hint' }, `${hint} · botão direito/meio arrasta a tela · roda dá zoom`))
+    parts.push(h('span', { class: 'vt-hint' }, `${hint} · Alt+clique copia · botão direito arrasta a tela · roda dá zoom`))
     this.statusEl.replaceChildren(...parts)
   }
 
@@ -392,8 +395,9 @@ export class EditorUI {
       if (!this.confirmDiscard()) return
       this.state.load(zone)
       this.state.dirty = true
+      this.state.emit('ui')
       this.hooks.centerOnZone()
-      this.toast(`"${zone.name}" importada. Salve pra guardar no navegador.`)
+      this.toast(`"${zone.name}" importada. Salve pra guardar.`)
     } catch (err) {
       this.toast((err as Error).message, true)
     }
@@ -405,9 +409,12 @@ export class EditorUI {
 
   private resizeZone(width: number, height: number) {
     const z = this.state.zone
-    width = Math.max(ZONE_MIN, Math.min(ZONE_MAX, Math.round(width) || z.width))
-    height = Math.max(ZONE_MIN, Math.min(ZONE_MAX, Math.round(height) || z.height))
-    if (width === z.width && height === z.height) return
+    width = clampZoneSize(width, z.width)
+    height = clampZoneSize(height, z.height)
+    if (width === z.width && height === z.height) {
+      this.renderZoneProps()
+      return
+    }
     this.state.checkpoint()
     const corners: string[] = new Array((width + 1) * (height + 1)).fill('')
     for (let y = 0; y <= Math.min(height, z.height); y++)
@@ -423,14 +430,30 @@ export class EditorUI {
       spawn: { x: Math.min(z.spawn.x, W - 16), y: Math.min(z.spawn.y, H - 16) },
     }
     this.state.zone = resized
+    this.state.selected = null
     this.state.emit('zone')
     this.toast(`Zona agora tem ${width}×${height} tiles.`)
   }
 
   private startTest() {
+    if (this.spawnBlocked()) this.toast('Atenção: o ponto de início está dentro de algo sólido — o boneco pode ficar preso.', true)
     this.testing = true
     this.root.classList.add('vt-testing')
     this.hooks.startTest()
+  }
+
+  /** O pé do boneco no ponto de início encosta em água, buraco ou tronco? */
+  private spawnBlocked() {
+    const z = this.state.zone
+    const foot = { x: z.spawn.x - 9, y: z.spawn.y - 10, w: 18, h: 10 }
+    const hit = (r: { x: number; y: number; w: number; h: number }) =>
+      foot.x < r.x + r.w && r.x < foot.x + foot.w && foot.y < r.y + r.h && r.y < foot.y + foot.h
+    if (solidTerrainRects(z).some(hit)) return true
+    return z.objects.some((o) => {
+      const def = objectDef(o.kind)
+      const r = def && footRect(def, o.x, o.y)
+      return !!r && hit(r)
+    })
   }
 
   private stopTest() {
@@ -466,22 +489,21 @@ export class EditorUI {
     const hh = h('input', { class: 'vt-input vt-num', type: 'number', min: ZONE_MIN, max: ZONE_MAX, value: 30 })
     const base = h('select', { class: 'vt-select' }) as HTMLSelectElement
     for (const t of TERRAINS.filter((t) => !t.solid)) base.append(h('option', { value: t.id }, t.label))
+    const create = () => {
+      if (!this.confirmDiscard()) return
+      this.state.load(newZone(name.value.trim() || 'Nova zona', Number(w.value), Number(hh.value), base.value))
+      this.hooks.centerOnZone()
+      close()
+    }
     const close = this.modal('Nova zona', [
       h('div', { class: 'vt-row' }, h('label', {}, 'Nome'), name),
       h('div', { class: 'vt-row' }, h('label', {}, 'Tamanho'), w, '×', hh, h('small', { style: 'color:var(--vt-muted)' }, `tiles (${ZONE_MIN}–${ZONE_MAX})`)),
       h('div', { class: 'vt-row' }, h('label', {}, 'Fundo'), base),
     ], [
       h('button', { class: 'vt-btn', onclick: () => close() }, 'Cancelar'),
-      h('button', {
-        class: 'vt-btn vt-primary',
-        onclick: () => {
-          if (!this.confirmDiscard()) return
-          this.state.load(newZone(name.value.trim() || 'Nova zona', Number(w.value), Number(hh.value), base.value))
-          this.hooks.centerOnZone()
-          close()
-        },
-      }, 'Criar'),
+      h('button', { class: 'vt-btn vt-primary', onclick: create }, 'Criar'),
     ])
+    for (const input of [name, w, hh]) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') create() })
     setTimeout(() => name.select(), 0)
   }
 
@@ -489,7 +511,13 @@ export class EditorUI {
     const list = h('div', { class: 'vt-list' })
     const close = this.modal('Abrir zona', [list], [h('button', { class: 'vt-btn', onclick: () => close() }, 'Fechar')])
     const render = async () => {
-      const zones = await this.storage.list()
+      let zones
+      try {
+        zones = await this.storage.list()
+      } catch (err) {
+        list.replaceChildren(h('div', { class: 'vt-empty' }, `Não deu pra ler as zonas: ${(err as Error).message}`))
+        return
+      }
       list.replaceChildren()
       if (!zones.length) list.append(h('div', { class: 'vt-empty' }, 'Nenhuma zona salva ainda.'))
       for (const z of zones) {
@@ -502,8 +530,8 @@ export class EditorUI {
             class: 'vt-btn vt-primary',
             onclick: async () => {
               if (!this.confirmDiscard()) return
-              const zone = await this.storage.load(z.id)
-              if (!zone) return this.toast('Não achei essa zona.', true)
+              const zone = await this.storage.load(z.id).catch(() => null)
+              if (!zone) return this.toast('Não deu pra abrir essa zona (apagada ou corrompida).', true)
               this.state.load(zone)
               this.hooks.centerOnZone()
               close()
@@ -515,7 +543,11 @@ export class EditorUI {
             html: ICONS.trash,
             onclick: async () => {
               if (!confirm(`Apagar "${z.name}"? Não dá pra desfazer.`)) return
-              await this.storage.remove(z.id)
+              try {
+                await this.storage.remove(z.id)
+              } catch (err) {
+                this.toast(`Não deu pra apagar: ${(err as Error).message}`, true)
+              }
               render()
             },
           }),

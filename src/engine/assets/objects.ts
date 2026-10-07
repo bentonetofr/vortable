@@ -36,6 +36,15 @@ export function setObjectCatalog(c: ObjectCatalog) {
 export const objectCatalog = () => catalog
 export const objectDef = (id: string) => byId.get(id)
 
+/**
+ * Profundidade de desenho: a linha do pé, não a borda de baixo do sprite
+ * (que inclui a sombra). Assim quem pisa na sombra, na frente do tronco,
+ * aparece na frente da árvore.
+ */
+export function objectDepth(def: ObjectDef | undefined, y: number) {
+  return y - (def?.foot?.lift ?? 0)
+}
+
 /** Retângulo que colide de um objeto colocado em (x, y) (base-centro), em px do mundo. */
 export function footRect(def: ObjectDef, x: number, y: number) {
   if (!def.foot) return null
