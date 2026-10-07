@@ -7,6 +7,7 @@ import Phaser from 'phaser'
 import { GEN_SOURCES, TERRAIN_GEN_TEXTURE, TERRAIN_TEXTURE, TERRAIN_URL, TERRAINS, terrainFrame, terrainFrameRect, terrainTexture } from '../assets/terrains'
 import { buildGeneratedTerrains } from '../assets/genTerrain'
 import { CATALOG_URL, setObjectCatalog, sheetTexture, type ObjectCatalog } from '../assets/objects'
+import { registerObjectArt } from '../world/objects'
 
 export class BootScene extends Phaser.Scene {
   constructor(private assetBase: string, private onReady: () => void) {
@@ -51,7 +52,7 @@ export class BootScene extends Phaser.Scene {
     for (const s of catalog.sheets) this.load.image(sheetTexture(s.id), this.assetBase + s.url)
     this.load.once(Phaser.Loader.Events.COMPLETE, () => {
       if (this.failed.length) return this.fail()
-      for (const o of catalog.objects) this.textures.get(sheetTexture(o.sheet)).add(o.id, 0, o.x, o.y, o.w, o.h)
+      registerObjectArt(this, catalog)
       this.onReady()
     })
     this.load.start()

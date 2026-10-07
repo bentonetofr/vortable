@@ -15,6 +15,8 @@ import { EditorState } from './editor/EditorState'
 import { EditorUI } from './editor/EditorUI'
 import { LocalWorldStorage, type WorldStorage } from './storage'
 import { newZone, type Appearance, type ZoneData } from './types'
+import { setObjectCatalog, type ObjectCatalog } from './assets/objects'
+import { registerObjectArt } from './world/objects'
 
 import { CreatorUI } from './character/CreatorUI'
 import { LocalCharacterStorage, type CharacterStorage } from './character/storage'
@@ -39,7 +41,14 @@ export interface VortableOptions {
   storage?: WorldStorage
   /** Editor: mostra o botão "Personagem" e chama isto ao clicar. */
   onEditCharacter?: () => void
+  /**
+   * Editor: liga a curadoria de peças (gravar ajustes nos pack.json). Só
+   * funciona com o servidor de desenvolvimento do Vortable (npm run dev).
+   */
+  curate?: boolean
 }
+
+const CURATE_URL = '/__vortable/curate'
 
 export interface VortableHandle {
   setAppearance(appearance: Appearance): Promise<void>
@@ -82,6 +91,20 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
       deleteSelected: () => editor()?.deleteSelected(),
       centerOnZone: () => editor()?.centerOnZone(),
       editCharacter: opts.onEditCharacter,
+      curate: opts.curate
+        ? async (pack, id, override) => {
+          const res = await fetch(CURATE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pack, id, override }),
+          })
+          const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+          if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`)
+          setObjectCatalog(body as ObjectCatalog)
+          registerObjectArt(game, body as ObjectCatalog)
+          state!.emit('catalog')
+        }
+        : undefined,
     })
     host = ui.stage
   }

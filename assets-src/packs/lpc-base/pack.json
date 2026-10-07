@@ -1,0 +1,666 @@
+{
+  "name": "LPC Base Assets",
+  "license": "CC-BY-SA 3.0 / GPL 3.0 (Sharm também OGA-BY 3.0)",
+  "source": "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+  "sheets": [
+    {
+      "id": "base-barrel",
+      "file": "barrel.png",
+      "category": "Vila",
+      "label": "Barril",
+      "tags": [
+        "madeira",
+        "armazém"
+      ],
+      "collision": "base"
+    },
+    {
+      "id": "base-buckets",
+      "file": "buckets.png",
+      "category": "Vila",
+      "label": "Balde",
+      "tags": [
+        "madeira"
+      ],
+      "collision": "base"
+    },
+    {
+      "id": "base-chests",
+      "file": "chests.png",
+      "mode": "pieces",
+      "category": "Móveis",
+      "label": "Baú",
+      "tags": [
+        "tesouro",
+        "madeira"
+      ],
+      "pieces": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Baú",
+          "group": "bau",
+          "variant": "Fechado"
+        },
+        {
+          "x": 0,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Baú",
+          "group": "bau",
+          "variant": "Entreaberto"
+        },
+        {
+          "x": 0,
+          "y": 64,
+          "w": 32,
+          "h": 32,
+          "label": "Baú",
+          "group": "bau",
+          "variant": "Aberto"
+        },
+        {
+          "x": 32,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Baú de tampa redonda",
+          "group": "bau-redondo",
+          "variant": "Fechado"
+        },
+        {
+          "x": 32,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Baú de tampa redonda",
+          "group": "bau-redondo",
+          "variant": "Entreaberto"
+        },
+        {
+          "x": 32,
+          "y": 64,
+          "w": 32,
+          "h": 32,
+          "label": "Baú de tampa redonda",
+          "group": "bau-redondo",
+          "variant": "Aberto"
+        }
+      ],
+      "collision": "base"
+    },
+    {
+      "id": "base-cabinets",
+      "file": "cabinets.png",
+      "mode": "pieces",
+      "category": "Móveis",
+      "label": "Móvel",
+      "tags": [
+        "interior",
+        "madeira"
+      ],
+      "pieces": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 32,
+          "h": 80,
+          "label": "Estante vazia"
+        },
+        {
+          "x": 32,
+          "y": 0,
+          "w": 32,
+          "h": 80,
+          "label": "Estante com livros",
+          "tags": [
+            "interior",
+            "madeira",
+            "livros",
+            "biblioteca"
+          ]
+        },
+        {
+          "x": 64,
+          "y": 0,
+          "w": 32,
+          "h": 80,
+          "label": "Estante com livros 2",
+          "tags": [
+            "interior",
+            "madeira",
+            "livros",
+            "biblioteca"
+          ]
+        },
+        {
+          "x": 96,
+          "y": 0,
+          "w": 32,
+          "h": 80,
+          "label": "Estante de pratos",
+          "tags": [
+            "interior",
+            "madeira",
+            "cozinha"
+          ]
+        },
+        {
+          "x": 128,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Tapete pequeno",
+          "kind": "floor",
+          "tags": [
+            "interior",
+            "tecido"
+          ]
+        },
+        {
+          "x": 160,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Tapete de porta",
+          "kind": "floor",
+          "tags": [
+            "interior",
+            "tecido"
+          ]
+        },
+        {
+          "x": 128,
+          "y": 40,
+          "w": 32,
+          "h": 24,
+          "label": "Toalhinha de renda",
+          "kind": "floor",
+          "tags": [
+            "interior",
+            "tecido",
+            "mesa"
+          ]
+        },
+        {
+          "x": 160,
+          "y": 40,
+          "w": 32,
+          "h": 24,
+          "label": "Toalhinha de renda pequena",
+          "kind": "floor",
+          "tags": [
+            "interior",
+            "tecido",
+            "mesa"
+          ]
+        },
+        {
+          "x": 0,
+          "y": 96,
+          "w": 32,
+          "h": 80,
+          "label": "Cômoda de gavetas"
+        },
+        {
+          "x": 32,
+          "y": 96,
+          "w": 32,
+          "h": 80,
+          "label": "Armário"
+        },
+        {
+          "x": 64,
+          "y": 96,
+          "w": 32,
+          "h": 80,
+          "label": "Armário de quatro portas"
+        },
+        {
+          "x": 96,
+          "y": 96,
+          "w": 32,
+          "h": 80,
+          "label": "Armário com gavetas"
+        },
+        {
+          "x": 128,
+          "y": 96,
+          "w": 32,
+          "h": 80,
+          "label": "Guarda-roupa"
+        },
+        {
+          "x": 32,
+          "y": 200,
+          "w": 32,
+          "h": 70,
+          "label": "Cristaleira",
+          "tags": [
+            "interior",
+            "madeira",
+            "vidro"
+          ]
+        },
+        {
+          "x": 64,
+          "y": 200,
+          "w": 32,
+          "h": 70,
+          "label": "Cristaleira 2",
+          "tags": [
+            "interior",
+            "madeira",
+            "vidro"
+          ]
+        },
+        {
+          "x": 96,
+          "y": 200,
+          "w": 32,
+          "h": 70,
+          "label": "Cristaleira 3",
+          "tags": [
+            "interior",
+            "madeira",
+            "vidro"
+          ]
+        },
+        {
+          "x": 128,
+          "y": 200,
+          "w": 32,
+          "h": 70,
+          "label": "Cristaleira alta",
+          "tags": [
+            "interior",
+            "madeira",
+            "vidro"
+          ]
+        },
+        {
+          "x": 96,
+          "y": 264,
+          "w": 64,
+          "h": 52,
+          "label": "Mesa",
+          "tags": [
+            "interior",
+            "madeira",
+            "taverna"
+          ]
+        },
+        {
+          "x": 96,
+          "y": 316,
+          "w": 64,
+          "h": 100,
+          "label": "Mesa comprida",
+          "tags": [
+            "interior",
+            "madeira",
+            "taverna",
+            "banquete"
+          ]
+        },
+        {
+          "x": 160,
+          "y": 296,
+          "w": 32,
+          "h": 52,
+          "label": "Mesinha",
+          "tags": [
+            "interior",
+            "madeira"
+          ]
+        },
+        {
+          "x": 160,
+          "y": 348,
+          "w": 32,
+          "h": 52,
+          "label": "Mesinha de canto",
+          "tags": [
+            "interior",
+            "madeira"
+          ]
+        }
+      ],
+      "collision": "base"
+    },
+    {
+      "id": "base-country",
+      "file": "country.png",
+      "mode": "pieces",
+      "category": "Móveis",
+      "label": "Móvel rústico",
+      "tags": [
+        "interior",
+        "madeira",
+        "rústico"
+      ],
+      "pieces": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 64,
+          "h": 128,
+          "label": "Cama de solteiro",
+          "tags": [
+            "interior",
+            "madeira",
+            "quarto"
+          ]
+        },
+        {
+          "x": 64,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Cadeira de costas"
+        },
+        {
+          "x": 64,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Cadeira de frente"
+        },
+        {
+          "x": 64,
+          "y": 64,
+          "w": 32,
+          "h": 32,
+          "label": "Cadeira de lado"
+        },
+        {
+          "x": 64,
+          "y": 96,
+          "w": 32,
+          "h": 32,
+          "label": "Cadeira de lado 2"
+        },
+        {
+          "x": 96,
+          "y": 16,
+          "w": 32,
+          "h": 32,
+          "label": "Poltrona de costas"
+        },
+        {
+          "x": 128,
+          "y": 16,
+          "w": 32,
+          "h": 32,
+          "label": "Poltrona de frente"
+        },
+        {
+          "x": 96,
+          "y": 72,
+          "w": 32,
+          "h": 48,
+          "label": "Cadeira de lado 3"
+        },
+        {
+          "x": 128,
+          "y": 72,
+          "w": 32,
+          "h": 48,
+          "label": "Cadeira de lado 4"
+        }
+      ],
+      "collision": "base"
+    },
+    {
+      "id": "base-kitchen",
+      "file": "kitchen.png",
+      "mode": "pieces",
+      "category": "Cozinha",
+      "label": "Cozinha",
+      "tags": [
+        "interior",
+        "cozinha"
+      ],
+      "pieces": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 32,
+          "h": 128,
+          "label": "Fogão a lenha com chaminé",
+          "light": {
+            "x": 0,
+            "y": -12,
+            "radius": 56,
+            "color": "#ff9a40",
+            "intensity": 0.7,
+            "flicker": 0.3
+          }
+        },
+        {
+          "x": 32,
+          "y": 64,
+          "w": 32,
+          "h": 64,
+          "label": "Fogão aceso com panelas",
+          "light": {
+            "x": 0,
+            "y": -12,
+            "radius": 64,
+            "color": "#ff9a40",
+            "intensity": 0.9,
+            "flicker": 0.35
+          }
+        },
+        {
+          "x": 32,
+          "y": 0,
+          "w": 32,
+          "h": 32,
+          "label": "Pia com bomba d'água"
+        },
+        {
+          "x": 32,
+          "y": 32,
+          "w": 32,
+          "h": 32,
+          "label": "Bacia com bomba d'água"
+        }
+      ],
+      "collision": "base"
+    },
+    {
+      "id": "base-signs",
+      "file": "signs.png",
+      "category": "Vila",
+      "label": "Placa",
+      "kind": "wall",
+      "tags": [
+        "loja",
+        "placa"
+      ]
+    },
+    {
+      "id": "base-rock",
+      "file": "rock.png",
+      "category": "Pedras",
+      "label": "Pedra",
+      "tags": [
+        "natureza",
+        "pedra"
+      ],
+      "collision": "base"
+    },
+    {
+      "id": "base-cup",
+      "file": "cup.png",
+      "category": "Vila",
+      "label": "Cálice no pedestal",
+      "tags": [
+        "pedra",
+        "praça",
+        "templo"
+      ],
+      "collision": "base"
+    },
+    {
+      "id": "base-lights",
+      "file": "castle_lightsources.png",
+      "category": "Luzes",
+      "label": "Luz",
+      "tags": [
+        "fogo",
+        "luz",
+        "castelo"
+      ]
+    },
+    {
+      "id": "base-trunk",
+      "file": "trunk.png",
+      "category": "Árvores",
+      "label": "Tronco de árvore",
+      "tags": [
+        "natureza",
+        "montável"
+      ]
+    },
+    {
+      "id": "base-treetop",
+      "file": "treetop.png",
+      "category": "Árvores",
+      "label": "Copa",
+      "kind": "over",
+      "tags": [
+        "natureza",
+        "montável"
+      ]
+    }
+  ],
+  "objects": {
+    "base-barrel@2,10": {
+      "label": "Barril em pé",
+      "category": "Vila",
+      "tags": [
+        "madeira"
+      ],
+      "kind": "stand",
+      "light": null
+    },
+    "base-barrel@34,26": {
+      "label": "Barril em pé (escuro)"
+    },
+    "base-barrel@64,2": {
+      "label": "Pilha de barris",
+      "solids": [
+        {
+          "x": -20,
+          "y": -12,
+          "w": 40,
+          "h": 11
+        }
+      ],
+      "sort": 2
+    },
+    "base-buckets@37,21": {
+      "label": "Balde com água"
+    },
+    "base-buckets@5,37": {
+      "label": "Balde vazio (escuro)"
+    },
+    "base-buckets@5,5": {
+      "label": "Balde vazio"
+    },
+    "base-buckets@69,21": {
+      "label": "Balde com água (escuro)"
+    },
+    "base-lights@124,15": {
+      "label": "Poste com tocha",
+      "solids": [
+        {
+          "x": -3,
+          "y": -4,
+          "w": 6,
+          "h": 4
+        }
+      ],
+      "sort": 2,
+      "light": {
+        "x": 0,
+        "y": -66,
+        "radius": 112,
+        "color": "#ffa050",
+        "intensity": 1,
+        "flicker": 0.25
+      }
+    },
+    "base-lights@29,6": {
+      "label": "Arandela de vela",
+      "kind": "wall",
+      "light": {
+        "x": 0,
+        "y": -20,
+        "radius": 48,
+        "color": "#ffc070",
+        "intensity": 0.8,
+        "flicker": 0.15
+      }
+    },
+    "base-lights@72,4": {
+      "label": "Tocha de ferro",
+      "kind": "wall",
+      "light": {
+        "x": 0,
+        "y": -46,
+        "radius": 96,
+        "color": "#ffa050",
+        "intensity": 1,
+        "flicker": 0.25
+      }
+    },
+    "base-rock@0,0": {
+      "label": "Pedra grande"
+    },
+    "base-rock@43,11": {
+      "label": "Pedrinha"
+    },
+    "base-signs@0,36": {
+      "label": "Placa de estalagem 2"
+    },
+    "base-signs@32,36": {
+      "label": "Placa de ferreiro 2"
+    },
+    "base-signs@40,4": {
+      "label": "Placa de ferreiro"
+    },
+    "base-signs@64,36": {
+      "label": "Placa de mercador 2"
+    },
+    "base-signs@72,4": {
+      "label": "Placa de mercador"
+    },
+    "base-signs@8,4": {
+      "label": "Placa de estalagem"
+    },
+    "base-treetop@1,0": {
+      "label": "Copa redonda"
+    },
+    "base-treetop@102,117": {
+      "label": "Copa de pinheiro 2"
+    },
+    "base-treetop@4,101": {
+      "label": "Copa de pinheiro"
+    },
+    "base-treetop@97,16": {
+      "label": "Copa redonda 2"
+    },
+    "base-trunk@115,0": {
+      "label": "Tronco de árvore 2"
+    },
+    "base-trunk@16,0": {
+      "label": "Tronco de árvore"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "[LPC] Animated Torch",
+  "license": "CC-BY 3.0/4.0, GPL 2.0/3.0, OGA-BY 3.0",
+  "source": "https://opengameart.org/content/lpc-animated-torch",
+  "sheets": [
+    { "id": "torch", "file": "torch.png", "mode": "strip", "frame": { "w": 32, "h": 64 }, "fps": 10, "kind": "wall", "category": "Luzes", "label": "Tocha de parede", "tags": ["fogo", "luz", "masmorra", "castelo"],
+      "light": { "x": 0, "y": -44, "radius": 96, "color": "#ffb060", "intensity": 1, "flicker": 0.25 } }
+  ],
+  "objects": {}
+}

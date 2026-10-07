@@ -13,6 +13,9 @@ que formam um mundo, e **4–7 jogadores** exploram em tempo real, cada um com s
 | Jogadores | 4 a 7 por sessão |
 | Ritmo | **Tudo em tempo real** (exploração e combate) |
 | Ficha de RPG | **Não** — o programa é o mundo; regras ficam fora |
+| Temas da arte | **Tudo que for LPC e coeso entra**, temas diferentes (castelo/gótico, oriental, urbano) em **categorias separadas** — quanto mais customização, melhor |
+| Hora do dia | **As duas**: ciclo dia/noite que corre sozinho **e** hora fixa por zona |
+| Nomes das peças | Nomeadas à mão as mais usadas; o resto com nome automático, melhorado aos poucos |
 
 ## Stack
 
@@ -92,29 +95,33 @@ scripts/      ferramentas de assets
 - ⏳ Pendente: tipos de corpo extras do LPC (musculoso, adolescente, criança), expressões
 - ✅ *Cada jogador cria seu boneco único*
 
-### M3.1 — Objetos 2.0 (fundação técnica pra arte nova)
-A arte que vem a seguir (casas inteiras, paredes, móveis, tochas) precisa de recursos que o
-sistema de objetos ainda não tem. Sem isso, os objetos novos ficariam "colados" no chão.
-- **Tipos de objeto**: *em pé* (y-sort, colide: árvore, armário), *no chão* (sempre por baixo
-  do boneco: tapete, mancha, folhas), *na parede* (sem colisão, preso à parede: quadro, tocha,
-  janela), *por cima* (telhado/copa: fica translúcido quando o boneco passa atrás)
-- **Colisão editável**: um ou mais retângulos por objeto, ajustados num editor de colisão
-  (corrige as árvores tortas de hoje e permite casas com porta vazada)
-- **Objetos animados**: sequência de quadros (tocha, fogueira, moinho, água)
-- **Espelhar** objeto (esquerda/direita) e **variantes** (mesma peça em cores/estados)
-- **Pacotes de arte com manifesto**: cada pacote tem `pack.json` (fonte, autores, licença,
-  nomes em português, categoria, tags, colisão, luz, animação). O script gera catálogo e
-  créditos a partir dos manifestos
-- **Curadoria no próprio editor** (só em desenvolvimento): clicar num objeto do catálogo e
-  editar nome, categoria, tags, colisão e luz, salvando no manifesto — é o que torna viável
-  curar centenas de peças
-- Paleta de objetos com **tags** e **favoritos/recentes**
+### M3.1 — Objetos 2.0 ✅ (concluído)
+- **Tipos de objeto**: *em pé* (y-sort pela linha do pé, colide), *no chão* (sempre por baixo:
+  tapetes), *na parede* (placas, tochas), *por cima* (copas e telhados: transparentes com o
+  boneco embaixo). Árvores e móveis altos ficam semitransparentes quando escondem o boneco
+- **Colisão por retângulos** (vários por peça) + **linha do pé** editável; automática pelo pé
+  (árvores, postes) ou pela base (móveis, barris, pedras)
+- **Animação** (folhas em tira; cada cópia começa num quadro diferente), **espelhar** (`F`)
+- **Variantes**: cores (as 5 versões de cada árvore viram 1 peça) e estados (baú
+  fechado/entreaberto/aberto); troca no painel, até em objeto já colocado
+- **Pacotes com manifesto** (`assets-src/packs/<pacote>/pack.json`): fonte, licença, folhas,
+  modo de recorte (automático, tira animada, retângulos à mão) e a curadoria de cada peça;
+  créditos por pacote na tela de créditos
+- **Curadoria no editor** (só no `npm run dev`): nome, categoria, tags, tipo, colisão
+  desenhada sobre a arte, linha do pé e luz → grava no `pack.json` e recarrega na hora
+- Paleta com **busca por tag/tipo**, **favoritos** e **recentes**; painel da peça escolhida
+- Pacotes de amostra: árvores (67 modelos nomeados, 247 peças com variantes), LPC Base
+  (estantes, armários, cristaleiras, mesas, cadeiras, cama, fogões, baús, barris, placas,
+  pedras, copas e troncos montáveis, luzes) e a tocha animada — 126 peças na paleta
+- Luz por peça já fica gravada (tochas, fogões, postes) e passa a brilhar no M3.3
 - ✅ *Qualquer peça LPC pode entrar no editor com comportamento certo*
 
 ### M3.2 — Grande leva de arte (exteriores, interiores, pedra, natureza)
-Regra de coesão: **só LPC** (mesma perspectiva ¾, grade de 32px, mesma família de cores),
-**tema medieval/fantasia rural**. Nada é redimensionado. Fica de fora o que quebra o tema
-(máquinas de venda, privadas modernas, pichação, portais japoneses, fachadas parisienses).
+Regra de coesão: **só LPC** (mesma perspectiva ¾, grade de 32px, mesma família de cores).
+Nada é redimensionado. O centro é **medieval/fantasia rural**; temas diferentes que forem
+LPC e coesos entre si (castelo/gótico, oriental, urbano antigo) também entram, **cada um na
+sua categoria**. Fica de fora só o que é moderno demais (máquinas de venda, privadas
+modernas, pichação).
 
 | Grupo | O que entra | Pacotes (OpenGameArt) |
 |---|---|---|
@@ -144,7 +151,9 @@ Regra de coesão: **só LPC** (mesma perspectiva ¾, grade de 32px, mesma famíl
   uma ferramenta **Luz** pra pôr luz solta no mapa; raio, cor, intensidade e **tremulação**
 - **Como desenha**: uma camada de escuridão por cima do mapa, com as luzes "abrindo" buracos
   em gradiente e somando cor (estilo Stardew à noite); orçamento de ~64 luzes por zona
-- **Ciclo dia/noite** opcional por zona (exteriores); quem controla a hora é o mestre (M4)
+- **Hora do dia, dos dois jeitos**: **ciclo dia/noite** que corre sozinho (velocidade
+  ajustável) **ou hora fixa** por zona (a taverna é sempre noite, a masmorra sempre escura);
+  no M4 o mestre pode pausar, adiantar e mudar a hora pra todos
 - **Janelas que acendem** à noite; brilho da lava e da água venenosa
 - **Partículas leves**: fumaça de chaminé, faíscas de fogueira, vaga-lumes, poeira de masmorra
 - Editor: alternar "ver iluminação" e um controle de hora pra pré-visualizar

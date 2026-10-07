@@ -12,11 +12,11 @@
 // ────────────────────────────────────────────────────────
 
 import Phaser from 'phaser'
-import { footRect, objectDef, sheetTexture } from '../assets/objects'
+import { objectDef, objectSolids, sheetTexture } from '../assets/objects'
 import { terrainById } from '../assets/terrains'
 import { Ground, cornerTerrain, solidTerrainRects } from '../world/ground'
-import { createObjectSprite, moveObjectSprite } from '../world/objects'
-import { TILE, newId, type Portal } from '../types'
+import { createObjectSprite, updateObjectSprite, type ObjectSprite } from '../world/objects'
+import { TILE, newId, type Portal, type ZoneObject } from '../types'
 import type { EditorState } from './EditorState'
 
 const ZOOM_MIN = 0.25
@@ -26,7 +26,7 @@ const SELECT_TINT = 0x9fd3ff
 export class EditorScene extends Phaser.Scene {
   private state!: EditorState
   private ground!: Ground
-  private sprites: (Phaser.GameObjects.Image | null)[] = []
+  private sprites: (ObjectSprite | null)[] = []
   private gridGfx!: Phaser.GameObjects.Graphics
   private collisionGfx!: Phaser.GameObjects.Graphics
   private cursorGfx!: Phaser.GameObjects.Graphics
@@ -88,6 +88,12 @@ export class EditorScene extends Phaser.Scene {
       if (c === 'zone') this.reloadZone()
       if (c === 'ui') this.onUiChange()
       if (c === 'world' || c === 'edit') this.drawPortals()
+      if (c === 'objects') this.syncObjects()
+      if (c === 'catalog') {
+        this.rebuildObjects()
+        this.refreshOverlays()
+        this.onUiChange()
+      }
     })
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       off()
@@ -112,7 +118,17 @@ export class EditorScene extends Phaser.Scene {
     this.applySelection()
   }
 
-  private makeSprite(o: { kind: string; x: number; y: number }) {
+  /** Reaplica cada objeto no seu sprite (espelho, variante) sem refazer tudo. */
+  private syncObjects() {
+    this.state.zone.objects.forEach((o, i) => {
+      const s = this.sprites[i]
+      if (s) updateObjectSprite(s, o)
+    })
+    this.applySelection()
+    this.refreshOverlays()
+  }
+
+  private makeSprite(o: ZoneObject) {
     const s = createObjectSprite(this, o, 'placeholder')
     s?.setInteractive({ pixelPerfect: true, alphaTolerance: 1 })
     return s
@@ -142,7 +158,7 @@ export class EditorScene extends Phaser.Scene {
     this.refreshOverlays()
     if (this.state.tool === 'object' && this.state.objectKind) {
       const def = objectDef(this.state.objectKind)
-      if (def) this.ghost.setTexture(sheetTexture(def.sheet), def.id)
+      if (def) this.ghost.setTexture(sheetTexture(def.sheet), def.id).setFlipX(this.state.flip)
     } else {
       this.ghost.setVisible(false)
     }
@@ -169,8 +185,14 @@ export class EditorScene extends Phaser.Scene {
       this.collisionGfx.fillStyle(0xef4444, 0.55)
       for (const o of z.objects) {
         const def = objectDef(o.kind)
-        const r = def && footRect(def, o.x, o.y)
-        if (r) this.collisionGfx.fillRect(r.x, r.y, r.w, r.h)
+        if (def) for (const r of objectSolids(def, o)) this.collisionGfx.fillRect(r.x, r.y, r.w, r.h)
+      }
+      // linha do pé do selecionado: quem passa acima dela fica atrás
+      const sel = this.state.selected !== null ? z.objects[this.state.selected] : null
+      const def = sel && objectDef(sel.kind)
+      if (sel && def && (def.kind === 'stand' || def.kind === 'wall')) {
+        this.collisionGfx.lineStyle(1 / this.cameras.main.zoom, 0xfacc15, 1)
+          .lineBetween(sel.x - def.w / 2, sel.y - def.sort, sel.x + def.w / 2, sel.y - def.sort)
       }
     }
   }
@@ -280,7 +302,7 @@ export class EditorScene extends Phaser.Scene {
       const { x, y } = this.snapped(wx, wy)
       if (!this.inside(x, y)) return
       this.state.checkpoint()
-      const o = { kind: this.state.objectKind, x, y }
+      const o: ZoneObject = { kind: this.state.objectKind, x, y, ...(this.state.flip ? { flip: true } : {}) }
       this.state.zone.objects.push(o)
       this.sprites.push(this.makeSprite(o))
       this.refreshOverlays()
@@ -358,7 +380,7 @@ export class EditorScene extends Phaser.Scene {
       o.x = x
       o.y = y
       const s = this.sprites[d.index]
-      if (s) moveObjectSprite(s, o)
+      if (s) updateObjectSprite(s, o)
       this.drawSelection()
     }
     this.drawCursor(p)
@@ -504,8 +526,8 @@ export class EditorScene extends Phaser.Scene {
 
   /** Objeto de cima sob o mouse (pixel a pixel), ou null. */
   private objectAt(p: Phaser.Input.Pointer): number | null {
-    const hits = this.input.hitTestPointer(p) as Phaser.GameObjects.Image[]
-    let best: Phaser.GameObjects.Image | null = null
+    const hits = this.input.hitTestPointer(p) as ObjectSprite[]
+    let best: ObjectSprite | null = null
     for (const h of hits) if (this.sprites.includes(h) && (!best || h.depth > best.depth)) best = h
     return best ? this.sprites.indexOf(best) : null
   }
@@ -518,7 +540,10 @@ export class EditorScene extends Phaser.Scene {
     const { tool } = this.state
     if (tool === 'object' || tool === 'select') {
       const i = this.objectAt(p)
-      if (i !== null) this.state.set({ objectKind: this.state.zone.objects[i].kind, tool: 'object' })
+      if (i !== null) {
+        const o = this.state.zone.objects[i]
+        this.state.set({ objectKind: o.kind, flip: !!o.flip, tool: 'object' })
+      }
       return
     }
     const z = this.state.zone

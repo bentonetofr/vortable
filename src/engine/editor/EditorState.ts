@@ -15,8 +15,10 @@ export type Tool = 'brush' | 'fill' | 'erase' | 'object' | 'select' | 'portal' |
  * ui     = ferramenta/opções mudaram
  * cursor = o mouse andou
  * world  = dados do mundo ou lista de zonas salvas mudaram
+ * objects = objetos mudaram no lugar (espelhar, trocar variante) → reaplicar sprites
+ * catalog = o catálogo de objetos mudou (curadoria) → refazer sprites e paleta
  */
-export type Change = 'zone' | 'edit' | 'ui' | 'cursor' | 'world'
+export type Change = 'zone' | 'edit' | 'ui' | 'cursor' | 'world' | 'objects' | 'catalog'
 
 const HISTORY_MAX = 100
 
@@ -26,6 +28,8 @@ export class EditorState {
   terrain = 'dirt'
   brush = 2
   objectKind: string | null = null
+  /** O objeto a carimbar sai espelhado. */
+  flip = false
   snap = false
   showGrid = false
   showCollision = false
@@ -60,7 +64,7 @@ export class EditorState {
     for (const fn of this.listeners) fn(c)
   }
 
-  set(patch: Partial<Pick<EditorState, 'tool' | 'terrain' | 'brush' | 'objectKind' | 'snap' | 'showGrid' | 'showCollision' | 'selected' | 'selectedPortal' | 'zoom'>>) {
+  set(patch: Partial<Pick<EditorState, 'tool' | 'terrain' | 'brush' | 'objectKind' | 'flip' | 'snap' | 'showGrid' | 'showCollision' | 'selected' | 'selectedPortal' | 'zoom'>>) {
     Object.assign(this, patch)
     if (patch.tool && patch.tool !== 'select') this.selected = null
     if (patch.tool && patch.tool !== 'portal') this.selectedPortal = null

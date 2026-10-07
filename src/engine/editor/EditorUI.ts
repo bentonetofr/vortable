@@ -10,9 +10,11 @@ import { creditsBody } from '../ui/credits'
 import { ICONS } from './icons'
 import type { EditorState, Tool } from './EditorState'
 import { TERRAINS, canBeBase, terrainById, terrainFrameRect, terrainTexture } from '../assets/terrains'
-import { footRect, objectCatalog, objectDef, sheetTexture } from '../assets/objects'
+import { KIND_LABELS, objectCatalog, objectDef, objectSolids, paletteObjects, sheetTexture, variantsOf, type ObjectDef } from '../assets/objects'
+import { curateForm, type CurateOverride } from './curate'
+import { readList, writeList } from './prefs'
 import { parseZone, summarize, type WorldStorage, type ZoneSummary } from '../storage'
-import { TILE, ZONE_MAX, ZONE_MIN, clampZoneSize, newId, newZone, type Portal, type ZoneData } from '../types'
+import { TILE, ZONE_MAX, ZONE_MIN, clampZoneSize, newId, newZone, type Portal, type ZoneData, type ZoneObject } from '../types'
 import { solidTerrainRects } from '../world/ground'
 
 export interface EditorHooks {
@@ -26,6 +28,8 @@ export interface EditorHooks {
   centerOnZone(): void
   /** Abrir o criador de personagem (se quem montou o editor oferecer). */
   editCharacter?: () => void
+  /** Curadoria (só no desenvolvimento): grava o ajuste de uma peça no pacote e recarrega o catálogo. */
+  curate?: (pack: string, id: string, override: CurateOverride) => Promise<void>
 }
 
 const TOOLS: { id: Tool; label: string; key: string }[] = [
@@ -39,6 +43,11 @@ const TOOLS: { id: Tool; label: string; key: string }[] = [
 ]
 
 const BRUSH_MAX = 8
+const FAV_KEY = 'vortable:objects:favorites'
+const RECENT_KEY = 'vortable:objects:recent'
+const RECENT_MAX = 24
+/** Filtros especiais da paleta (além das categorias). */
+const ALL = 'Todas', FAV = '★', RECENT = '⟲'
 
 export class EditorUI {
   readonly root: HTMLDivElement
@@ -59,7 +68,13 @@ export class EditorUI {
   /** Qual saída o painel está mostrando (só redesenha quando troca). */
   private shownPortal: string | null = null
   private objectFilter = ''
-  private objectCategory = 'Todas'
+  private objectCategory = ALL
+  private objectEl!: HTMLDivElement
+  /** O que o painel da peça está mostrando (só redesenha quando muda). */
+  private shownObject = ''
+  private catalogVersion = 0
+  private favorites = readList(FAV_KEY)
+  private recents = readList(RECENT_KEY)
   private terrainCells = new Map<string, HTMLElement>()
   private objectCells = new Map<string, HTMLElement>()
   private testing = false
@@ -95,6 +110,10 @@ export class EditorUI {
       if (c === 'zone') this.nameInput.value = state.zone.name
       if (c === 'zone' || c === 'edit') this.renderZoneProps()
       if (c === 'zone' || c === 'world' || state.selectedPortal !== this.shownPortal) this.renderPortal()
+      if (c === 'catalog') {
+        this.catalogVersion++
+        this.renderPane()
+      }
       this.refresh()
     })
     window.addEventListener('keydown', this.onKey)
@@ -216,7 +235,8 @@ export class EditorUI {
     this.paneEl = h('div', { class: 'vt-pane' })
     this.zonePropsEl = h('div', { class: 'vt-zoneprops' })
     this.portalEl = h('div', { class: 'vt-zoneprops vt-portalprops' })
-    return h('aside', { class: 'vt-panel' }, tabs, this.paneEl, this.portalEl, this.zonePropsEl)
+    this.objectEl = h('div', { class: 'vt-zoneprops vt-objinfo', hidden: true })
+    return h('aside', { class: 'vt-panel' }, tabs, this.paneEl, this.objectEl, this.portalEl, this.zonePropsEl)
   }
 
   private buildStatus() {
@@ -258,43 +278,45 @@ export class EditorUI {
   }
 
   private renderObjects() {
-    const { objects } = objectCatalog()
-    const cats = ['Todas', ...new Set(objects.map((o) => o.category))]
+    const objects = paletteObjects()
+    const cats = [...new Set(objects.map((o) => o.category))].sort((a, b) => a.localeCompare(b, 'pt'))
     const search = h('input', {
       class: 'vt-search',
-      placeholder: `Buscar entre ${objects.length} objetos...`,
+      placeholder: `Buscar entre ${objects.length} peças (nome, tag, tipo)...`,
       value: this.objectFilter,
       oninput: () => { this.objectFilter = search.value; fill() },
     })
     const chips = h('div', { class: 'vt-chips' })
-    for (const c of cats) {
-      chips.append(h('button', {
-        class: `vt-chip${c === this.objectCategory ? ' vt-on' : ''}`,
-        onclick: () => { this.objectCategory = c; this.renderPane(); this.refresh() },
-      }, c))
-    }
+    const chip = (id: string, label: string) => chips.append(h('button', {
+      class: `vt-chip${id === this.objectCategory ? ' vt-on' : ''}`,
+      onclick: () => { this.objectCategory = id; this.renderPane(); this.refresh() },
+    }, label))
+    chip(ALL, 'Todas')
+    chip(FAV, '★ Favoritos')
+    chip(RECENT, 'Recentes')
+    for (const c of cats) chip(c, c)
     const grid = h('div', { class: 'vt-grid vt-objects' })
+    const ids = (list: string[]) => list.map((id) => objectDef(id)).filter((d): d is ObjectDef => !!d)
     const fill = () => {
       grid.replaceChildren()
       this.objectCells.clear()
-      const q = this.objectFilter.trim().toLowerCase()
-      const list = objects.filter((o) =>
-        (this.objectCategory === 'Todas' || o.category === this.objectCategory) &&
-        (!q || o.label.toLowerCase().includes(q) || o.category.toLowerCase().includes(q)))
-      if (!list.length) grid.append(h('div', { class: 'vt-empty', style: 'grid-column: 1 / -1' }, 'Nada encontrado.'))
+      const cat = this.objectCategory
+      let list = cat === FAV ? ids(this.favorites) : cat === RECENT ? ids(this.recents) : objects.filter((o) => cat === ALL || o.category === cat)
+      const q = fold(this.objectFilter.trim())
+      if (q) list = list.filter((o) => fold(searchText(o)).includes(q))
+      if (!list.length) {
+        const msg = q ? 'Nada encontrado.'
+          : cat === FAV ? 'Nenhum favorito ainda. Escolha uma peça e clique na estrela.'
+          : cat === RECENT ? 'As peças que você usar aparecem aqui.' : 'Nada encontrado.'
+        grid.append(h('div', { class: 'vt-empty', style: 'grid-column: 1 / -1' }, msg))
+      }
       for (const o of list) {
-        const size = 64
-        const c = h('canvas', { width: size, height: size }) as HTMLCanvasElement
-        const ctx = c.getContext('2d')!
-        ctx.imageSmoothingEnabled = false
-        const s = Math.min(size / o.w, size / o.h, 2)
-        const w = o.w * s, hh = o.h * s
-        ctx.drawImage(this.hooks.textureImage(sheetTexture(o.sheet)), o.x, o.y, o.w, o.h, (size - w) / 2, size - hh, w, hh)
+        const n = variantsOf(o).length
         const cell = h('button', {
           class: 'vt-cell',
-          title: `${o.label} — ${o.w}×${o.h}px${o.foot ? '' : ' (sem colisão)'}`,
-          onclick: () => this.state.set({ objectKind: o.id, tool: 'object' }),
-        }, c)
+          title: `${o.label} — ${KIND_LABELS[o.kind]}, ${o.w}×${o.h}px${o.solids.length ? '' : ', atravessável'}${n > 1 ? `, ${n} variantes` : ''}${o.anim ? ', animado' : ''}`,
+          onclick: () => this.pick(o.id),
+        }, this.thumb(o, 64), n > 1 ? h('i', { class: 'vt-badge' }, `${n}`) : null, o.anim ? h('i', { class: 'vt-badge vt-badge-anim' }, '▶') : null)
         this.objectCells.set(o.id, cell)
         grid.append(cell)
       }
@@ -302,6 +324,139 @@ export class EditorUI {
     }
     this.paneEl.append(search, chips, grid)
     fill()
+  }
+
+  /** Miniatura de uma peça, encostada embaixo (como fica no chão). */
+  private thumb(o: ObjectDef, size: number, maxScale = 2) {
+    const c = h('canvas', { width: size, height: size }) as HTMLCanvasElement
+    const ctx = c.getContext('2d')!
+    ctx.imageSmoothingEnabled = false
+    const k = Math.min(size / o.w, size / o.h, maxScale)
+    const w = o.w * k, hh = o.h * k
+    ctx.drawImage(this.hooks.textureImage(sheetTexture(o.sheet)), o.x, o.y, o.w, o.h, (size - w) / 2, size - hh, w, hh)
+    return c
+  }
+
+  /** Peça base do grupo de variantes (é ela que aparece na paleta e que se cura). */
+  private primary(def: ObjectDef) {
+    return (def.group && objectDef(def.group)) || def
+  }
+
+  /** Escolhe a peça pra carimbar (e lembra nos recentes). */
+  private pick(id: string) {
+    const def = objectDef(id)
+    if (!def) return
+    const base = this.primary(def).id
+    this.recents = [base, ...this.recents.filter((r) => r !== base)].slice(0, RECENT_MAX)
+    writeList(RECENT_KEY, this.recents)
+    this.state.set({ objectKind: id, tool: 'object' })
+  }
+
+  private toggleFavorite(def: ObjectDef) {
+    const id = this.primary(def).id
+    this.favorites = this.favorites.includes(id) ? this.favorites.filter((f) => f !== id) : [id, ...this.favorites]
+    writeList(FAV_KEY, this.favorites)
+    if (this.objectCategory === FAV && this.tab === 'objects') this.renderPane()
+    this.refresh()
+  }
+
+  /** Espelha o objeto selecionado (ou o que vai ser carimbado). */
+  private flip() {
+    const s = this.state
+    if (s.tool === 'select' && s.selected !== null) {
+      const o = s.zone.objects[s.selected]
+      if (!o) return
+      s.checkpoint()
+      if (o.flip) delete o.flip
+      else o.flip = true
+      s.edited()
+      s.emit('objects')
+    } else if (s.tool === 'object') {
+      s.set({ flip: !s.flip })
+    }
+  }
+
+  // ── Painel: peça escolhida / objeto selecionado ────────
+
+  private renderObjectInfo() {
+    const s = this.state
+    let def: ObjectDef | undefined
+    let placed: ZoneObject | null = null
+    if (s.tool === 'select' && s.selected !== null) {
+      placed = s.zone.objects[s.selected] ?? null
+      def = placed ? objectDef(placed.kind) : undefined
+    } else if (s.tool === 'object' && s.objectKind) {
+      def = objectDef(s.objectKind)
+    }
+    const flipped = placed ? !!placed.flip : s.flip
+    const fav = !!def && this.favorites.includes(this.primary(def).id)
+    const key = def ? [def.id, flipped, !!placed, fav, this.catalogVersion].join('|') : ''
+    if (key === this.shownObject) return
+    this.shownObject = key
+    this.objectEl.hidden = !def
+    if (!def) {
+      this.objectEl.replaceChildren()
+      return
+    }
+    const d = def
+    const pack = objectCatalog().packs.find((p) => p.id === d.pack)
+    const variants = variantsOf(d)
+    const choose = (v: ObjectDef) => {
+      if (!placed) return this.pick(v.id)
+      if (placed.kind === v.id) return
+      s.checkpoint()
+      placed.kind = v.id
+      s.edited()
+      s.emit('objects')
+    }
+    this.objectEl.replaceChildren(
+      h('h4', { class: 'vt-subtitle' }, placed ? 'Objeto selecionado' : 'Peça pra colocar'),
+      h('div', { class: 'vt-objhead' },
+        this.thumb(d, 56),
+        h('div', {},
+          h('b', {}, d.label),
+          h('small', {}, `${KIND_LABELS[d.kind]} · ${d.w}×${d.h}px${d.solids.length ? '' : ' · atravessável'}${d.light ? ' · ilumina' : ''}`),
+          h('small', { title: pack?.license ?? '' }, pack?.name ?? d.pack),
+        ),
+      ),
+      h('div', { class: 'vt-variants', hidden: variants.length < 2 },
+        ...variants.map((v) => h('button', {
+          class: `vt-cell${v.id === d.id ? ' vt-on' : ''}`,
+          title: v.variant ?? v.label,
+          onclick: () => choose(v),
+        }, this.thumb(v, 36))),
+      ),
+      h('div', { class: 'vt-row vt-objactions' },
+        h('button', { class: `vt-btn${fav ? ' vt-on' : ''}`, title: fav ? 'Tirar dos favoritos' : 'Favoritar', html: `${ICONS.star}<span>${fav ? 'Favorito' : 'Favoritar'}</span>`, onclick: () => this.toggleFavorite(d) }),
+        h('button', { class: `vt-btn${flipped ? ' vt-on' : ''}`, title: 'Espelhar (F)', onclick: () => this.flip() }, 'Espelhar'),
+        this.hooks.curate ? h('button', { class: 'vt-btn', title: 'Ajustar nome, colisão, tipo e luz da peça no pacote (desenvolvimento)', onclick: () => this.openCurate(d) }, 'Curar') : null,
+        placed ? h('button', { class: 'vt-btn vt-danger', title: 'Apagar (Del)', html: ICONS.trash, onclick: () => this.hooks.deleteSelected() }) : null,
+      ),
+    )
+  }
+
+  private openCurate(def: ObjectDef) {
+    const base = this.primary(def)
+    const cats = [...new Set(objectCatalog().objects.map((o) => o.category))].sort((a, b) => a.localeCompare(b, 'pt'))
+    const form = curateForm(base, this.hooks.textureImage(sheetTexture(base.sheet)), cats)
+    const save = h('button', {
+      class: 'vt-btn vt-primary',
+      onclick: async () => {
+        save.disabled = true
+        try {
+          await this.hooks.curate!(base.pack, base.id, form.value())
+          close()
+          this.toast('Peça atualizada no pacote.')
+        } catch (err) {
+          this.toast(`Não deu pra gravar: ${(err as Error).message}`, true)
+          save.disabled = false
+        }
+      },
+    }, 'Gravar no pacote') as HTMLButtonElement
+    const close = this.modal(`Curar peça: ${base.label}`, form.body, [
+      h('button', { class: 'vt-btn', onclick: () => close() }, 'Cancelar'),
+      save,
+    ], undefined, true)
   }
 
   private renderZoneProps() {
@@ -460,7 +615,10 @@ export class EditorUI {
     for (const t of this.toggles) t.el.classList.toggle('vt-on', t.on())
     for (const [id, b] of this.tabButtons) b.classList.toggle('vt-on', this.tab === id)
     for (const [id, c] of this.terrainCells) c.classList.toggle('vt-on', s.terrain === id && (s.tool === 'brush' || s.tool === 'fill'))
-    for (const [id, c] of this.objectCells) c.classList.toggle('vt-on', s.objectKind === id && s.tool === 'object')
+    const chosen = s.tool === 'object' && s.objectKind ? objectDef(s.objectKind) : undefined
+    const chosenBase = chosen && this.primary(chosen).id
+    for (const [id, c] of this.objectCells) c.classList.toggle('vt-on', chosenBase === id)
+    this.renderObjectInfo()
     this.brushLabel.textContent = String(s.brush)
     this.undoBtn.disabled = !s.canUndo
     this.redoBtn.disabled = !s.canRedo
@@ -476,8 +634,8 @@ export class EditorUI {
       brush: `Pincel: ${terrainById.get(s.terrain)?.label ?? ''} — arraste pra pintar`,
       fill: `Balde: ${terrainById.get(s.terrain)?.label ?? ''} — clique pra preencher a área`,
       erase: 'Borracha — volta ao terreno de fundo',
-      object: s.objectKind ? 'Clique pra colocar · Esc solta o objeto' : 'Escolha um objeto na aba Objetos',
-      select: s.selected !== null ? 'Arraste pra mover · Del apaga' : 'Clique num objeto pra selecionar',
+      object: s.objectKind ? 'Clique pra colocar · F espelha · Esc solta o objeto' : 'Escolha um objeto na aba Objetos',
+      select: s.selected !== null ? 'Arraste pra mover · F espelha · Del apaga' : 'Clique num objeto pra selecionar',
       portal: s.selectedPortal ? 'Escolha o destino no painel · arraste pra mover · Del apaga' : 'Arraste pra desenhar uma saída · clique numa saída pra editar',
       spawn: 'Clique onde o jogador deve aparecer',
     }[s.tool]
@@ -637,8 +795,7 @@ export class EditorUI {
     if (solidTerrainRects(z).some(hit)) return true
     return z.objects.some((o) => {
       const def = objectDef(o.kind)
-      const r = def && footRect(def, o.x, o.y)
-      return !!r && hit(r)
+      return !!def && objectSolids(def, o).some(hit)
     })
   }
 
@@ -943,11 +1100,21 @@ export class EditorUI {
     else if (k === 'h') this.state.set({ showGrid: !this.state.showGrid })
     else if (k === 'k') this.state.set({ showCollision: !this.state.showCollision })
     else if (k === 'n') this.state.set({ snap: !this.state.snap })
+    else if (k === 'f') this.flip()
     else if (e.key === 'Home') this.hooks.centerOnZone()
     else if (e.key === 'Delete' || e.key === 'Backspace') this.hooks.deleteSelected()
     else if (e.key === 'Escape') this.state.set({ tool: 'select', selected: null })
     else if (e.key === ' ') e.preventDefault()
   }
+}
+
+/** Sem acento e minúsculo, pra busca achar "arvore" em "Árvore". */
+function fold(s: string) {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
+function searchText(o: ObjectDef) {
+  return [o.label, o.category, KIND_LABELS[o.kind], ...o.tags, ...variantsOf(o).map((v) => v.variant ?? '')].join(' ')
 }
 
 function slug(s: string) {

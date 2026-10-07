@@ -7,7 +7,7 @@
 import Phaser from 'phaser'
 import { buildCharacter } from '../character/compose'
 import { Ground, solidTerrainRects } from '../world/ground'
-import { addObjectSolids, createObjectSprite } from '../world/objects'
+import { Occluders, addObjectSolids, createObjectSprite } from '../world/objects'
 import { Player, isTyping } from '../world/Player'
 import { TILE, type Appearance, type Dir, type Portal, type ZoneData } from '../types'
 
@@ -35,6 +35,7 @@ export class WorldScene extends Phaser.Scene {
    */
   private armed = false
   private travelling = false
+  private occluders = new Occluders()
 
   constructor() {
     super('world')
@@ -45,6 +46,7 @@ export class WorldScene extends Phaser.Scene {
     this.player = undefined
     this.armed = false
     this.travelling = false
+    this.occluders = new Occluders()
   }
 
   async create() {
@@ -52,7 +54,7 @@ export class WorldScene extends Phaser.Scene {
     const W = zone.width * TILE, H = zone.height * TILE
 
     new Ground(this, zone)
-    for (const o of zone.objects) createObjectSprite(this, o)
+    for (const o of zone.objects) this.occluders.add(createObjectSprite(this, o), o)
 
     const solids = this.physics.add.staticGroup()
     for (const r of solidTerrainRects(zone)) solids.add(this.add.zone(r.x + r.w / 2, r.y + r.h / 2, r.w, r.h))
@@ -116,6 +118,7 @@ export class WorldScene extends Phaser.Scene {
     const player = this.player
     if (!player) return
     player.update()
+    this.occluders.update(player.sprite.x, player.sprite.y)
     if (this.travelling) return
 
     const portal = this.portalUnder(player.foot)

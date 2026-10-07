@@ -51,6 +51,7 @@ if (params.has('personagem')) {
     assetBase,
     storage: worlds,
     onEditCharacter: () => go('?personagem'),
+    curate: import.meta.env.DEV,
   })
 
   // R sorteia uma aparência pra testar (não salva)

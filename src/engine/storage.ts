@@ -162,7 +162,7 @@ export function parseZone(json: unknown): ZoneData {
     height: height!,
     base: typeof z.base === 'string' ? z.base : 'grass',
     corners: z.corners.map((c) => (typeof c === 'string' ? c : '')),
-    objects: objects.map((o) => ({ kind: o.kind, x: Math.round(o.x), y: Math.round(o.y) })),
+    objects: objects.map((o) => ({ kind: o.kind, x: Math.round(o.x), y: Math.round(o.y), ...(o.flip === true ? { flip: true } : {}) })),
     portals: portals.map((p) => ({
       id: p.id,
       name: typeof p.name === 'string' ? p.name : 'Saída',

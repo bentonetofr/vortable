@@ -45,6 +45,19 @@ npm run dev
 - **Nova → Interior** cria uma zona pequena com fundo escuro; use os terrenos de *Interior*
   (pisos, tapetes, paredes).
 
+### Objetos
+
+- Quatro tipos: **em pé** (árvore, armário: o boneco passa na frente ou atrás), **no chão**
+  (tapete: sempre por baixo), **na parede** (placa, tocha) e **por cima** (copa, telhado: fica
+  transparente quando o boneco passa embaixo). Árvores e móveis altos também ficam
+  transparentes quando escondem o boneco.
+- Peças com **variantes** (cores da árvore, baú fechado/aberto) aparecem uma vez na paleta;
+  troque a variante no painel da peça, inclusive de um objeto já colocado.
+- `F` espelha. ★ marca favoritos; *Recentes* lembra o que você usou. A busca acha por nome,
+  tag e tipo (sem precisar de acento).
+- **Curar** (só com `npm run dev`): ajusta nome, categoria, tags, tipo, colisão (desenhe
+  retângulos por cima da arte), linha do pé e luz da peça, e grava no `pack.json` do pacote.
+
 ### Personagem
 
 - 388 itens LPC em 46 espaços (corpo, cabeça, cabelo, barba, roupa, chapéu, capa, cicatrizes...),
@@ -63,10 +76,14 @@ No jogo: `WASD`/setas andam, `Shift` corre, `C` mostra colisões, `R` sorteia a 
 - `public/assets/lpc/` — arte LPC usada direto (personagem em camadas + paletas, terrenos).
 - `public/assets/catalog/` — objetos recortados pelo script de catálogo (não editar à mão).
 - `public/assets/character/` — catálogo, paletas e folhas do personagem (gerados por script).
-- `assets-src/` — arte original. `node scripts/build-catalog.mjs` recorta os objetos, calcula a
-  colisão de cada um e gera `public/assets/catalog/objects.json`.
+- `assets-src/packs/<pacote>/` — arte de objetos em **pacotes**: as folhas, `CREDITS.txt` e o
+  manifesto `pack.json` (fonte, licença, folhas, como recortar, e a curadoria de cada peça).
+  `npm run catalog` recorta tudo, calcula colisões e gera `public/assets/catalog/objects.json`
+  (`npm run catalog -- --pack nome` refaz só um pacote).
+- `assets-src/lpc/` — terrenos e texturas de interior.
 
 ## Licença da arte
 
 A arte é do projeto Liberated Pixel Cup (CC-BY-SA 3.0 / GPL 3.0 / OGA-BY). Créditos em
-`assets-src/credits/` — precisam aparecer numa tela de créditos do jogo.
+`assets-src/credits/` e no `CREDITS.txt` de cada pacote — aparecem na tela de créditos
+(link no rodapé do editor e no criador de personagem).

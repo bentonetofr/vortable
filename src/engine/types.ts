@@ -64,6 +64,8 @@ export interface ZoneObject {
   kind: string
   x: number
   y: number
+  /** Espelhado na horizontal. */
+  flip?: boolean
 }
 
 export const ZONE_MIN = 8

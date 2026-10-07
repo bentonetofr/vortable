@@ -1,0 +1,572 @@
+{
+  "name": "[LPC] Trees Mega-Pack",
+  "license": "CC-BY-SA 3.0 (com peças CC0, CC-BY 2.0/3.0 e GPL 3.0)",
+  "source": "https://opengameart.org/content/lpc-trees",
+  "sheets": [
+    {
+      "id": "trees-green",
+      "file": "trees-green.png",
+      "category": "Árvores",
+      "label": "Árvore",
+      "variant": "Verde",
+      "tags": [
+        "natureza"
+      ]
+    },
+    {
+      "id": "trees-orange",
+      "file": "trees-orange.png",
+      "category": "Árvores",
+      "label": "Árvore de outono",
+      "variantOf": "trees-green",
+      "variant": "Outono",
+      "tags": [
+        "natureza",
+        "outono"
+      ]
+    },
+    {
+      "id": "trees-brown",
+      "file": "trees-brown.png",
+      "category": "Árvores",
+      "label": "Árvore marrom",
+      "variantOf": "trees-green",
+      "variant": "Marrom",
+      "tags": [
+        "natureza",
+        "outono"
+      ]
+    },
+    {
+      "id": "trees-pale",
+      "file": "trees-pale.png",
+      "category": "Árvores",
+      "label": "Árvore pálida",
+      "variantOf": "trees-green",
+      "variant": "Pálida",
+      "tags": [
+        "natureza",
+        "inverno"
+      ]
+    },
+    {
+      "id": "trees-dead",
+      "file": "trees-dead.png",
+      "category": "Árvores",
+      "label": "Árvore seca",
+      "variantOf": "trees-green",
+      "variant": "Seca",
+      "tags": [
+        "natureza",
+        "morta"
+      ]
+    }
+  ],
+  "objects": {
+    "trees-dead@11,712": {
+      "label": "Árvore espinhosa",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-dead@131,133": {
+      "label": "Árvore morta grossa",
+      "category": "Árvores",
+      "tags": [
+        "natureza",
+        "morta"
+      ]
+    },
+    "trees-dead@140,393": {
+      "label": "Árvore morta alta",
+      "category": "Árvores",
+      "tags": [
+        "natureza",
+        "morta"
+      ]
+    },
+    "trees-dead@147,745": {
+      "label": "Árvore seca curvada",
+      "category": "Árvores",
+      "tags": [
+        "natureza",
+        "morta"
+      ]
+    },
+    "trees-dead@178,539": {
+      "label": "Árvore morta torta",
+      "category": "Árvores",
+      "tags": [
+        "natureza",
+        "morta"
+      ]
+    },
+    "trees-dead@233,129": {
+      "label": "Tronco morto retorcido",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-dead@236,408": {
+      "label": "Galhada caída",
+      "category": "Tocos e galhos",
+      "tags": [
+        "natureza",
+        "toco",
+        "morta"
+      ]
+    },
+    "trees-dead@26,555": {
+      "label": "Árvore morta torta 2",
+      "category": "Árvores",
+      "tags": [
+        "natureza",
+        "morta"
+      ]
+    },
+    "trees-dead@3,139": {
+      "label": "Árvore morta",
+      "category": "Árvores",
+      "tags": [
+        "natureza",
+        "morta"
+      ]
+    },
+    "trees-dead@3,73": {
+      "label": "Galhos secos",
+      "category": "Tocos e galhos",
+      "tags": [
+        "natureza",
+        "toco",
+        "morta"
+      ]
+    },
+    "trees-dead@322,133": {
+      "label": "Árvore morta larga",
+      "category": "Árvores",
+      "tags": [
+        "natureza",
+        "morta"
+      ]
+    },
+    "trees-dead@33,73": {
+      "label": "Galhos secos 2",
+      "category": "Tocos e galhos",
+      "tags": [
+        "natureza",
+        "toco",
+        "morta"
+      ]
+    },
+    "trees-dead@425,353": {
+      "label": "Árvore morta assombrada",
+      "category": "Árvores",
+      "tags": [
+        "natureza",
+        "morta"
+      ]
+    },
+    "trees-dead@519,29": {
+      "label": "Arvoreta seca",
+      "category": "Árvores",
+      "tags": [
+        "natureza",
+        "morta"
+      ]
+    },
+    "trees-dead@66,73": {
+      "label": "Galhos secos 3",
+      "category": "Tocos e galhos",
+      "tags": [
+        "natureza",
+        "toco",
+        "morta"
+      ]
+    },
+    "trees-dead@702,389": {
+      "label": "Árvore seca espalhada",
+      "category": "Árvores",
+      "tags": [
+        "natureza",
+        "morta"
+      ]
+    },
+    "trees-dead@71,0": {
+      "label": "Moita seca",
+      "category": "Arbustos",
+      "tags": [
+        "natureza",
+        "arbusto",
+        "morta"
+      ]
+    },
+    "trees-dead@880,368": {
+      "label": "Árvore seca alta",
+      "category": "Árvores",
+      "tags": [
+        "natureza",
+        "morta"
+      ]
+    },
+    "trees-green@0,102": {
+      "label": "Choupo",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@0,356": {
+      "label": "Pinheiro",
+      "category": "Árvores",
+      "tags": [
+        "natureza",
+        "pinheiro"
+      ]
+    },
+    "trees-green@0,535": {
+      "label": "Árvore de raízes grossas",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@0,64": {
+      "label": "Par de arbustos",
+      "category": "Arbustos",
+      "tags": [
+        "natureza",
+        "arbusto"
+      ]
+    },
+    "trees-green@0,705": {
+      "label": "Árvore em tufos",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@11,11": {
+      "label": "Arbusto pequeno",
+      "category": "Arbustos",
+      "tags": [
+        "natureza",
+        "arbusto"
+      ]
+    },
+    "trees-green@128,104": {
+      "label": "Árvore copada",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@129,352": {
+      "label": "Árvore redonda",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@131,2": {
+      "label": "Arbusto claro",
+      "category": "Arbustos",
+      "tags": [
+        "natureza",
+        "arbusto"
+      ]
+    },
+    "trees-green@131,716": {
+      "label": "Árvore torta",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@134,64": {
+      "label": "Muda",
+      "category": "Tocos e galhos",
+      "tags": [
+        "natureza",
+        "toco"
+      ]
+    },
+    "trees-green@161,530": {
+      "label": "Árvore de praça",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@163,64": {
+      "label": "Graveto",
+      "category": "Tocos e galhos",
+      "tags": [
+        "natureza",
+        "toco",
+        "morta"
+      ]
+    },
+    "trees-green@164,224": {
+      "label": "Árvore de folhas miúdas",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@194,64": {
+      "label": "Galho fincado",
+      "category": "Tocos e galhos",
+      "tags": [
+        "natureza",
+        "toco"
+      ]
+    },
+    "trees-green@200,7": {
+      "label": "Arbusto redondo",
+      "category": "Arbustos",
+      "tags": [
+        "natureza",
+        "arbusto"
+      ]
+    },
+    "trees-green@224,368": {
+      "label": "Moita grande",
+      "category": "Arbustos",
+      "tags": [
+        "natureza",
+        "arbusto"
+      ]
+    },
+    "trees-green@225,64": {
+      "label": "Toco oco",
+      "category": "Tocos e galhos",
+      "tags": [
+        "natureza",
+        "toco"
+      ]
+    },
+    "trees-green@231,104": {
+      "label": "Carvalho",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@256,0": {
+      "label": "Árvore com toco",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@263,64": {
+      "label": "Toco",
+      "category": "Tocos e galhos",
+      "tags": [
+        "natureza",
+        "toco"
+      ]
+    },
+    "trees-green@264,224": {
+      "label": "Árvore galhuda",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@268,704": {
+      "label": "Árvore colossal",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@301,512": {
+      "label": "Carvalho frondoso",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@320,0": {
+      "label": "Par de árvores",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@320,102": {
+      "label": "Carvalho largo",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@321,352": {
+      "label": "Árvore de copa leve",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@384,224": {
+      "label": "Árvore inclinada",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@418,352": {
+      "label": "Carvalho velho",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@424,21": {
+      "label": "Dupla de arvoretas",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@485,226": {
+      "label": "Árvore de tronco grosso",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@491,515": {
+      "label": "Carvalho frondoso 2",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@518,1": {
+      "label": "Arvoreta",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@544,96": {
+      "label": "Árvore antiga",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@551,718": {
+      "label": "Árvore colossal escura",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@556,356": {
+      "label": "Árvore sombria",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@582,0": {
+      "label": "Árvore frondosa",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@583,224": {
+      "label": "Árvore densa",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@64,356": {
+      "label": "Cipreste",
+      "category": "Árvores",
+      "tags": [
+        "natureza",
+        "pinheiro"
+      ]
+    },
+    "trees-green@64,96": {
+      "label": "Árvore jovem",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@65,0": {
+      "label": "Arvoreta com arbusto",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@66,230": {
+      "label": "Árvore retorcida",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@672,515": {
+      "label": "Carvalho frondoso 3",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@672,8": {
+      "label": "Árvore baixa de raízes",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@681,354": {
+      "label": "Árvore de copa larga",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@709,224": {
+      "label": "Árvore grande",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@8,232": {
+      "label": "Pinheiro jovem",
+      "category": "Árvores",
+      "tags": [
+        "natureza",
+        "pinheiro"
+      ]
+    },
+    "trees-green@835,533": {
+      "label": "Carvalho gigante",
+      "category": "Árvores",
+      "tags": [
+        "natureza"
+      ]
+    },
+    "trees-green@864,354": {
+      "label": "Árvore esgalhada",
+      "category": "Árvores",
+      "tags": [
+        "natureza",
+        "morta"
+      ]
+    }
+  }
+}
