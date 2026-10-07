@@ -15,8 +15,10 @@
 //   brilho   (por cima, SOMA): um halo fraco nas luzes quando escurece —
 //            o fogo "acende" o ar em volta.
 //
-// Mais as partículas (particles.ts). As luzes, janelas e sombras saem da
-// zona em rebuild(); o editor chama de novo quando a zona muda.
+// Mais o vento (wind.ts: balanço das plantas, ondas na grama, sombra de
+// nuvens passando) e as partículas (particles.ts: chamas, folhas, reflexos).
+// As luzes, janelas, sombras e fontes saem da zona em rebuild(); o editor
+// chama de novo quando a zona muda.
 // ────────────────────────────────────────────────────────
 
 import Phaser from 'phaser'
@@ -25,7 +27,8 @@ import { TILE, type ZoneData, type ZoneObject } from '../types'
 import { cornerTerrain } from './ground'
 import { ambientAt, darkness, daylight, hexToRgb, lightingOf, rgbToInt, sunAt, zoneHour, type RGB } from './daylight'
 import { buildOcclusion, maskedLight, type Occlusion } from './shadowcast'
-import { DOT, PUFF, Particles, type FireSource } from './particles'
+import { DOT, PUFF, Particles, type FireSource, type LeafSource } from './particles'
+import { DEFAULT_WIND, Wind, setActiveWind, swayOf, swaySpec, terrainSway, type SwaySpec } from './wind'
 
 /**
  * Canvas na CPU: são pequenos e viram textura logo em seguida — no canvas da
@@ -33,6 +36,10 @@ import { DOT, PUFF, Particles, type FireSource } from './particles'
  */
 const CPU: CanvasRenderingContext2DSettings = { willReadFrequently: true }
 
+const CLOUDS = 'fx:clouds'
+/** Um ladrilho da textura de nuvens cobre isso do mundo (px). */
+const CLOUD_TILE = 1024
+const DEPTH_WAVES = -450_000
 const SOFT = 'light:soft'
 const BEAM = 'light:beam'
 export const BLOB = 'light:blob'
@@ -63,11 +70,13 @@ interface Live {
   phase: number
   speed: number
   fire: boolean
+  /** Línguas de chama (0 = sem: luz solta, forno fechado). */
+  flames: number
 }
 
 interface Win { x: number; y: number; w: number; h: number }
 
-interface Caster { def: ObjectDef; o: ZoneObject; frame: string; reach: number }
+interface Caster { def: ObjectDef; o: ZoneObject; frame: string; reach: number; sway: SwaySpec | null }
 
 /** Quem mais faz sombra além dos objetos (os bonecos): quadro atual e os pés. */
 export interface ExtraCaster {
@@ -97,6 +106,11 @@ export class Lighting {
   private masks = new Map<string, { key: string; size: number } | null>()
   private serial = 0
   private time = 0
+  readonly wind = new Wind()
+  private trees: LeafSource[] = []
+  private water: { x: number; y: number }[] = []
+  /** Ondas de vento na grama: um valor por vértice, esticado sobre a zona. */
+  private waves: { img: Phaser.GameObjects.Image; key: string; mask: Float32Array; data: ImageData; ctx: CanvasRenderingContext2D } | null = null
 
   /** Desligada (editor: "ver iluminação" desmarcado) = tudo claro, sem sombras. */
   enabled = true
@@ -138,6 +152,8 @@ export class Lighting {
   }
 
   destroy() {
+    setActiveWind(null)
+    this.dropWaves()
     this.scene.scale.off(Phaser.Scale.Events.RESIZE, this.resize, this)
     this.particles.destroy()
     for (const m of this.masks.values()) if (m) this.scene.textures.remove(m.key)
@@ -160,7 +176,7 @@ export class Lighting {
     const zone = this.zone
     if (walls) this.occ = buildOcclusion(zone)
     const used = new Set<string>()
-    const light = (x: number, y: number, radius: number, color: string, intensity: number, flicker: number): Live => {
+    const light = (x: number, y: number, radius: number, color: string, intensity: number, flicker: number, flames = false): Live => {
       let key = SOFT, size = SOFT_SIZE
       if (walls && this.occ) {
         const id = `${Math.round(x)},${Math.round(y)},${Math.round(radius)},${this.occ.version}`
@@ -180,25 +196,36 @@ export class Lighting {
         x, y, radius, color: rgbToInt(rgb), rgb, intensity, flicker, key, size,
         phase: Math.random() * 100, speed: 0.8 + Math.random() * 0.6,
         fire: flicker >= 0.2 && rgb[0] > rgb[2] + 0.3,
+        flames: flames && flicker >= 0.2 && rgb[0] > rgb[2] + 0.3 ? Math.max(0.6, Math.min(1.6, radius / 96)) : 0,
       }
     }
 
     this.live = []
     this.windows = []
     this.casters = []
+    this.trees = []
     for (const o of zone.objects) {
       const def = objectDef(o.kind)
       if (!def) continue
       if (def.light) {
         const l = def.light
-        this.live.push(light(o.x + (o.flip ? -l.x : l.x), o.y - (o.z ?? 0) + l.y, l.radius, l.color, l.intensity, l.flicker))
+        // fogo fechado (forno, fogão) não solta chama pra fora
+        const open = !/forno|fog[ãa]o|fornalha/i.test(def.label)
+        this.live.push(light(o.x + (o.flip ? -l.x : l.x), o.y - (o.z ?? 0) + l.y, l.radius, l.color, l.intensity, l.flicker, open))
+      }
+      if (def.category === 'Árvores' && def.h >= 48 && !o.z) {
+        // a copa: a parte de cima do desenho, um pouco pra dentro das bordas
+        this.trees.push({
+          x0: o.x - def.w * 0.35, x1: o.x + def.w * 0.35, y0: o.y - def.h * 0.92, y1: o.y - def.h * 0.45,
+          foot: o.y, colors: leafColors(this.scene, def),
+        })
       }
       if (def.kind === 'wall' && /janela/i.test(def.label)) {
         this.windows.push({ x: o.x, y: o.y - (o.z ?? 0), w: def.w, h: def.h })
       }
       if (def.kind === 'stand' && !o.z && def.h - def.sort >= SHADOW_MIN_H) {
         const frame = shadowFrame(this.scene, def)
-        if (frame) this.casters.push({ def, o, frame, reach: Math.max(def.w, def.h) * 1.4 })
+        if (frame) this.casters.push({ def, o, frame, reach: Math.max(def.w, def.h) * 1.4, sway: swaySpec(def, o.x, o.y) })
       }
     }
     for (const l of zone.lights ?? []) this.live.push(light(l.x, l.y, l.radius, l.color, l.intensity, l.flicker))
@@ -212,6 +239,66 @@ export class Lighting {
       }
     }
     this.buildEmission()
+    this.buildWaves()
+  }
+
+  private dropWaves() {
+    if (!this.waves) return
+    this.waves.img.destroy()
+    this.scene.textures.remove(this.waves.key)
+    this.waves = null
+  }
+
+  /** Onde o vento mexe no chão (grama, trigo, capim) e onde tem água (reflexos). */
+  private buildWaves() {
+    this.dropWaves()
+    const z = this.zone, VW = z.width + 1, VH = z.height + 1
+    const mask = new Float32Array(VW * VH)
+    this.water = []
+    let any = false
+    for (let vy = 0; vy < VH; vy++) {
+      for (let vx = 0; vx < VW; vx++) {
+        const t = cornerTerrain(z, vx, vy)
+        const m = terrainSway(t)
+        mask[vy * VW + vx] = m
+        if (m) any = true
+        if (/^water(-light|-deep)?$/.test(t.id)) this.water.push({ x: vx * TILE, y: vy * TILE })
+      }
+    }
+    if (!any) return
+    const key = `fx:waves:${++this.serial}`
+    const canvas = document.createElement('canvas')
+    canvas.width = VW
+    canvas.height = VH
+    const ctx = canvas.getContext('2d', CPU)!
+    this.scene.textures.addCanvas(key, canvas)?.setFilter(Phaser.Textures.FilterMode.LINEAR)
+    // 1 pixel por vértice, esticado: o centro do pixel cai em cima do vértice
+    const img = this.scene.add.image(-TILE / 2, -TILE / 2, key).setOrigin(0, 0).setScale(TILE)
+      .setDepth(DEPTH_WAVES).setBlendMode(Phaser.BlendModes.ADD).setTint(0xfff4d0).setVisible(false)
+    this.waves = { img, key, mask, data: ctx.createImageData(VW, VH), ctx }
+  }
+
+  /** Faixas claras correndo pela grama onde a rajada está passando. */
+  private drawWaves(strength: number, day: number) {
+    const w = this.waves
+    if (!w) return
+    const on = strength > 0.02
+    w.img.setVisible(on)
+    if (!on) return
+    const z = this.zone, VW = z.width + 1, VH = z.height + 1, d = w.data.data
+    for (let vy = 0; vy < VH; vy++) {
+      for (let vx = 0; vx < VW; vx++) {
+        const i = vy * VW + vx, m = w.mask[i]
+        const g = m ? this.wind.gust(vx * TILE, vy * TILE) : 0
+        const v = Math.min(255, m * g * g * 255)
+        d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = v
+        d[i * 4 + 3] = 255
+      }
+    }
+    w.ctx.putImageData(w.data, 0, 0)
+    // (o envio da textura volta o filtro pro padrão pixelado: liga o suave de novo)
+    ;(this.scene.textures.get(w.key) as Phaser.Textures.CanvasTexture).refresh().setFilter(Phaser.Textures.FilterMode.LINEAR)
+    w.img.setAlpha(Math.min(1, strength * 1.6) * 0.13 * (0.45 + 0.55 * day))
   }
 
   /** Brilho do chão (lava, água venenosa): um mapa pequeno, borrado e esticado. */
@@ -279,6 +366,8 @@ export class Lighting {
     this.shade.setVisible(false)
     if (!on) {
       this.particles.clear()
+      this.waves?.img.setVisible(false)
+      setActiveWind(null)
       return
     }
     const l = lightingOf(this.zone)
@@ -288,6 +377,12 @@ export class Lighting {
     const day = l.place === 'underground' ? 0 : daylight(hour)
     const v = this.view()
     const t = this.time
+    const outdoor = l.place === 'outdoor'
+    // dentro de casa não venta (mas o que é pendurado ainda balança de leve)
+    this.wind.update(dt, outdoor ? l.wind ?? DEFAULT_WIND : 0)
+    setActiveWind(this.wind)
+    if (outdoor) this.drawWaves(this.wind.strength, day)
+    else this.waves?.img.setVisible(false)
 
     // ── escuridão + luzes ──
     const s = LIGHT_RES * v.zoom
@@ -295,6 +390,21 @@ export class Lighting {
     const rt = this.dark
     rt.setPosition(v.x, v.y).setScale(1 / s)
     paint(rt, rgbToInt(ambient))
+    // sombra de nuvens passando com o vento (de dia, ao ar livre)
+    const clouds = outdoor && l.clouds !== false ? day : 0
+    if (clouds > 0.02) {
+      const speed = 10 + 45 * this.wind.strength
+      const ox = (((t * speed * this.wind.dx) % CLOUD_TILE) + CLOUD_TILE) % CLOUD_TILE
+      const oy = (((t * speed * this.wind.dy) % CLOUD_TILE) + CLOUD_TILE) % CLOUD_TILE
+      const scale = (CLOUD_TILE / CLOUD_SIZE) * s
+      for (let wy = Math.floor((v.y - oy) / CLOUD_TILE) * CLOUD_TILE + oy; wy < v.y + v.h; wy += CLOUD_TILE) {
+        for (let wx = Math.floor((v.x - ox) / CLOUD_TILE) * CLOUD_TILE + ox; wx < v.x + v.w; wx += CLOUD_TILE) {
+          rt.stamp(CLOUDS, undefined, px(wx), py(wy), {
+            originX: 0, originY: 0, scale, alpha: clouds * 0.9, blendMode: Phaser.BlendModes.MULTIPLY, skipBatch: true,
+          })
+        }
+      }
+    }
     if (this.emission) {
       const pulse = 0.85 + 0.15 * Math.sin(t * 1.3)
       rt.stamp(this.emission.key, undefined, px(-TILE / 2), py(-TILE / 2), {
@@ -385,8 +495,10 @@ export class Lighting {
       for (const c of this.casters) {
         const { o, def } = c
         if (!visible(o.x, o.y, c.reach)) continue
+        // a sombra balança junto com a árvore
+        const bend = c.sway ? swayOf(c.sway) / Math.max(8, (def.h - def.sort) * sun.length) : 0
         sh.stamp(sheetTexture(def.sheet), c.frame, (o.x - v.x) * k, (o.y - def.sort - v.y) * k, {
-          originX: 0.5, originY: 1, scaleX: (o.flip ? -1 : 1) * k, scaleY: -sun.length * k, rotation: sun.angle,
+          originX: 0.5, originY: 1, scaleX: (o.flip ? -1 : 1) * k, scaleY: -sun.length * k, rotation: sun.angle - bend,
           tint: 0x000000, skipBatch: true,
         })
       }
@@ -403,11 +515,18 @@ export class Lighting {
     // ── partículas ──
     const particles = l.particles !== false
     const fires: FireSource[] = particles
-      ? this.live.filter((L) => L.fire && L.radius >= 110).map((L) => ({ x: L.x, y: L.y, smoke: l.place === 'outdoor' && L.radius >= 128 }))
+      ? this.live.filter((L) => L.flames || (L.fire && L.radius >= 110)).map((L) => ({
+        x: L.x, y: L.y, size: L.flames, sparks: L.fire && L.radius >= 110, smoke: outdoor && L.fire && L.radius >= 128,
+      }))
       : []
     this.particles.update(dt, t, {
       view: { x: v.x - 32, y: v.y - 32, w: v.w + 64, h: v.h + 64 },
+      bounds: { w: this.zone.width * TILE, h: this.zone.height * TILE },
+      wind: this.wind,
       fires,
+      trees: particles && outdoor ? this.trees : [],
+      water: particles && l.place !== 'underground' ? this.water : [],
+      day,
       fireflies: particles && l.place === 'outdoor' ? Math.max(0, (dark - 0.45) / 0.4) : 0,
       dust: particles && l.place !== 'outdoor' ? 1 : 0,
     })
@@ -440,6 +559,81 @@ function shadowFrame(scene: Phaser.Scene, def: ObjectDef): string | null {
   return key
 }
 
+const CLOUD_SIZE = 256
+
+/** Nuvens: ruído suave que emenda nas bordas; branco = céu limpo, cinza = sombra. */
+function cloudCanvas() {
+  const N = CLOUD_SIZE
+  const grid = (cells: number, seed: number) => {
+    const g = new Float32Array(cells * cells)
+    let a = seed
+    for (let i = 0; i < g.length; i++) {
+      a = (a * 1103515245 + 12345) >>> 0
+      g[i] = (a >>> 8) / 16777216
+    }
+    return (x: number, y: number) => {
+      const fx = (x / N) * cells, fy = (y / N) * cells
+      const x0 = Math.floor(fx), y0 = Math.floor(fy)
+      const tx = fx - x0, ty = fy - y0
+      const sx = tx * tx * (3 - 2 * tx), sy = ty * ty * (3 - 2 * ty)
+      const at = (cx: number, cy: number) => g[((cy % cells) + cells) % cells * cells + ((cx % cells) + cells) % cells]
+      const top = at(x0, y0) + (at(x0 + 1, y0) - at(x0, y0)) * sx
+      const bot = at(x0, y0 + 1) + (at(x0 + 1, y0 + 1) - at(x0, y0 + 1)) * sx
+      return top + (bot - top) * sy
+    }
+  }
+  const big = grid(4, 7), mid = grid(8, 31), small = grid(16, 97)
+  const c = document.createElement('canvas')
+  c.width = c.height = N
+  const ctx = c.getContext('2d', CPU)!
+  const img = ctx.createImageData(N, N)
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      const n = big(x, y) * 0.55 + mid(x, y) * 0.3 + small(x, y) * 0.15
+      // só as partes mais densas fazem sombra; borda macia
+      const t = Math.max(0, Math.min(1, (n - 0.55) / 0.18))
+      const v = 255 * (1 - 0.3 * t * t * (3 - 2 * t))
+      const i = (y * N + x) * 4
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v
+      img.data[i + 3] = 255
+    }
+  }
+  ctx.putImageData(img, 0, 0)
+  return c
+}
+
+const leafCache = new Map<string, number[]>()
+
+/** Cores das folhas que caem: amostras da copa da própria árvore. */
+function leafColors(scene: Phaser.Scene, def: ObjectDef): number[] {
+  const cached = leafCache.get(def.id)
+  if (cached) return cached
+  const out: number[] = []
+  try {
+    const src = scene.textures.get(sheetTexture(def.sheet)).getSourceImage() as CanvasImageSource
+    const w = def.w, h = Math.max(1, Math.round(def.h * 0.5))
+    const c = document.createElement('canvas')
+    c.width = w
+    c.height = h
+    const ctx = c.getContext('2d', CPU)!
+    ctx.drawImage(src, def.x, def.y, w, h, 0, 0, w, h)
+    const d = ctx.getImageData(0, 0, w, h).data
+    const pool: number[] = []
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] < 220) continue
+      const lum = d[i] * 0.3 + d[i + 1] * 0.55 + d[i + 2] * 0.15
+      // folhas que se vejam no chão: nem as sombras escuras da copa, nem o brilho branco
+      if (lum < 70 || lum > 230) continue
+      pool.push((d[i] << 16) | (d[i + 1] << 8) | d[i + 2])
+    }
+    for (let k = 0; k < 10 && pool.length; k++) out.push(pool[Math.floor(Math.random() * pool.length)])
+  } catch {
+    // folha sem cor própria: as de outono das partículas
+  }
+  leafCache.set(def.id, out)
+  return out
+}
+
 let softCanvas: HTMLCanvasElement | null = null
 
 /**
@@ -461,6 +655,7 @@ function ensureTextures(scene: Phaser.Scene) {
     })
   }
   add(SOFT, softCanvas)
+  if (!tm.exists(CLOUDS)) add(CLOUDS, cloudCanvas())
   if (!tm.exists(BEAM)) {
     // facho: mais forte embaixo da janela, some no chão; bordas macias e alargando
     const c = document.createElement('canvas')

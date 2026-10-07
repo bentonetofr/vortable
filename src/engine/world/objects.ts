@@ -8,6 +8,7 @@
 import Phaser from 'phaser'
 import { animFrame, animKey, objectDef, objectDepth, objectSolids, sheetTexture, type ObjectCatalog, type ObjectDef } from '../assets/objects'
 import type { ZoneObject } from '../types'
+import { applySway } from './wind'
 
 export type ObjectSprite = Phaser.GameObjects.Sprite
 
@@ -45,6 +46,7 @@ export function createObjectSprite(scene: Phaser.Scene, o: ZoneObject, missing: 
   const s = scene.add.sprite(o.x, o.y - (o.z ?? 0), sheetTexture(def.sheet), def.id).setOrigin(0.5, 1).setFlipX(!!o.flip).setName(def.id)
   s.setDepth(depthOf(def, o))
   playAnim(s, def)
+  applySway(s, def, o.x, o.y, o.z)
   return s
 }
 
@@ -68,6 +70,7 @@ export function updateObjectSprite(s: ObjectSprite, o: ZoneObject) {
     s.setTexture(sheetTexture(def.sheet), def.id).setName(def.id)
     playAnim(s, def)
   }
+  applySway(s, def, o.x, o.y, o.z)
 }
 
 /** Corpos estáticos invisíveis nos retângulos de colisão dos objetos. */

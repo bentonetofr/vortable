@@ -224,6 +224,21 @@ nova faz isso numa ação só, em qualquer forma:
   desenho); fumaça de chaminé (falta casa por fora); controle da hora pelo mestre (M4)
 - ✅ *Uma taverna à noite, com lareira e velas, parece aconchegante; uma masmorra, ameaçadora*
 
+### M3.6 — Vento e vida (animações do mundo) ✅ (concluído)
+O mundo parado parece foto: tudo que é leve mexe com o vento, e o fogo vive.
+- **Vento por zona** (Parado / Brisa / Ventania) com **rajadas** que atravessam o mapa como
+  ondas — o mesmo campo move árvores, grama e folhas, então tudo mexe junto
+- **Plantas balançando**: árvores, arbustos, flores, plantações (cisalhamento feito na hora de
+  desenhar, sem custo extra); **pendurados** (placas, lamparinas, sachês) balançam presos no
+  topo; as sombras do sol acompanham o balanço
+- **Ondas de vento na grama e no trigo**: faixas claras correndo na direção do vento
+- **Folhas**: caem das copas ziguezagueando (cor tirada da própria árvore: cerejeira solta
+  pétala rosa), pousam e rolam pelo chão nas rajadas; na ventania entram folhas de fora
+- **Fogo vivo**: línguas de chama subindo de toda tocha, lareira e fogueira (amarelo → laranja →
+  vermelho, inclinando com o vento); fornos fechados não soltam chama
+- **Água**: reflexos piscando (prateados à noite); **sombra de nuvens** passando de dia
+- ✅ *Uma clareira com vento parece viva; uma fogueira à noite crepita*
+
 ### M4 — Integração Vorterium + multiplayer
 - Aba **Vortable** na campanha do Vorterium; login e papéis vindos de `campaign_members`
 - Migrations `vortable_*`; zonas e aparências salvas no Supabase

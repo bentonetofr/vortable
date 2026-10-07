@@ -204,6 +204,8 @@ function parseLighting(l: unknown): { lighting?: ZoneLighting } {
       ...(typeof v.tint === 'string' && COLOR.test(v.tint) ? { tint: v.tint } : {}),
       ...(v.sunShadows === false ? { sunShadows: false } : {}),
       ...(v.particles === false ? { particles: false } : {}),
+      ...(num(v.wind) ? { wind: clamp(v.wind, 0, 1) } : {}),
+      ...(v.clouds === false ? { clouds: false } : {}),
     },
   }
 }

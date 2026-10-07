@@ -23,6 +23,7 @@ import {
 } from '../types'
 import { LIGHT_PRESETS, UNDERGROUND_TINT, ambientAt, daylight, formatHour, lightingOf, rgbToInt } from '../world/daylight'
 import type { LightLook } from './EditorState'
+import { DEFAULT_WIND, WIND_LEVELS } from '../world/wind'
 import { solidTerrainRects } from '../world/ground'
 import { fenceSolids } from '../world/fences'
 
@@ -653,12 +654,25 @@ export class EditorUI {
     }
     const extras = h('div', { class: 'vt-checks' },
       cur.place === 'outdoor' ? check('Sombras do sol', cur.sunShadows !== false, (v) => setLighting({ sunShadows: v ? undefined : false }), 'Árvores e bonecos fazem sombra; o tamanho e a direção mudam com a hora') : null,
-      check('Partículas', cur.particles !== false, (v) => setLighting({ particles: v ? undefined : false }), 'Vaga-lumes à noite, poeira no ar, faíscas e fumaça das fogueiras'),
+      cur.place === 'outdoor' ? check('Sombra de nuvens', cur.clouds !== false, (v) => setLighting({ clouds: v ? undefined : false }), 'Manchas de sombra passando pelo chão, levadas pelo vento') : null,
+      check('Partículas', cur.particles !== false, (v) => setLighting({ particles: v ? undefined : false }), 'Folhas caindo, chamas, faíscas e fumaça, vaga-lumes, poeira, reflexos na água'),
     )
+
+    // vento: o mais próximo dos três níveis fica marcado
+    const wind = cur.wind ?? DEFAULT_WIND
+    const near = WIND_LEVELS.reduce((a, b) => (Math.abs(b[0] - wind) < Math.abs(a[0] - wind) ? b : a))[0]
+    const windSeg = h('div', { class: 'vt-segmented' }, ...WIND_LEVELS.map(([value, label, title]) => h('button', {
+      class: `vt-seg${near === value ? ' vt-on' : ''}`, title,
+      onclick: () => near !== value && setLighting({ wind: value === DEFAULT_WIND ? undefined : value }),
+    }, label)))
 
     this.paneEl.append(
       h('div', { class: 'vt-group' }, h('h4', {}, 'Clima'), presets),
       h('div', { class: 'vt-group' }, h('h4', {}, 'Onde fica'), place),
+      ...(cur.place === 'outdoor'
+        ? [h('div', { class: 'vt-group' }, h('h4', {}, 'Vento'), windSeg,
+          h('small', { class: 'vt-note vt-modehelp' }, 'Árvores, plantas e placas balançam; ondas correm pela grama; folhas caem e rolam pelo chão.'))]
+        : []),
       h('div', { class: 'vt-group' }, h('h4', {}, cur.place === 'underground' ? 'Escuridão' : 'Hora'), ...timeBlock),
       h('div', { class: 'vt-group' }, extras),
       this.lightLookGroup(),

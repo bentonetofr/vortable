@@ -79,6 +79,10 @@ export interface ZoneLighting {
   sunShadows?: boolean
   /** Vaga-lumes, poeira, faíscas e fumaça. Padrão: ligados. */
   particles?: boolean
+  /** Vento ao ar livre, 0 (parado) a 1 (ventania). Ausente = brisa. Dentro de casa não venta. */
+  wind?: number
+  /** Sombra de nuvens passando (ao ar livre, de dia). Padrão: ligada. */
+  clouds?: boolean
 }
 
 export const DAY_MINUTES = 24

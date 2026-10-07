@@ -73,7 +73,7 @@ Aba **Cômodos** (ou tecla `C`) — funciona em zona de interior (fundo *Vazio*)
 - Estilo = parede (252) + piso + moldura (32) + altura da parede (0 = só a borda, pra
   corredores de castelo/masmorra). Há estilos prontos (casa de fazenda, taverna, castelo...).
 
-### Luz, hora e sombras
+### Luz, hora, sombras e vento
 
 Aba **Luz**:
 - **Clima**: Ciclo dia/noite, Dia, Entardecer, Noite, Interior, Taverna à noite, Caverna, Masmorra.
@@ -87,7 +87,12 @@ Aba **Luz**:
   `L` põe luz solta (cores prontas: fogo, vela, luar, magia, veneno...).
 - As paredes dos cômodos **barram a luz** (uma tocha não clareia o cômodo vizinho; passa pela
   porta). Janelas acendem à noite vistas de fora; lava e água venenosa brilham no escuro.
-- Partículas: faíscas e fumaça das fogueiras, vaga-lumes à noite, poeira no ar dos interiores.
+- **Vento** (ao ar livre: parado, brisa ou ventania): árvores, arbustos, flores e plantações
+  balançam (placas e lamparinas penduradas balançam presas no topo); rajadas passam como ondas
+  claras pela grama e pelo trigo; folhas caem das copas — com a cor da própria árvore — e o
+  vento as leva rolando pelo chão; sombra de nuvens passa pelo mapa.
+- Partículas: chamas em toda tocha, lareira e fogueira; faíscas e fumaça nas grandes; vaga-lumes à
+  noite; poeira no ar dos interiores; reflexos piscando na água.
 - No editor, `I` liga/desliga a prévia (pra pintar no claro).
 
 ### Terrenos, paredes, tapetes e cercas
