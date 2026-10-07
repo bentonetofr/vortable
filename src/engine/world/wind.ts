@@ -4,6 +4,9 @@
 // o mesmo campo — a árvore balança no instante em que a onda passa pela
 // grama embaixo dela, e as folhas do chão correm junto.
 //
+// O que mexe: árvores, arbustos, flores, plantações, pendurados e os
+// tufinhos da grama do chão (tufts.ts).
+//
 // O balanço dos objetos é um cisalhamento: o pé fica parado e o topo anda
 // de lado (pendurados: o topo fica e a ponta de baixo balança). É feito na
 // hora de mandar o sprite pra placa de vídeo (SwayPipeline), sem custo de
@@ -26,6 +29,8 @@ export interface SwaySpec {
   /** Onde a peça está (a rajada chega em cada lugar numa hora). */
   x: number
   y: number
+  /** Empurrão extra agora, em px (grama chacoalhando quando alguém passa). */
+  kick?: number
 }
 
 export const WIND_LEVELS: [number, string, string][] = [
@@ -51,7 +56,7 @@ export function swaySpec(def: ObjectDef, x: number, y: number): SwaySpec | null 
   return null
 }
 
-/** Quanto o vento mexe neste terreno (grama 1, capim/trigo mais; 0 = nada). */
+/** Terrenos cujos tufos balançam (grama 1, capim/trigo mais; 0 = nada). */
 export function terrainSway(t: TerrainDef) {
   if (t.category === 'Grama') return t.id === 'grass-dry' ? 0.8 : 1
   if (/trigo|capim/i.test(t.label)) return 1.6
@@ -122,7 +127,7 @@ class SwayPipeline extends Phaser.Renderer.WebGL.Pipelines.MultiPipeline {
   batchQuad(go: SwaySprite | null, x0: number, y0: number, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, ...rest: unknown[]) {
     const spec = go?.sway
     if (spec && active) {
-      const d = active.sway(spec) * this.zoom
+      const d = (active.sway(spec) + (spec.kick ?? 0)) * this.zoom
       if (spec.anchor === 'top') { x1 += d; x2 += d } else { x0 += d; x3 += d }
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -134,7 +139,11 @@ export const SWAY_PIPELINE = 'VortableSway'
 
 /** Põe (ou tira) o balanço num sprite de objeto. */
 export function applySway(s: Phaser.GameObjects.Sprite, def: ObjectDef | undefined, x: number, y: number, z = 0) {
-  const spec = def && !z ? swaySpec(def, x, y) : null
+  setSway(s, def && !z ? swaySpec(def, x, y) : null)
+}
+
+/** Põe (ou tira) um balanço qualquer num sprite. */
+export function setSway(s: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite, spec: SwaySpec | null) {
   ;(s as SwaySprite).sway = spec ?? undefined
   const renderer = s.scene.game.renderer
   if (!(renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer)) return

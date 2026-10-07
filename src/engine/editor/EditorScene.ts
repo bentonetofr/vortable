@@ -209,6 +209,7 @@ export class EditorScene extends Phaser.Scene {
     // hora fixa da zona, ou a hora escolhida pra prévia (zona em ciclo)
     l.hourOverride = lightingOf(this.state.zone).hour ?? this.state.previewHour
     l.render(this.game.loop.delta)
+    this.ground.tufts.update(this.cameras.main, this.game.loop.delta / 1000)
   }
 
   /** Luzes refeitas um pouco depois da última edição (recortar pelas paredes custa). */
@@ -291,7 +292,7 @@ export class EditorScene extends Phaser.Scene {
 
   private reloadZone() {
     this.state.view = null
-    this.ground.rt.destroy()
+    this.ground.destroy()
     this.ground = new Ground(this, this.state.zone)
     this.fences.setZone(this.state.zone)
     this.lastStrokeEnd = null

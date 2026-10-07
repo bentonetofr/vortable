@@ -25,6 +25,7 @@ import { TERRAINS, terrainById, terrainFrame, terrainTexture, wangFrame, type Te
 import { TILE, type ZoneData } from '../types'
 import { hash2 } from '../rng'
 import { roomRoles } from './rooms'
+import { Tufts, tuftTexture } from './tufts'
 
 export const MASK_FRAMES: Record<number, number[]> = {
   1: [14], 2: [12], 4: [8], 8: [6],
@@ -78,13 +79,21 @@ export function cornerTerrain(zone: ZoneData, vx: number, vy: number): TerrainDe
 /** O chão desenhado numa textura só; dá pra redesenhar só um pedaço (editor). */
 export class Ground {
   readonly rt: Phaser.GameObjects.RenderTexture
+  /** Tufinhos de grama soltos do chão (balançam com o vento). */
+  readonly tufts: Tufts
 
-  constructor(scene: Phaser.Scene, private zone: ZoneData) {
+  constructor(private scene: Phaser.Scene, private zone: ZoneData) {
     this.rt = scene.add
       .renderTexture(0, 0, zone.width * TILE, zone.height * TILE)
       .setOrigin(0, 0)
       .setDepth(-1_000_000)
+    this.tufts = new Tufts(scene, zone.width, zone.height)
     this.redrawAll()
+  }
+
+  destroy() {
+    this.rt.destroy()
+    this.tufts.destroy()
   }
 
   setZone(zone: ZoneData) {
@@ -125,13 +134,21 @@ export class Ground {
     // chão: o de menor rank é o fundo inteiro; os outros por cima, só nos cantos deles
     const c = [cornerTerrain(z, tx, ty), cornerTerrain(z, tx + 1, ty), cornerTerrain(z, tx, ty + 1), cornerTerrain(z, tx + 1, ty + 1)]
     const present = [...new Set(c)].sort((a, b) => a.rank - b.rank)
-    draw(present[0], 15)
+    const o = z.overlay ? [overlayTerrain(z, tx, ty), overlayTerrain(z, tx + 1, ty), overlayTerrain(z, tx, ty + 1), overlayTerrain(z, tx + 1, ty + 1)] : []
+    const layers = [...new Set(o.filter((t): t is TerrainDef => !!t))].sort((a, b) => a.rank - b.rank)
+
+    // tile inteiro de grama com tufo (e nada por cima): o chão fica liso e o
+    // tufo vira um sprite que balança. Com outro terreno ou tapete no tile, o
+    // tufo fica desenhado no chão (o sprite passaria por cima deles).
+    const base = present[0]
+    const fill = fillFrame(base, tx, ty)
+    const tuft = present.length === 1 && !layers.length && !base.wang && fill !== 10 ? tuftTexture(this.scene, base, fill) : null
+    this.tufts.set(tx, ty, tuft)
+    if (tuft) this.rt.batchDrawFrame(terrainTexture(base), terrainFrame(base.id, 10), x, y)
+    else draw(base, 15)
     for (let i = 1; i < present.length; i++) draw(present[i], cornerMask(c, present[i].rank))
 
     // camada de cima: vértice vazio não tem nada
-    if (!z.overlay) return
-    const o = [overlayTerrain(z, tx, ty), overlayTerrain(z, tx + 1, ty), overlayTerrain(z, tx, ty + 1), overlayTerrain(z, tx + 1, ty + 1)]
-    const layers = [...new Set(o.filter((t): t is TerrainDef => !!t))].sort((a, b) => a.rank - b.rank)
     for (const t of layers) draw(t, cornerMask(o, t.rank))
   }
 }

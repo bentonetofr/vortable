@@ -15,8 +15,8 @@
 //   brilho   (por cima, SOMA): um halo fraco nas luzes quando escurece —
 //            o fogo "acende" o ar em volta.
 //
-// Mais o vento (wind.ts: balanço das plantas, ondas na grama, sombra de
-// nuvens passando) e as partículas (particles.ts: chamas, folhas, reflexos).
+// Mais o vento (wind.ts: balanço das plantas e dos tufos de grama, sombra
+// de nuvens passando) e as partículas (particles.ts: chamas, folhas, reflexos).
 // As luzes, janelas, sombras e fontes saem da zona em rebuild(); o editor
 // chama de novo quando a zona muda.
 // ────────────────────────────────────────────────────────
@@ -28,7 +28,7 @@ import { cornerTerrain } from './ground'
 import { ambientAt, darkness, daylight, hexToRgb, lightingOf, rgbToInt, sunAt, zoneHour, type RGB } from './daylight'
 import { buildOcclusion, maskedLight, type Occlusion } from './shadowcast'
 import { DOT, PUFF, Particles, type FireSource, type LeafSource } from './particles'
-import { DEFAULT_WIND, Wind, setActiveWind, swayOf, swaySpec, terrainSway, type SwaySpec } from './wind'
+import { DEFAULT_WIND, Wind, setActiveWind, swayOf, swaySpec, type SwaySpec } from './wind'
 
 /**
  * Canvas na CPU: são pequenos e viram textura logo em seguida — no canvas da
@@ -39,7 +39,6 @@ const CPU: CanvasRenderingContext2DSettings = { willReadFrequently: true }
 const CLOUDS = 'fx:clouds'
 /** Um ladrilho da textura de nuvens cobre isso do mundo (px). */
 const CLOUD_TILE = 1024
-const DEPTH_WAVES = -450_000
 const SOFT = 'light:soft'
 const BEAM = 'light:beam'
 export const BLOB = 'light:blob'
@@ -109,8 +108,6 @@ export class Lighting {
   readonly wind = new Wind()
   private trees: LeafSource[] = []
   private water: { x: number; y: number }[] = []
-  /** Ondas de vento na grama: um valor por vértice, esticado sobre a zona. */
-  private waves: { img: Phaser.GameObjects.Image; key: string; mask: Float32Array; data: ImageData; ctx: CanvasRenderingContext2D } | null = null
 
   /** Desligada (editor: "ver iluminação" desmarcado) = tudo claro, sem sombras. */
   enabled = true
@@ -153,7 +150,6 @@ export class Lighting {
 
   destroy() {
     setActiveWind(null)
-    this.dropWaves()
     this.scene.scale.off(Phaser.Scale.Events.RESIZE, this.resize, this)
     this.particles.destroy()
     for (const m of this.masks.values()) if (m) this.scene.textures.remove(m.key)
@@ -239,66 +235,18 @@ export class Lighting {
       }
     }
     this.buildEmission()
-    this.buildWaves()
+    this.findWater()
   }
 
-  private dropWaves() {
-    if (!this.waves) return
-    this.waves.img.destroy()
-    this.scene.textures.remove(this.waves.key)
-    this.waves = null
-  }
-
-  /** Onde o vento mexe no chão (grama, trigo, capim) e onde tem água (reflexos). */
-  private buildWaves() {
-    this.dropWaves()
-    const z = this.zone, VW = z.width + 1, VH = z.height + 1
-    const mask = new Float32Array(VW * VH)
+  /** Onde tem água (os reflexos piscam ali). */
+  private findWater() {
+    const z = this.zone
     this.water = []
-    let any = false
-    for (let vy = 0; vy < VH; vy++) {
-      for (let vx = 0; vx < VW; vx++) {
-        const t = cornerTerrain(z, vx, vy)
-        const m = terrainSway(t)
-        mask[vy * VW + vx] = m
-        if (m) any = true
-        if (/^water(-light|-deep)?$/.test(t.id)) this.water.push({ x: vx * TILE, y: vy * TILE })
+    for (let vy = 0; vy <= z.height; vy++) {
+      for (let vx = 0; vx <= z.width; vx++) {
+        if (/^water(-light|-deep)?$/.test(cornerTerrain(z, vx, vy).id)) this.water.push({ x: vx * TILE, y: vy * TILE })
       }
     }
-    if (!any) return
-    const key = `fx:waves:${++this.serial}`
-    const canvas = document.createElement('canvas')
-    canvas.width = VW
-    canvas.height = VH
-    const ctx = canvas.getContext('2d', CPU)!
-    this.scene.textures.addCanvas(key, canvas)?.setFilter(Phaser.Textures.FilterMode.LINEAR)
-    // 1 pixel por vértice, esticado: o centro do pixel cai em cima do vértice
-    const img = this.scene.add.image(-TILE / 2, -TILE / 2, key).setOrigin(0, 0).setScale(TILE)
-      .setDepth(DEPTH_WAVES).setBlendMode(Phaser.BlendModes.ADD).setTint(0xfff4d0).setVisible(false)
-    this.waves = { img, key, mask, data: ctx.createImageData(VW, VH), ctx }
-  }
-
-  /** Faixas claras correndo pela grama onde a rajada está passando. */
-  private drawWaves(strength: number, day: number) {
-    const w = this.waves
-    if (!w) return
-    const on = strength > 0.02
-    w.img.setVisible(on)
-    if (!on) return
-    const z = this.zone, VW = z.width + 1, VH = z.height + 1, d = w.data.data
-    for (let vy = 0; vy < VH; vy++) {
-      for (let vx = 0; vx < VW; vx++) {
-        const i = vy * VW + vx, m = w.mask[i]
-        const g = m ? this.wind.gust(vx * TILE, vy * TILE) : 0
-        const v = Math.min(255, m * g * g * 255)
-        d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = v
-        d[i * 4 + 3] = 255
-      }
-    }
-    w.ctx.putImageData(w.data, 0, 0)
-    // (o envio da textura volta o filtro pro padrão pixelado: liga o suave de novo)
-    ;(this.scene.textures.get(w.key) as Phaser.Textures.CanvasTexture).refresh().setFilter(Phaser.Textures.FilterMode.LINEAR)
-    w.img.setAlpha(Math.min(1, strength * 1.6) * 0.13 * (0.45 + 0.55 * day))
   }
 
   /** Brilho do chão (lava, água venenosa): um mapa pequeno, borrado e esticado. */
@@ -366,7 +314,6 @@ export class Lighting {
     this.shade.setVisible(false)
     if (!on) {
       this.particles.clear()
-      this.waves?.img.setVisible(false)
       setActiveWind(null)
       return
     }
@@ -381,8 +328,6 @@ export class Lighting {
     // dentro de casa não venta (mas o que é pendurado ainda balança de leve)
     this.wind.update(dt, outdoor ? l.wind ?? DEFAULT_WIND : 0)
     setActiveWind(this.wind)
-    if (outdoor) this.drawWaves(this.wind.strength, day)
-    else this.waves?.img.setVisible(false)
 
     // ── escuridão + luzes ──
     const s = LIGHT_RES * v.zoom

@@ -49,6 +49,7 @@ export class WorldScene extends Phaser.Scene {
   private occluders = new Occluders()
   private lighting?: Lighting
   private blob?: Phaser.GameObjects.Image
+  private ground?: Ground
   private clockAt = 0
 
   constructor() {
@@ -63,6 +64,7 @@ export class WorldScene extends Phaser.Scene {
     this.occluders = new Occluders()
     this.lighting = undefined
     this.blob = undefined
+    this.ground = undefined
     this.clockAt = 0
   }
 
@@ -70,7 +72,7 @@ export class WorldScene extends Phaser.Scene {
     const { zone, assetBase, appearance, arrival } = this.cfg
     const W = zone.width * TILE, H = zone.height * TILE
 
-    new Ground(this, zone)
+    this.ground = new Ground(this, zone)
     for (const o of zone.objects) this.occluders.add(createObjectSprite(this, o), o)
     new FenceLayer(this, zone)
     const lighting = (this.lighting = new Lighting(this, zone))
@@ -154,6 +156,10 @@ export class WorldScene extends Phaser.Scene {
       cam.setScroll(x, y)
       this.blob?.setPosition(s.x, s.y - 1).setDepth(s.depth - 0.5)
     }
+    // a grama chacoalha embaixo de quem está andando
+    const s = player?.sprite
+    const moving = !!s && (s.body as Phaser.Physics.Arcade.Body).velocity.lengthSq() > 1
+    this.ground?.tufts.update(cam, this.game.loop.delta / 1000, moving ? [{ x: s!.x, y: s!.y - 2 }] : [])
     const lighting = this.lighting
     if (!lighting) return
     lighting.render(this.game.loop.delta)

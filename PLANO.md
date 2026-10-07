@@ -231,7 +231,9 @@ O mundo parado parece foto: tudo que é leve mexe com o vento, e o fogo vive.
 - **Plantas balançando**: árvores, arbustos, flores, plantações (cisalhamento feito na hora de
   desenhar, sem custo extra); **pendurados** (placas, lamparinas, sachês) balançam presos no
   topo; as sombras do sol acompanham o balanço
-- **Ondas de vento na grama e no trigo**: faixas claras correndo na direção do vento
+- **Tufos de grama balançando**: os tufinhos desenhados nos tiles de grama viram peças soltas
+  (o que difere do miolo liso) que balançam com as rajadas e chacoalham quando alguém passa
+  (as faixas claras de "onda" na grama foram testadas e tiradas)
 - **Folhas**: caem das copas ziguezagueando (cor tirada da própria árvore: cerejeira solta
   pétala rosa), pousam e rolam pelo chão nas rajadas; na ventania entram folhas de fora
 - **Fogo vivo**: línguas de chama subindo de toda tocha, lareira e fogueira (amarelo → laranja →

@@ -88,8 +88,8 @@ Aba **Luz**:
 - As paredes dos cômodos **barram a luz** (uma tocha não clareia o cômodo vizinho; passa pela
   porta). Janelas acendem à noite vistas de fora; lava e água venenosa brilham no escuro.
 - **Vento** (ao ar livre: parado, brisa ou ventania): árvores, arbustos, flores e plantações
-  balançam (placas e lamparinas penduradas balançam presas no topo); rajadas passam como ondas
-  claras pela grama e pelo trigo; folhas caem das copas — com a cor da própria árvore — e o
+  balançam (placas e lamparinas penduradas balançam presas no topo); os tufinhos da grama do
+  chão balançam com as rajadas e chacoalham quando alguém passa por cima; folhas caem das copas — com a cor da própria árvore — e o
   vento as leva rolando pelo chão; sombra de nuvens passa pelo mapa.
 - Partículas: chamas em toda tocha, lareira e fogueira; faíscas e fumaça nas grandes; vaga-lumes à
   noite; poeira no ar dos interiores; reflexos piscando na água.
