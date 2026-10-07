@@ -9,6 +9,7 @@ que formam um mundo, e **4–7 jogadores** exploram em tempo real, cada um com s
 |---|---|
 | Arte | **LPC** (Liberated Pixel Cup) — grátis, CC-BY-SA/GPL → tela de créditos obrigatória |
 | Custo | **100% grátis** (nada de servidor pago) |
+| Integração | **Vorterium** (login, campanhas, fichas) |
 | Jogadores | 4 a 7 por sessão |
 | Ritmo | **Tudo em tempo real** (exploração e combate) |
 | Ficha de RPG | **Não** — o programa é o mundo; regras ficam fora |
@@ -17,31 +18,43 @@ que formam um mundo, e **4–7 jogadores** exploram em tempo real, cada um com s
 
 - **TypeScript** em tudo
 - **Phaser 3** — motor 2D (tilemaps, animação, colisão, câmera)
-- **Vite** — build/dev do cliente
-- **Colyseus** (Node.js) — servidor multiplayer, uma *sala* por zona
-- **Electron** — app de Windows que já embute o servidor (o mestre hospeda)
-- Jogadores entram pelo **app ou pelo navegador**
+- **Vite** — build/dev
+- **Vorterium** (React + Supabase, Vercel) — login, campanhas, papéis, fichas, persistência
+- **WebRTC data channels** — multiplayer em tempo real, o **navegador do mestre é o host**
+- App desktop (Electron) só no fim, se ainda fizer sentido
 
-### Hospedagem grátis
-O app do mestre roda o servidor localmente. Para os jogadores de fora entrarem:
-1. **Cloudflare Quick Tunnel** (`cloudflared`) — grátis, sem conta, gera um link `https://...` (padrão)
-2. Alternativas: **Tailscale** (rede privada grátis) ou **playit.gg**
+### Integração com o Vorterium
+```
+Vortable (este repo)   motor Phaser, sem React/Supabase → mountVortable(div, opções)
+        ▲  contratos: Storage · Signal · Sheets · Events
+Ponte no Vorterium     src/features/vortable/ (aba da campanha), implementa os contratos
+        ▲
+Supabase               auth · campaign_members · fichas · tabelas vortable_*
+```
+- Tabelas novas: `vortable_worlds`, `vortable_zones`, `vortable_zone_exits`,
+  `vortable_appearances`, `vortable_world_state` (migrations + RLS no padrão do Vorterium)
+- Ficha ↔ boneco por **adaptador por sistema** (Altherium, D&D, Vampiro, Terra Devastada...):
+  nome, vida, retrato; vida sincroniza nos dois sentidos
+- Deploy: Vortable vira repo no GitHub, instalado no Vorterium como dependência com tag
+
+### Rede (100% grátis)
+- Supabase Realtime só para a **sinalização** (aperto de mão) — poucas mensagens
+- Posições/ações vão P2P jogador ↔ mestre (o Supabase grátis não aguenta 7 jogadores a ~10 msg/s)
+- STUN do Google; TURN opcional via `.env` (mesmo esquema do `mesaRtc.ts` do Vorterium)
 
 ## Estrutura do repositório
 
 ```
-packages/
-  shared/   tipos, formato de zona/mundo, constantes, protocolo de rede
-  client/   Phaser + Vite (jogo, editor, criador de personagem)
-  server/   Colyseus (salas por zona, estado autoritativo)
-  desktop/  Electron (empacota client + server)
-assets/
-  lpc/      sprites LPC + CREDITS
+src/engine/   motor (Phaser) — mundo, editor, personagem, rede
+src/dev/      harness para rodar sozinho
+public/assets/lpc/   arte LPC
+assets-src/credits/  créditos obrigatórios
+scripts/      ferramentas de assets
 ```
 
 ## Marcos
 
-### M0 — Fundação
+### M0 — Fundação ✅ (concluído)
 - Monorepo, Vite + Phaser rodando
 - Importação do LPC (tiles + spritesheet de personagem)
 - Um mapa de teste, boneco andando em 4 direções com animação
@@ -70,12 +83,12 @@ assets/
 - Personagem compilado em um spritesheet único (performance)
 - ✅ *Cada jogador cria seu boneco único*
 
-### M4 — Multiplayer
-- Mestre cria sessão → código/link; jogadores entram
-- Movimento em tempo real com interpolação; cada jogador pode estar numa zona diferente
-- Chat com balão sobre a cabeça
-- Papéis: mestre × jogador
-- Túnel grátis integrado no app do mestre
+### M4 — Integração Vorterium + multiplayer
+- Aba **Vortable** na campanha do Vorterium; login e papéis vindos de `campaign_members`
+- Migrations `vortable_*`; zonas e aparências salvas no Supabase
+- Mestre inicia sessão ao vivo → jogadores avisados pelas notificações do site
+- Host WebRTC no navegador do mestre; movimento com interpolação; zonas diferentes por jogador
+- Boneco ligado à ficha (nome, vida, retrato); chat com balão sobre a cabeça; dados no histórico
 - ✅ *Sessão real com amigos*
 
 ### M5 — Interações
@@ -100,4 +113,4 @@ assets/
 ## Riscos conhecidos
 - **Estilo LPC** é um pouco diferente do Stardew (perspectiva levemente mais "de frente"). Aceito.
 - **Licença CC-BY-SA/GPL** do LPC: precisa creditar autores; arte derivada herda a licença.
-- **Rede doméstica**: túnel resolve a maioria dos casos; latência depende da internet do mestre.
+- **Rede**: algumas redes (4G/CGNAT) exigem TURN; latência depende da internet do mestre; se o mestre fechar a aba a sessão pausa.
