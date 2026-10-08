@@ -9,6 +9,7 @@
 //   bye       {id}                     saí
 //   teleport  {zone, x, y}             o mestre leva ESTE jogador pra outro lugar
 //   zone      {id}                     o mestre salvou esta zona: quem está nela recarrega
+//   react     {id, name, emoji, zone, x, y}   reação de um espectador (um emoji que sobe no ponto x,y da zona)
 //   env       {zone, hour, weather, wind}   o mestre muda hora/tempo/vento ao vivo
 //                                      (zone '*' = todas as zonas; null = o padrão da zona)
 //
@@ -23,8 +24,12 @@ export type NetAnim = 'idle' | 'walk' | 'run'
 export interface NetHello { t: 'hello'; id: string; name: string; appearance: Appearance }
 export interface NetState { t: 'state'; id: string; zone: string; x: number; y: number; dir: Dir; anim: NetAnim }
 export interface NetEnv { t: 'env'; zone: string; hour: number | null; weather: string | null; wind: number | null }
+/** Reações que o espectador pode mandar. */
+export const REACTIONS = ['👏', '😮', '😂', '❤️', '🔥', '🎉', '😱', '🤔'] as const
+export interface NetReact { t: 'react'; id: string; name: string; emoji: string; zone: string; x: number; y: number }
 export type NetMsg =
   | NetEnv
+  | NetReact
   | { t: 'zone'; id: string }
   | NetHello
   | { t: 'who' }
@@ -78,6 +83,10 @@ export function parseNet(raw: unknown): NetMsg | null {
         weather: typeof m.weather === 'string' ? m.weather.slice(0, 20) : null,
         wind: num(m.wind) ? Math.min(1, Math.max(0, m.wind)) : null,
       }
+    case 'react':
+      if (typeof m.id !== 'string' || typeof m.zone !== 'string' || !num(m.x) || !num(m.y)) return null
+      if (typeof m.emoji !== 'string' || !(REACTIONS as readonly string[]).includes(m.emoji)) return null
+      return { t: 'react', id: m.id, name: typeof m.name === 'string' ? m.name.slice(0, 60) : '', emoji: m.emoji, zone: m.zone, x: m.x, y: m.y }
     case 'teleport':
       return typeof m.zone === 'string' && num(m.x) && num(m.y) ? { t: 'teleport', zone: m.zone, x: m.x, y: m.y } : null
     default: return null
@@ -92,6 +101,7 @@ export class NetHub {
   private roster = new Set<() => void>()
   private zoneChanges = new Set<(id: string) => void>()
   private teleports = new Set<(m: { zone: string; x: number; y: number }) => void>()
+  private reactions = new Set<(m: NetReact) => void>()
   private hello: NetHello | null = null
   private asked = false
 
@@ -131,7 +141,8 @@ export class NetHub {
 
   /** A rede acabou de abrir (ou reabriu): conta quem sou e pergunta quem está aí. */
   resync() {
-    if (!this.hello) return
+    // observador (mestre ou espectador): sem boneco, só pergunta quem está na sala
+    if (!this.hello) { this.link.send({ t: 'who' }); return }
     this.link.send(this.hello)
     this.link.send({ t: 'who' })
   }
@@ -144,6 +155,7 @@ export class NetHub {
     this.roster.clear()
     this.teleports.clear()
     this.zoneChanges.clear()
+    this.reactions.clear()
   }
 
   /** Chegou uma mensagem da rede. */
@@ -175,6 +187,9 @@ export class NetHub {
       case 'teleport':
         this.teleports.forEach((fn) => fn(msg))
         break
+      case 'react':
+        this.reactions.forEach((fn) => fn(msg))
+        break
       case 'env':
         this.envs.set(msg.zone, msg)
         break
@@ -193,6 +208,20 @@ export class NetHub {
   onZoneChanged(fn: (id: string) => void) {
     this.zoneChanges.add(fn)
     return () => { this.zoneChanges.delete(fn) }
+  }
+
+  /** Chegou uma reação (de um espectador) pra mostrar no mapa. */
+  onReact(fn: (m: NetReact) => void) {
+    this.reactions.add(fn)
+    return () => { this.reactions.delete(fn) }
+  }
+
+  /** Manda uma reação (de espectador) no ponto dado; também aparece pra quem mandou. */
+  react(emoji: string, zone: string, x: number, y: number) {
+    if (!(REACTIONS as readonly string[]).includes(emoji)) return
+    const msg: NetReact = { t: 'react', id: this.link.selfId, name: this.link.name, emoji, zone, x: Math.round(x), y: Math.round(y) }
+    this.link.send(msg)
+    this.reactions.forEach((fn) => fn(msg))
   }
 
   onTeleport(fn: (m: { zone: string; x: number; y: number }) => void) {

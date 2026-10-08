@@ -45,6 +45,10 @@ export interface WorldSceneData {
   notice?: string
   /** Câmera do mestre: sem boneco, câmera livre, só observa os jogadores. */
   watch?: boolean
+  /** Câmera de observador: quem ela está acompanhando (guardado nas trocas de zona). */
+  follow?: string
+  /** Observador que também ouve os sons da zona (espectador; o mestre não precisa). */
+  listen?: boolean
 }
 
 const PLAYER_KEY = 'char:me'
@@ -94,6 +98,8 @@ export class WorldScene extends Phaser.Scene {
     this.clockAt = 0
     this.audio = null
     this.reloading = false
+    this.switching = false
+    this.reactions = 0
     this.remotes = undefined
     this.netAt = 0
     this.netSent = ''
@@ -111,7 +117,7 @@ export class WorldScene extends Phaser.Scene {
     lighting.sky = this.cfg.sky ?? { hour: null }
     this.events.on(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
     // o observador (mestre) não ouve os sons da zona
-    this.audio = this.cfg.watch ? null : ZoneAudio.create(this, zone)
+    this.audio = this.cfg.watch && !this.cfg.listen ? null : ZoneAudio.create(this, zone)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.events.off(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
       this.audio?.destroy()
@@ -133,6 +139,11 @@ export class WorldScene extends Phaser.Scene {
     // o mestre salvou ESTA zona: recarrega com a versão nova, sem sair do lugar
     if (this.cfg.hub) {
       const off = this.cfg.hub.onZoneChanged((id) => { if (id === zone.id) void this.reloadZone() })
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, off)
+    }
+    // reações dos espectadores: um emoji que sobe no ponto onde ele estava olhando
+    if (this.cfg.hub) {
+      const off = this.cfg.hub.onReact((m) => { if (m.zone === zone.id) this.showReaction(m.emoji, m.name, m.x, m.y) })
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, off)
     }
     if (this.cfg.watch) return this.startWatch(zone, W, H)
@@ -224,11 +235,15 @@ export class WorldScene extends Phaser.Scene {
   // ── Câmera do mestre (observador) ──────────────────────
 
   private following: string | null = null
+  private switching = false
+  private reactions = 0
 
   private startWatch(zone: ZoneData, W: number, H: number) {
     const cam = this.cameras.main
     cam.removeBounds()
     this.watchFit()
+    // seguindo alguém antes da troca de zona: continua e volta ao zoom do jogo
+    if (this.cfg.follow) { this.following = this.cfg.follow; cam.setZoom(2) }
     cam.setRoundPixels(false)
     // arrastar move a câmera; a roda dá zoom no ponto sob o mouse
     const input = this.input
@@ -262,7 +277,7 @@ export class WorldScene extends Phaser.Scene {
     if (!this.cfg.watch || id === this.cfg.zone.id) return
     const zone = await this.cfg.loadZone(id).catch(() => null)
     if (!zone || !this.sys.isActive()) return
-    this.scene.restart({ ...this.cfg, zone, notice: undefined } satisfies WorldSceneData)
+    this.scene.restart({ ...this.cfg, zone, follow: this.following ?? undefined, notice: undefined } satisfies WorldSceneData)
   }
 
   /** Enquadra a zona inteira na tela. */
@@ -288,6 +303,40 @@ export class WorldScene extends Phaser.Scene {
   /** A câmera acompanha um jogador (null solta). */
   watchFollow(id: string | null) {
     this.following = id
+    if (id) this.cameras.main.setZoom(2) // o enquadramento do próprio jogo
+  }
+
+  /** Quem a câmera acompanha agora. */
+  watchFollowing() {
+    return this.following
+  }
+
+  /** Espectador reage: o emoji aparece no jogador acompanhado (ou no centro da câmera) pra todos. */
+  watchReact(emoji: string) {
+    const hub = this.cfg.hub
+    if (!hub) return
+    const p = this.following ? hub.peers.get(this.following) : null
+    const at = p?.state && p.state.zone === this.cfg.zone.id ? { x: p.state.x, y: p.state.y - 40 } : this.cameras.main.midPoint
+    // um pouco de espalhamento: várias reações seguidas não ficam uma em cima da outra
+    hub.react(emoji, this.cfg.zone.id, at.x + (Math.random() - 0.5) * 70, at.y - Math.random() * 10)
+  }
+
+  /** Um emoji sobe e some (com o nome de quem reagiu embaixo). */
+  private showReaction(emoji: string, name: string, x: number, y: number) {
+    if (this.reactions >= 24) return
+    this.reactions++
+    const icon = this.add.text(x, y, emoji, {
+      fontFamily: '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", system-ui', fontSize: '20px',
+    }).setOrigin(0.5, 1).setDepth(1e9).setResolution(4)
+    const label = name
+      ? this.add.text(x, y + 1, name, { fontFamily: 'system-ui', fontSize: '8px', color: '#e9e2d0', stroke: '#000', strokeThickness: 3 })
+        .setOrigin(0.5, 0).setDepth(1e9).setResolution(4)
+      : null
+    this.tweens.add({
+      targets: label ? [icon, label] : [icon], y: '-=44', alpha: { from: 1, to: 0 }, duration: 1900, ease: 'Sine.easeOut',
+      onComplete: () => { icon.destroy(); label?.destroy(); this.reactions = Math.max(0, this.reactions - 1) },
+    })
+    this.tweens.add({ targets: icon, scale: { from: 0.6, to: 1.15 }, duration: 260, ease: 'Back.easeOut' })
   }
 
   /** Quem está na sala e onde (pra lista do mestre). */
@@ -372,6 +421,10 @@ export class WorldScene extends Phaser.Scene {
       if (p?.state && p.state.zone === this.cfg.zone.id) {
         cam.scrollX += (p.state.x - cam.width / 2 - cam.scrollX) * FOLLOW_LERP
         cam.scrollY += (p.state.y - cam.height / 2 - cam.scrollY) * FOLLOW_LERP
+      } else if (p?.state && this.cfg.watch && !this.switching) {
+        // o jogador seguido foi pra outra zona: a câmera vai atrás
+        this.switching = true
+        void this.watchZone(p.state.zone).finally(() => { this.switching = false })
       }
     }
     // hora, tempo e vento do mestre (ao vivo)

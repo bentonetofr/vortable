@@ -33,8 +33,8 @@ export { TERRAINS } from './assets/terrains'
 export { composeFrame as characterFrame } from './character/compose'
 export { defaultAppearance, randomAppearance, loadCharacterData, normalizeAppearance } from './character/catalog'
 
-export { parseNet } from './net/hub'
-export type { NetLink, NetMsg, NetHello, NetState, NetAnim, NetEnv } from './net/hub'
+export { parseNet, REACTIONS } from './net/hub'
+export type { NetLink, NetMsg, NetHello, NetState, NetAnim, NetEnv, NetReact } from './net/hub'
 export { formatHour }
 export { WEATHERS, WEATHER_ORDER } from './world/weather'
 export { WIND_LEVELS, DEFAULT_WIND } from './world/wind'
@@ -58,6 +58,8 @@ export interface VortableOptions {
   onEditCharacter?: () => void
   /** Rede: com isto, os outros jogadores aparecem no mundo (sem, o jogo é solo). */
   net?: NetLink
+  /** Câmera de observador: também ouve os sons da zona (espectador). */
+  listen?: boolean
   /**
    * Editor: liga a curadoria de peças (gravar ajustes nos pack.json). Só
    * funciona com o servidor de desenvolvimento do Vortable (npm run dev).
@@ -76,6 +78,10 @@ export interface WatchControls {
   focus(x: number, y: number): void
   /** A câmera acompanha um jogador (null solta). */
   follow(id: string | null): void
+  /** Quem a câmera acompanha agora (null = ninguém). */
+  following(): string | null
+  /** Espectador: manda uma reação (emoji de REACTIONS) pra todos verem no mapa. */
+  react(emoji: string): void
   /** Quem está na sala e onde. */
   peers(): { id: string; name: string; zone: string | null; x: number; y: number }[]
   /** Muda hora/tempo/vento ao vivo pra todos (zone '*' = todas as zonas; null = padrão da zona). */
@@ -124,6 +130,7 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
     inputLocked: () => inputLocked,
     hub,
     watch: mode === 'watch',
+    listen: opts.listen,
   })
 
   /**
@@ -236,6 +243,8 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
       zoomBy: (f) => world()?.watchZoom(f),
       focus: (x, y) => world()?.watchFocus(x, y),
       follow: (id) => world()?.watchFollow(id),
+      following: () => world()?.watchFollowing() ?? null,
+      react: (emoji) => world()?.watchReact(emoji),
       peers: () => world()?.watchPeers() ?? [],
       setEnv: (env) => hub?.setEnv(env),
       envs: () => [...(hub?.envs.values() ?? [])].map(({ zone, hour, weather, wind }) => ({ zone, hour, weather, wind })),
