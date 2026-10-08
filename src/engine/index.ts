@@ -94,6 +94,14 @@ export interface WatchControls {
   react(emoji: string): void
   /** Quem está na sala e onde. */
   peers(): { id: string; name: string; zone: string | null; x: number; y: number }[]
+  /** NPCs parados da zona que a câmera está vendo. */
+  npcs(): { id: string; name: string; role: string }[]
+  /** O NPC que o mestre controla agora (null = nenhum). */
+  controllingNpc(): string | null
+  /** Passa a controlar este NPC como um jogador (teclado WASD/setas, Shift corre). false = não deu. */
+  controlNpc(id: string): Promise<boolean>
+  /** Solta o NPC onde ele está: todos o veem parado ali, e o ponto fica guardado na zona. */
+  releaseNpc(): Promise<void>
   /** Muda hora/tempo/vento ao vivo pra todos (zone '*' = todas as zonas; null = padrão da zona). */
   setEnv(env: { zone: string; hour: number | null; weather: string | null; wind: number | null }): void
   /** Ajuste que está valendo agora (pra a interface mostrar). */
@@ -259,9 +267,22 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
   const world = () => (game.scene.isActive('world') ? (game.scene.getScene('world') as WorldScene) : null)
   const editor = () => (game.scene.isActive('editor') ? (game.scene.getScene('editor') as EditorScene) : null)
 
+  /** Guarda o ponto onde o mestre largou o NPC (relê a zona do banco, pra não passar por cima de edições). */
+  const persistNpc = async (r: { id: string; zone: string; x: number; y: number; dir: Dir }) => {
+    const z = await storage.load(r.zone)
+    const n = z?.npcs?.find((x) => x.id === r.id)
+    if (!z || !n) return
+    n.x = r.x; n.y = r.y; n.dir = r.dir
+    await storage.save(z)
+  }
+
   const watch: WatchControls | undefined = mode === 'watch'
     ? {
-      setZone: async (id) => { await world()?.watchZone(id) },
+      setZone: async (id) => { await world()?.releaseNpc(persistNpc); await world()?.watchZone(id) },
+      npcs: () => world()?.watchNpcs() ?? [],
+      controllingNpc: () => world()?.controllingNpc() ?? null,
+      controlNpc: async (id) => (await world()?.controlNpc(id)) ?? false,
+      releaseNpc: async () => { await world()?.releaseNpc(persistNpc) },
       fit: () => world()?.watchFit(),
       zoomBy: (f) => world()?.watchZoom(f),
       focus: (x, y) => world()?.watchFocus(x, y),
@@ -312,6 +333,8 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
       if (game.scene.isActive('world')) (game.scene.getScene('world') as WorldScene).setInputLocked(locked)
     },
     destroy() {
+      // NPC controlado: fica onde está (o ponto é guardado em segundo plano)
+      if (mode === 'watch') void world()?.releaseNpc(persistNpc)
       hub?.leave()
       ui?.destroy()
       game.destroy(true)

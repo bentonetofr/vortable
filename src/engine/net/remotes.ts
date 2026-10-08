@@ -27,6 +27,8 @@ interface Avatar {
   shadow: Phaser.GameObjects.Image | null
   label: Phaser.GameObjects.Text | null
   name: string
+  /** Nome em cima da cabeça (NPC controlado só mostra se o mestre ligou). */
+  showLabel: boolean
   state: NetState | null
   stateAt: number
   placed: boolean
@@ -59,11 +61,12 @@ export class Remotes {
       if (!a) {
         a = {
           id, texKey: `char:r:${id}`, sig: '', appearance: peer.hello.appearance, building: false,
-          sprite: null, shadow: null, label: null, name: peer.hello.name, state: null, stateAt: 0, placed: false, playing: '',
+          sprite: null, shadow: null, label: null, name: peer.hello.name, showLabel: true, state: null, stateAt: 0, placed: false, playing: '',
         }
         this.avatars.set(id, a)
       }
       a.name = peer.hello.name
+      a.showLabel = !peer.hello.npc || !!peer.hello.showName
       if (a.label && a.label.text !== a.name) a.label.setText(a.name)
       if (peer.state && peer.state !== a.state) { a.state = peer.state; a.stateAt = now }
       if (a.sig !== sig && !a.building) void this.build(a, peer.hello.appearance, sig)
@@ -80,7 +83,7 @@ export class Remotes {
       const here = state.zone === this.zoneId && now - a.stateAt < STALE_MS
       sprite.setVisible(here)
       shadow.setVisible(here)
-      label.setVisible(here)
+      label.setVisible(here && a.showLabel)
       if (!here) { a.placed = false; continue }
       if (!a.placed || Phaser.Math.Distance.Between(sprite.x, sprite.y, state.x, state.y) > SNAP_DIST) {
         sprite.setPosition(state.x, state.y)

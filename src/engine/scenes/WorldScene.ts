@@ -13,6 +13,7 @@ import { Occluders, addObjectSolids, createObjectSprite } from '../world/objects
 import { FenceLayer, fenceSolids } from '../world/fences'
 import { Player, isTyping } from '../world/Player'
 import { Remotes } from '../net/remotes'
+import { NPC_PEER } from '../net/hub'
 import { NpcLayer } from '../world/npcs'
 import type { NetHub } from '../net/hub'
 import { BLOB, Lighting } from '../world/lighting'
@@ -86,6 +87,12 @@ export class WorldScene extends Phaser.Scene {
   private npcs?: NpcLayer
   private netAt = 0
   private netSent = ''
+  /** Os "calços" dos NPCs parados (somem enquanto o mestre controla o NPC; mudam de lugar quando ele o larga). */
+  private npcSolids = new Map<string, Phaser.GameObjects.Zone>()
+  private solids?: Phaser.Physics.Arcade.StaticGroup
+  /** NPC que o mestre (câmera) controla agora, como se fosse um jogador. */
+  private npcCtl: { id: string; player: Player; blob: Phaser.GameObjects.Image; at: number; sent: string } | null = null
+  private hiddenNpcs = ''
   /** Quanto andou desde o último passo, e onde estava no quadro anterior. */
 
   constructor() {
@@ -93,6 +100,12 @@ export class WorldScene extends Phaser.Scene {
   }
 
   init(data: WorldSceneData) {
+    // a cena recomeçou com um NPC controlado (troca de zona): a sala deixa de vê-lo como jogador
+    if (this.npcCtl) this.cfg?.hub?.unhostNpc(NPC_PEER + this.npcCtl.id)
+    this.npcCtl = null
+    this.npcSolids = new Map()
+    this.solids = undefined
+    this.hiddenNpcs = ''
     this.cfg = data
     this.player = undefined
     this.armed = false
@@ -135,7 +148,12 @@ export class WorldScene extends Phaser.Scene {
     for (const r of [...solidTerrainRects(zone), ...fenceSolids(zone)]) solids.add(this.add.zone(r.x + r.w / 2, r.y + r.h / 2, r.w, r.h))
     addObjectSolids(this, zone.objects, solids)
     // NPCs parados: o jogador não atravessa
-    for (const n of zone.npcs ?? []) solids.add(this.add.zone(n.x, n.y - 3, 18, 10))
+    this.solids = solids
+    for (const n of zone.npcs ?? []) {
+      const block = this.add.zone(n.x, n.y - 3, 18, 10)
+      solids.add(block)
+      this.npcSolids.set(n.id, block)
+    }
     this.npcs = new NpcLayer(this, assetBase, this.cfg.watch ? 'always' : 'near')
     this.npcs.set(zone.npcs ?? [])
 
@@ -153,6 +171,11 @@ export class WorldScene extends Phaser.Scene {
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, off)
     }
     // reações dos espectadores: um emoji que sobe no ponto onde ele estava olhando
+    // o mestre largou um NPC que controlava: o NPC parado da zona passa pra esse ponto
+    if (this.cfg.hub) {
+      const off = this.cfg.hub.onNpcMove((m) => { if (m.zone === zone.id) this.applyNpcMove(m) })
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, off)
+    }
     if (this.cfg.hub) {
       const off = this.cfg.hub.onReact((m) => { if (m.zone === zone.id) this.showReaction(m.emoji, m.name, m.x, m.y) })
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, off)
@@ -241,6 +264,7 @@ export class WorldScene extends Phaser.Scene {
   setInputLocked(locked: boolean) {
     this.inputLocked = locked
     if (this.player) this.player.locked = locked
+    if (this.npcCtl) this.npcCtl.player.locked = locked
   }
 
   // ── Câmera do mestre (observador) ──────────────────────
@@ -279,7 +303,7 @@ export class WorldScene extends Phaser.Scene {
     }
     const lighting = this.lighting
     if (lighting) {
-      lighting.extraCasters = () => (this.remotes?.sprites ?? []).map((s) => ({ key: s.texture.key, frame: s.frame.name, x: s.x, y: s.y, originY: s.originY }))
+      lighting.extraCasters = () => [...(this.remotes?.sprites ?? []), ...(this.npcCtl ? [this.npcCtl.player.sprite] : [])].map((s) => ({ key: s.texture.key, frame: s.frame.name, x: s.x, y: s.y, originY: s.originY }))
     }
     void W; void H
   }
@@ -363,7 +387,7 @@ export class WorldScene extends Phaser.Scene {
   watchPeers() {
     const hub = this.cfg.hub
     if (!hub) return []
-    return [...hub.peers.values()].map((p) => ({
+    return [...hub.peers.values()].filter((p) => !p.hello.npc).map((p) => ({
       id: p.hello.id, name: p.hello.name, zone: p.state?.zone ?? null, x: p.state?.x ?? 0, y: p.state?.y ?? 0,
     }))
   }
@@ -419,8 +443,10 @@ export class WorldScene extends Phaser.Scene {
 
   /** Depois da física e antes de desenhar: câmera no jogador, sombra dos pés, luz. */
   private preRender() {
-    const player = this.player
+    const ctl = this.npcCtl
+    const player = this.player ?? ctl?.player
     const cam = this.cameras.main
+    this.syncHiddenNpcs()
     if (player) {
       const s = player.sprite
       let x = cam.scrollX + (s.x - cam.width / 2 - cam.scrollX) * FOLLOW_LERP
@@ -430,7 +456,7 @@ export class WorldScene extends Phaser.Scene {
         y = cam.clampY(y)
       }
       cam.setScroll(x, y)
-      this.blob?.setPosition(s.x, s.y - 1).setDepth(s.depth - 0.5)
+      ;(ctl && !this.player ? ctl.blob : this.blob)?.setPosition(s.x, s.y - 1).setDepth(s.depth - 0.5)
     }
     // a grama chacoalha embaixo de quem está andando
     const s = player?.sprite
@@ -468,6 +494,12 @@ export class WorldScene extends Phaser.Scene {
   }
 
   update() {
+    const ctl = this.npcCtl
+    if (ctl) {
+      ctl.player.update()
+      this.publishNpc(ctl)
+      this.occluders.update(ctl.player.sprite.x, ctl.player.sprite.y)
+    }
     const player = this.player
     if (!player) return
     player.update()
@@ -494,6 +526,117 @@ export class WorldScene extends Phaser.Scene {
     hub.link.send({
       t: 'state', id: hub.link.selfId, zone: this.cfg.zone.id,
       x: Math.round(s.x * 10) / 10, y: Math.round(s.y * 10) / 10, dir: player.facing, anim: player.animName,
+    })
+  }
+
+  // ── Mestre controla um NPC ─────────────────────────────
+
+  private npcNoScroll = (e: KeyboardEvent) => {
+    if (!isTyping() && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault()
+  }
+
+  /** NPCs parados desta zona (pra lista do mestre). */
+  watchNpcs() {
+    return (this.cfg.zone.npcs ?? []).map((n) => ({ id: n.id, name: n.name, role: n.role }))
+  }
+
+  /** O NPC que o mestre controla agora (null = nenhum). */
+  controllingNpc() {
+    return this.npcCtl?.id ?? null
+  }
+
+  /**
+   * Câmera do mestre: passa a andar com este NPC (teclado, colisão e animação como um jogador).
+   * Os jogadores o veem andar. Não atravessa saídas: fica na zona.
+   */
+  async controlNpc(id: string): Promise<boolean> {
+    if (!this.cfg.watch || this.npcCtl || !this.solids) return false
+    const npc = (this.cfg.zone.npcs ?? []).find((n) => n.id === id)
+    if (!npc) return false
+    const texKey = `char:npc:${npc.id}`
+    try {
+      await buildCharacter(this, texKey, this.cfg.assetBase, npc.appearance)
+    } catch (err) {
+      console.error('[vortable] NPC não carregou', err)
+      return false
+    }
+    if (!this.sys.isActive() || this.npcCtl || !this.solids) return false
+    const player = new Player(this, texKey, npc.x, npc.y, npc.dir)
+    player.locked = this.inputLocked
+    this.physics.add.collider(player.sprite, this.solids)
+    const blob = this.add.image(npc.x, npc.y, BLOB).setScale(0.75, 0.6).setAlpha(0.32)
+    this.npcCtl = { id, player, blob, at: 0, sent: '' }
+    this.following = null
+    this.cameras.main.setZoom(2)
+    window.addEventListener('keydown', this.npcNoScroll)
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => window.removeEventListener('keydown', this.npcNoScroll))
+    this.cfg.hub?.hostNpc({ id, name: npc.name, appearance: npc.appearance, showName: !!npc.showName })
+    this.syncHiddenNpcs()
+    return true
+  }
+
+  /**
+   * Solta o NPC: ele fica onde está. Todos atualizam na hora; `persist` guarda o ponto na zona
+   * (pra quem entrar depois) e roda em segundo plano.
+   */
+  async releaseNpc(persist?: (r: { id: string; zone: string; x: number; y: number; dir: Dir }) => Promise<void>) {
+    const ctl = this.npcCtl
+    if (!ctl) return
+    this.npcCtl = null
+    window.removeEventListener('keydown', this.npcNoScroll)
+    const s = ctl.player.sprite
+    const r = { id: ctl.id, zone: this.cfg.zone.id, x: Math.round(s.x), y: Math.round(s.y), dir: ctl.player.facing }
+    s.destroy()
+    ctl.blob.destroy()
+    const hub = this.cfg.hub
+    this.applyNpcMove(r)
+    this.syncHiddenNpcs()
+    hub?.moveNpc(r)
+    hub?.unhostNpc(NPC_PEER + r.id)
+    try { await persist?.(r) } catch (err) { console.error('[vortable] não deu pra guardar o ponto do NPC', err) }
+  }
+
+  /** O NPC parado passa pra este ponto (e o "calço" dele junto). */
+  private applyNpcMove(m: { id: string; x: number; y: number; dir: Dir }) {
+    const npc = (this.cfg.zone.npcs ?? []).find((n) => n.id === m.id)
+    if (!npc) return
+    npc.x = m.x
+    npc.y = m.y
+    npc.dir = m.dir
+    this.npcs?.set(this.cfg.zone.npcs ?? [])
+    const block = this.npcSolids.get(m.id)
+    if (block) {
+      block.setPosition(m.x, m.y - 3)
+      ;(block.body as Phaser.Physics.Arcade.StaticBody).updateFromGameObject()
+    }
+  }
+
+  /** Quem está sendo controlado pelo mestre some do lugar parado (e o "calço" dele deixa de barrar). */
+  private syncHiddenNpcs() {
+    const ids = new Set<string>()
+    if (this.npcCtl) ids.add(this.npcCtl.id)
+    for (const id of this.cfg.hub?.peers.keys() ?? []) if (id.startsWith(NPC_PEER)) ids.add(id.slice(NPC_PEER.length))
+    const key = [...ids].sort().join(',')
+    if (key === this.hiddenNpcs) return
+    this.hiddenNpcs = key
+    this.npcs?.setHidden(ids)
+    for (const [id, block] of this.npcSolids) (block.body as Phaser.Physics.Arcade.StaticBody).enable = !ids.has(id)
+  }
+
+  /** Conta pra sala onde o NPC controlado está (como um jogador de id `npc:<id>`). */
+  private publishNpc(ctl: { id: string; player: Player; at: number; sent: string }) {
+    const hub = this.cfg.hub
+    if (!hub) return
+    const now = this.time.now
+    if (now - ctl.at < 100) return
+    const s = ctl.player.sprite
+    const sig = `${Math.round(s.x)},${Math.round(s.y)},${ctl.player.facing},${ctl.player.animName}`
+    if (sig === ctl.sent && now - ctl.at < 1000) return
+    ctl.at = now
+    ctl.sent = sig
+    hub.link.send({
+      t: 'state', id: NPC_PEER + ctl.id, zone: this.cfg.zone.id,
+      x: Math.round(s.x * 10) / 10, y: Math.round(s.y * 10) / 10, dir: ctl.player.facing, anim: ctl.player.animName,
     })
   }
 

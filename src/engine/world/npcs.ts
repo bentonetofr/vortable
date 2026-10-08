@@ -25,6 +25,8 @@ interface Item {
 
 export class NpcLayer {
   private items = new Map<string, Item>()
+  /** NPCs escondidos agora (o mestre está controlando: ele aparece como jogador). */
+  private hidden = new Set<string>()
 
   /** `names`: 'near' mostra o nome de quem está perto do foco; 'always' sempre (editor). */
   constructor(private scene: Phaser.Scene, private assetBase: string, private names: 'near' | 'always' = 'near') {
@@ -33,7 +35,13 @@ export class NpcLayer {
 
   /** Sprites visíveis agora (pra sombra do sol e luzes). */
   get sprites() {
-    return [...this.items.values()].map((i) => i.sprite).filter((s): s is Phaser.GameObjects.Sprite => !!s)
+    return [...this.items.values()].filter((i) => !this.hidden.has(i.npc.id)).map((i) => i.sprite).filter((s): s is Phaser.GameObjects.Sprite => !!s)
+  }
+
+  /** Esconde (ou mostra de volta) os NPCs parados com estes ids. */
+  setHidden(ids: Set<string>) {
+    this.hidden = ids
+    for (const it of this.items.values()) this.place(it)
   }
 
   /** Põe a lista de NPCs da zona na cena (cria os novos, move os que mudaram, tira os que saíram). */
@@ -83,12 +91,15 @@ export class NpcLayer {
   private place(it: Item) {
     const { sprite, shadow, label, npc } = it
     if (!sprite || !shadow || !label) return
+    const gone = this.hidden.has(npc.id)
+    sprite.setVisible(!gone)
+    shadow.setVisible(!gone)
     sprite.setPosition(npc.x, npc.y).setDepth(npc.y)
     shadow.setPosition(npc.x, npc.y - 1).setDepth(npc.y - 0.5)
     label.setPosition(npc.x, npc.y - 66).setDepth(1e8)
     if (label.text !== npc.name) label.setText(npc.name)
     // sem nome em cima da cabeça, a não ser que o mestre ligue (ZoneNpc.showName)
-    if (!npc.showName) label.setVisible(false)
+    if (!npc.showName || gone) label.setVisible(false)
     else if (this.names === 'always') label.setVisible(true)
     const key = `${it.texKey}:idle:${npc.dir}`
     if (sprite.anims.currentAnim?.key !== key && this.scene.anims.exists(key)) sprite.anims.play(key, true)
@@ -99,7 +110,7 @@ export class NpcLayer {
     if (this.names === 'always') return
     for (const it of this.items.values()) {
       if (!it.label) continue
-      if (!it.npc.showName) { it.label.setVisible(false); continue }
+      if (!it.npc.showName || this.hidden.has(it.npc.id)) { it.label.setVisible(false); continue }
       const near = !!focus && Phaser.Math.Distance.Between(focus.x, focus.y, it.npc.x, it.npc.y) < NAME_RANGE
       it.label.setVisible(near)
     }

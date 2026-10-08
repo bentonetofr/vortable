@@ -10,6 +10,7 @@
 //   teleport  {zone, x, y}             o mestre leva ESTE jogador pra outro lugar
 //   zone      {id}                     o mestre salvou esta zona: quem está nela recarrega
 //   react     {id, name, emoji, zone, x, y}   reação de um espectador (um emoji que sobe no ponto x,y da zona)
+//   npcmove   {zone, id, x, y, dir}    o mestre largou um NPC que controlava: ele fica nesse ponto
 //   env       {zone, hour, weather, wind}   o mestre muda hora/tempo/vento ao vivo
 //                                      (zone '*' = todas as zonas; null = o padrão da zona)
 //
@@ -21,7 +22,14 @@ import type { Appearance, Dir } from '../types'
 
 export type NetAnim = 'idle' | 'walk' | 'run'
 
-export interface NetHello { t: 'hello'; id: string; name: string; appearance: Appearance }
+/**
+ * `npc`: NPC que o mestre está controlando (id `npc:<id do NPC>`). Aparece como um jogador, mas o NPC
+ * parado da zona some enquanto isso, e o nome só aparece se `showName`.
+ */
+export interface NetHello { t: 'hello'; id: string; name: string; appearance: Appearance; npc?: boolean; showName?: boolean }
+export interface NetNpcMove { t: 'npcmove'; zone: string; id: string; x: number; y: number; dir: Dir }
+/** Prefixo do id de um NPC controlado pelo mestre na rede. */
+export const NPC_PEER = 'npc:'
 export interface NetState { t: 'state'; id: string; zone: string; x: number; y: number; dir: Dir; anim: NetAnim }
 export interface NetEnv { t: 'env'; zone: string; hour: number | null; weather: string | null; wind: number | null }
 /** Reações que o espectador pode mandar. */
@@ -29,6 +37,7 @@ export const REACTIONS = ['👏', '😮', '😂', '❤️', '🔥', '🎉', '�
 export interface NetReact { t: 'react'; id: string; name: string; emoji: string; zone: string; x: number; y: number }
 export type NetMsg =
   | NetEnv
+  | NetNpcMove
   | NetReact
   | { t: 'zone'; id: string }
   | NetHello
@@ -63,7 +72,10 @@ export function parseNet(raw: unknown): NetMsg | null {
     case 'hello': {
       const a = m.appearance as Appearance | undefined
       if (typeof m.id !== 'string' || !m.id || !a || a.version !== 2 || typeof a.slots !== 'object') return null
-      return { t: 'hello', id: m.id, name: typeof m.name === 'string' ? m.name.slice(0, 60) : 'Jogador', appearance: a }
+      return {
+        t: 'hello', id: m.id, name: typeof m.name === 'string' ? m.name.slice(0, 60) : 'Jogador', appearance: a,
+        ...(m.id.startsWith(NPC_PEER) ? { npc: true, showName: m.showName === true } : {}),
+      }
     }
     case 'who': return { t: 'who' }
     case 'state':
@@ -87,6 +99,9 @@ export function parseNet(raw: unknown): NetMsg | null {
       if (typeof m.id !== 'string' || typeof m.zone !== 'string' || !num(m.x) || !num(m.y)) return null
       if (typeof m.emoji !== 'string' || !(REACTIONS as readonly string[]).includes(m.emoji)) return null
       return { t: 'react', id: m.id, name: typeof m.name === 'string' ? m.name.slice(0, 60) : '', emoji: m.emoji, zone: m.zone, x: m.x, y: m.y }
+    case 'npcmove':
+      if (typeof m.zone !== 'string' || typeof m.id !== 'string' || !num(m.x) || !num(m.y)) return null
+      return { t: 'npcmove', zone: m.zone.slice(0, 80), id: m.id.slice(0, 80), x: m.x, y: m.y, dir: DIRS.includes(m.dir as Dir) ? (m.dir as Dir) : 'down' }
     case 'teleport':
       return typeof m.zone === 'string' && num(m.x) && num(m.y) ? { t: 'teleport', zone: m.zone, x: m.x, y: m.y } : null
     default: return null
@@ -102,6 +117,9 @@ export class NetHub {
   private zoneChanges = new Set<(id: string) => void>()
   private teleports = new Set<(m: { zone: string; x: number; y: number }) => void>()
   private reactions = new Set<(m: NetReact) => void>()
+  private npcMoves = new Set<(m: NetNpcMove) => void>()
+  /** NPCs que ESTE mestre está controlando agora (vistos pela sala como jogadores). */
+  private hosted = new Map<string, NetHello>()
   private hello: NetHello | null = null
   private asked = false
 
@@ -120,6 +138,23 @@ export class NetHub {
   /** Observador (a câmera do mestre): só pergunta quem está na sala, sem aparecer. */
   observe() {
     this.link.send({ t: 'who' })
+  }
+
+  /** Mestre: começa a controlar um NPC (a sala o vê como um jogador de id `npc:<id>`). */
+  hostNpc(npc: { id: string; name: string; appearance: Appearance; showName: boolean }) {
+    const hello: NetHello = { t: 'hello', id: NPC_PEER + npc.id, name: npc.name, appearance: npc.appearance, npc: true, showName: npc.showName }
+    this.hosted.set(hello.id, hello)
+    this.link.send(hello)
+  }
+
+  /** Mestre: largou o NPC (some da sala como jogador). */
+  unhostNpc(peerId: string) {
+    if (this.hosted.delete(peerId)) this.link.send({ t: 'bye', id: peerId })
+  }
+
+  /** Mestre: o NPC largado fica neste ponto (todos atualizam o NPC parado da zona). */
+  moveNpc(m: Omit<NetNpcMove, 't'>) {
+    this.link.send({ t: 'npcmove', ...m })
   }
 
   /** Mestre: muda hora/tempo/vento ao vivo (vale pra mim e pra sala). */
@@ -142,6 +177,7 @@ export class NetHub {
   /** A rede acabou de abrir (ou reabriu): conta quem sou e pergunta quem está aí. */
   resync() {
     // observador (mestre ou espectador): sem boneco, só pergunta quem está na sala
+    for (const h of this.hosted.values()) this.link.send(h)
     if (!this.hello) { this.link.send({ t: 'who' }); return }
     this.link.send(this.hello)
     this.link.send({ t: 'who' })
@@ -149,6 +185,7 @@ export class NetHub {
 
   /** Saindo: avisa e esquece todo mundo. */
   leave() {
+    for (const id of [...this.hosted.keys()]) this.unhostNpc(id)
     this.link.send({ t: 'bye', id: this.link.selfId })
     this.peers.clear()
     this.envs.clear()
@@ -156,6 +193,7 @@ export class NetHub {
     this.teleports.clear()
     this.zoneChanges.clear()
     this.reactions.clear()
+    this.npcMoves.clear()
   }
 
   /** Chegou uma mensagem da rede. */
@@ -165,6 +203,7 @@ export class NetHub {
     switch (msg.t) {
       case 'who':
         if (this.hello) this.link.send(this.hello)
+        for (const h of this.hosted.values()) this.link.send(h)
         break
       case 'hello': {
         if (msg.id === this.link.selfId) break
@@ -190,6 +229,9 @@ export class NetHub {
       case 'react':
         this.reactions.forEach((fn) => fn(msg))
         break
+      case 'npcmove':
+        this.npcMoves.forEach((fn) => fn(msg))
+        break
       case 'env':
         this.envs.set(msg.zone, msg)
         break
@@ -208,6 +250,12 @@ export class NetHub {
   onZoneChanged(fn: (id: string) => void) {
     this.zoneChanges.add(fn)
     return () => { this.zoneChanges.delete(fn) }
+  }
+
+  /** O mestre largou um NPC num ponto novo. */
+  onNpcMove(fn: (m: NetNpcMove) => void) {
+    this.npcMoves.add(fn)
+    return () => { this.npcMoves.delete(fn) }
   }
 
   /** Chegou uma reação (de um espectador) pra mostrar no mapa. */
