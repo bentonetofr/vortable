@@ -32,7 +32,9 @@ const pick = (list) => list[Math.floor(rnd() * list.length)]
 // ── objetos e terrenos (confere se todos existem) ──
 const O = {
   shelfA: 'base-cabinets@32,5', shelfB: 'base-cabinets@64,5', shelfC: 'int@32,192', shelfCobweb: 'int@0,256',
-  books: 'int@224,208',
+  // livros soltos (pacote "livros", arte do Vortable)
+  bookStack3: 'books@2,4', bookStackTall: 'books@33,0', bookOpen: 'books@66,6', bookFlat: 'books@98,6', scrolls: 'books@130,6',
+  bookMess: 'books@161,0', papersStack: 'books@195,5', bookStanding: 'books@226,2',
   table: 'furn-dark-wood@0,233', desk: 'furn-dark-wood@272,896',
   chairBack: 'furn-dark-wood@326,962', chairBack2: 'furn-dark-wood@358,962', chairLow: 'furn-dark-wood@387,960',
   armchair: 'furn-dark-wood@386,545', coffee: 'furn-dark-wood@328,258',
@@ -51,6 +53,7 @@ const O = {
   papers: 'int@289,66', rolledRed: 'med-deco@201,1216', rolledBrown: 'med-deco@201,1280',
   bush: 'plants@192,332', fern1: 'plants@1,264', fern2: 'plants@32,262', fernRed: 'plants@1,296', bamboo: 'plants@192,384',
   chest: 'base-chests@0,0', chestRound: 'base-chests@32,0',
+  skull: 'int@295,32', flasks: 'int@289,128', goblet: 'int@202,1', bottle: 'int@172,1', tray: 'int@167,34', chairHigh: 'furn-dark-wood@100,231',
   web1: 'dun@288,136', web2: 'dun@296,160',
 }
 for (const [k, id] of Object.entries(O)) if (!catalog.has(id)) throw new Error(`Objeto não existe no catálogo: ${k} = ${id}`)
@@ -63,6 +66,9 @@ const COL0 = [4, 16, 28, 40, 52]         // 1º tile de cada coluna de blocos
 const ROW0 = [10, 16, 22, 28, 34, 40, 46] // 1º tile de cada fileira de blocos
 const ALLEY_C = [14, 26, 38, 50]         // centro dos becos verticais
 const ALLEY_R = [14, 20, 26, 32, 38, 44] // centro dos becos horizontais
+
+/** Um livro/pergaminho qualquer pra pôr sobre uma mesa. */
+const bookProp = () => pick([O.bookStack3, O.bookStackTall, O.bookOpen, O.bookFlat, O.scrolls, O.bookMess, O.papersStack, O.bookStanding])
 
 const shelfKinds = [O.shelfA, O.shelfC, O.shelfB, O.shelfA, O.shelfC, O.shelfA]
 
@@ -146,7 +152,7 @@ function tablesPlaza(f, ci, ri) {
       f.putPx(pick([O.chairBack, O.chairBack2]), cx + dx, base - 20)
       f.putPx(O.chairLow, cx + dx, base + 24)
     }
-    f.putPx(O.books, cx - 28, base - 14, { z: 12 })
+    f.putPx(bookProp(), cx - 28, base - 14, { z: 12 })
     f.putPx(O.lampTable, cx + 4, base - 12, { z: 12 })
     f.light(`mesa-${Math.round(cx)}-${r0}`, cx + 4, base - 34, 100, '#ffc980', 0.75, 0.25)
   }
@@ -174,6 +180,43 @@ function loungePlaza(f, ci, ri, brick) {
   f.putPx(O.coffee, cx * TILE + 16, (r0 + 3) * TILE)
   f.putPx(O.candleTable, cx * TILE + 16 - 56, (r0 + 5) * TILE)
   f.putPx(O.candleTable, cx * TILE + 16 + 56, (r0 + 5) * TILE)
+}
+
+// mesa gigante do altar: duas fileiras de mesas compridas lado a lado, cobertas de livros empilhados
+// e bagunçados, com pergaminhos, frascos, uma caveira e uma cadeira encostada
+function giantDesk(f, cx, base) {
+  const rows = [base - 34, base]
+  const tables = [-96, 0, 96]
+  for (const y of rows) for (const dx of tables) f.putPx(O.table, cx + dx, y)
+  // livros: montes espalhados, uns sobre os outros (z maior = mais alto), virados pra todo lado
+  for (const y of rows) {
+    for (let i = 0; i < 16; i++) {
+      const x = cx - 138 + (i + rnd() * 0.8) * 17
+      const yy = y - 10 + Math.floor(rnd() * 14) - 6
+      const z = 13 + Math.floor(rnd() * 5)
+      f.putPx(bookProp(), x, yy, { z, flip: rnd() < 0.5 })
+      if (rnd() < 0.55) f.putPx(bookProp(), x + (rnd() - 0.5) * 12, yy, { z: z + 9 + Math.floor(rnd() * 4), flip: rnd() < 0.5 })
+      if (rnd() < 0.25) f.putPx(bookProp(), x + (rnd() - 0.5) * 10, yy - 1, { z: z + 19, flip: rnd() < 0.5 })
+    }
+  }
+  // o resto da bagunça: cálices, frascos, caveira, taças e lamparinas
+  f.putPx(O.chalice, cx - 118, base - 34 - 4, { z: 14 })
+  f.putPx(O.chalice, cx + 118, base - 34 - 4, { z: 14 })
+  f.putPx(O.skull, cx - 40, base - 40, { z: 16 })
+  f.putPx(O.flasks, cx + 50, base - 8, { z: 14 })
+  f.putPx(O.flasks, cx - 108, base - 6, { z: 14, flip: true })
+  f.putPx(O.goblet, cx + 12, base - 4, { z: 14 })
+  f.putPx(O.bottle, cx - 70, base - 2, { z: 14 })
+  f.putPx(O.tray, cx + 88, base - 40, { z: 15 })
+  f.putPx(O.lampTable, cx - 12, base - 38, { z: 14 })
+  f.putPx(O.lampTable, cx + 134, base - 30, { z: 14 })
+  f.putPx(O.lampTable, cx - 140, base - 36, { z: 14 })
+  f.light('mesa-altar-1', cx - 12, base - 70, 120, '#ffc980', 0.8, 0.25)
+  f.light('mesa-altar-2', cx + 134, base - 62, 110, '#ffc980', 0.7, 0.25)
+  f.light('mesa-altar-3', cx - 140, base - 68, 110, '#ffc980', 0.7, 0.25)
+  // cadeira encostada na mesa (de frente pra ela) e outra puxada de lado
+  f.putPx(O.chairHigh, cx + 6, base + 22)
+  f.putPx(O.chairBack2, cx - 74, base + 36, { flip: true })
 }
 
 // escada de degraus (3 tiles de largura × 2 de altura) cruzando o beco; a saída é a faixa de baixo
@@ -236,23 +279,22 @@ const F1 = makeFloor({ n: 1, id: 'torvallen-biblioteca-1', name: 'Biblioteca de 
       const base = (ty + 1) * TILE
       f.putPx(O.table, cx, base)
       for (const dx of [-30, 0, 30]) { f.putPx(pick([O.chairBack, O.chairBack2]), cx + dx, base - 20); f.putPx(O.chairLow, cx + dx, base + 24) }
-      f.putPx(O.books, cx - 28, base - 14, { z: 12 })
+      f.putPx(bookProp(), cx - 28, base - 14, { z: 12 })
       f.putPx(O.lampTable, cx + 4, base - 12, { z: 12 })
       f.light(`mesa-${Math.round(cx)}-${ty}`, cx + 4, base - 34, 96, '#ffc980', 0.75, 0.25)
     }
   }
   const altar = 9
-  f.put(O.statueAngel, 28, altar); f.put(O.statueAngel, 36, altar, { flip: true })
-  f.put(O.statueMaiden, 25, altar + 1); f.put(O.statueMaiden, 39, altar + 1, { flip: true })
-  f.putPx(O.desk, 32 * TILE + 16, (altar + 1) * TILE)
-  f.put(O.chalice, 30, altar); f.put(O.chalice, 34, altar)
+  f.put(O.statueAngel, 26, altar); f.put(O.statueAngel, 38, altar, { flip: true })
+  f.put(O.statueMaiden, 24, altar + 1); f.put(O.statueMaiden, 40, altar + 1, { flip: true })
+  giantDesk(f, 32 * TILE + 16, (altar + 1) * TILE + 12)
   f.put(O.candleTable, 29, 11); f.put(O.candleTable, 35, 11)
   f.light('altar', 32 * TILE + 16, 9 * TILE, 200, '#ffd9a0', 0.7, 0.1)
   for (const ty of [11, 20, 29, 38, 46]) f.light(`lustre-${ty}`, 32 * TILE + 16, ty * TILE, 270, '#ffd49a', 0.85, 0.14)
   // entrada ao sul: mesa da bibliotecária e postes de luz
   f.putPx(O.table, 32 * TILE + 16, 50 * TILE)
   f.putPx(O.chairBack, 32 * TILE + 16, 50 * TILE - 22)
-  f.putPx(O.books, 32 * TILE + 16 - 26, 50 * TILE - 12, { z: 12 })
+  f.putPx(bookProp(), 32 * TILE + 16 - 26, 50 * TILE - 12, { z: 12 })
   f.putPx(O.lampTable, 32 * TILE + 16 + 8, 50 * TILE - 10, { z: 12 })
   f.put(O.torchPost, 28, 52); f.put(O.torchPost, 36, 52)
   f.light('entrada-e', 28 * TILE + 16, 52 * TILE - 20, 150, '#ffb25e', 0.8, 0.6)

@@ -1,0 +1,98 @@
+{
+  "name": "Livros soltos (arte original do Vortable)",
+  "license": "CC0 1.0 (arte própria, gerada por scripts/make-books.mjs)",
+  "source": "https://github.com/bentonetofr/vortable",
+  "sheets": [
+    {
+      "id": "books",
+      "file": "books.png",
+      "mode": "pieces",
+      "kind": "stand",
+      "category": "Livros",
+      "label": "Livros",
+      "tags": [
+        "livro",
+        "biblioteca",
+        "pergaminho",
+        "papel"
+      ],
+      "collision": "none",
+      "pieces": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 32,
+          "h": 24
+        },
+        {
+          "x": 32,
+          "y": 0,
+          "w": 32,
+          "h": 24
+        },
+        {
+          "x": 64,
+          "y": 0,
+          "w": 32,
+          "h": 24
+        },
+        {
+          "x": 96,
+          "y": 0,
+          "w": 32,
+          "h": 24
+        },
+        {
+          "x": 128,
+          "y": 0,
+          "w": 32,
+          "h": 24
+        },
+        {
+          "x": 160,
+          "y": 0,
+          "w": 32,
+          "h": 24
+        },
+        {
+          "x": 192,
+          "y": 0,
+          "w": 32,
+          "h": 24
+        },
+        {
+          "x": 224,
+          "y": 0,
+          "w": 32,
+          "h": 24
+        }
+      ]
+    }
+  ],
+  "objects": {
+    "books@2,4": {
+      "label": "Três livros empilhados"
+    },
+    "books@33,0": {
+      "label": "Pilha alta de livros"
+    },
+    "books@66,6": {
+      "label": "Livro aberto"
+    },
+    "books@98,6": {
+      "label": "Dois livros deitados"
+    },
+    "books@130,6": {
+      "label": "Pergaminhos"
+    },
+    "books@161,0": {
+      "label": "Pilha bagunçada de livros"
+    },
+    "books@195,5": {
+      "label": "Folhas soltas empilhadas"
+    },
+    "books@226,2": {
+      "label": "Livro em pé"
+    }
+  }
+}

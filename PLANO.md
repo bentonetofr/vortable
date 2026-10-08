@@ -334,7 +334,7 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
 - **Mundo TORVALLEN** (`scripts/torvallen.mjs` → `maps/torvallen.mundo.json`): a Grande Biblioteca do palácio
   em **4 andares** (térreo / Galeria dos Corredores / Arquivos Antigos / Torre dos Pergaminhos), ~1000 objetos
   e 16–39 luzes por andar: blocos de estantes (9×3) separados por becos de 3 tiles, praças de leitura, jardim,
-  cantos com lareira, nave com altar e vitral no térreo, átrio no 4º andar. **Seis escadas de degraus** (pacote
+  cantos com lareira, nave com **mesa gigante coberta de livros** (pacote `livros`, arte própria em `scripts/make-books.mjs`) e vitral no térreo, átrio no 4º andar. **Seis escadas de degraus** (pacote
   `escadas`, arte própria em `scripts/make-stairs.mjs`) ligam os andares (subir/descer troca de zona); no Vorterium: Mundos → *Mundos prontos* → *Criar este mundo*, ou *Importar mundo*
 - Testado: loopback de WebRTC (mestre + 2 jogadores: relay, teleporte, expulsão) e duas abas do motor
 - ⏳ Falta: hora/clima do mestre pra todos, zonas em tempo real (mestre editando), chat no balão
