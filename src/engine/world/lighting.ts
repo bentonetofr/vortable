@@ -25,6 +25,7 @@
 import Phaser from 'phaser'
 import { objectDef, sheetTexture, type ObjectDef } from '../assets/objects'
 import { TILE, type ZoneData, type ZoneObject } from '../types'
+import { hash2 } from '../rng'
 import { cornerTerrain } from './ground'
 import { ambientAt, darkness, daylight, golden, hexToRgb, twilight, lightingOf, rgbToInt, sunAt, zoneHour, type RGB } from './daylight'
 import { buildOcclusion, maskedLight, type Occlusion } from './shadowcast'
@@ -52,6 +53,9 @@ const LIGHT_RES = 0.5
 /** Sombras do sol: quão escuras no dia pleno. */
 const SUN_SHADOW_ALPHA = 0.3
 const VIGNETTE = 'light:vignette'
+const RAY = 'light:ray'
+/** Distância entre os raios de sol (px do mundo). */
+const RAY_GAP = 120
 const VIG = 128
 /** Cores da luz da hora dourada: amanhecer (rosado) e entardecer (laranja). */
 const DAWN_LIGHT: RGB = [1, 0.62, 0.5]
@@ -527,18 +531,27 @@ export class Lighting {
         g.stamp(SOFT, undefined, px(cx), py(cy), {
           scale: (reach * 0.8 * s) / SOFT_SIZE, tint: 0xfff0c8, alpha: 0.4 * warm, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
         })
-        // …e raios de luz atravessando o mapa, na direção das sombras
-        const rays = 7, len = reach * 1.5, lean = Math.tan(sun.angle) * (v.h / 2)
+        // …e raios de luz atravessando o mapa, na direção das sombras. Eles
+        // são do CENÁRIO: ficam em linhas fixas do mundo (só a luz oscila), e
+        // a câmera passa por eles — não andam colados no boneco
+        const len = reach * 2.4
+        const nx = Math.cos(sun.angle), ny = Math.sin(sun.angle) // perpendicular aos raios
+        const cs = [v.x * nx + v.y * ny, (v.x + v.w) * nx + v.y * ny, v.x * nx + (v.y + v.h) * ny, (v.x + v.w) * nx + (v.y + v.h) * ny]
+        const i0 = Math.floor(Math.min(...cs) / RAY_GAP) - 1, i1 = Math.ceil(Math.max(...cs) / RAY_GAP) + 1
         const ray = rgbToInt([1, 0.82, 0.55])
-        for (let i = 0; i < rays; i++) {
-          const along = (i + 0.5) / rays
-          const wob = Math.sin(t * 0.25 + i * 1.7)
-          const x0 = v.x - 40 + along * (v.w + 80) + lean + wob * 22
-          const width = 70 + 55 * ((i * 37) % 5) / 4
-          const shimmer = 0.55 + 0.45 * Math.sin(t * 0.45 + i * 2.3)
-          g.stamp(BEAM, undefined, px(x0), py(v.y - 30), {
-            originX: 0.5, originY: 0, scaleX: (width * s) / 64, scaleY: (len * s) / 128,
-            rotation: sun.angle, tint: ray, alpha: 0.2 * warm * shimmer, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
+        for (let i = i0; i <= i1; i++) {
+          const h1 = hash2(i, 11) % 1000 / 1000, h2 = hash2(i, 29) % 1000 / 1000, h3 = hash2(i, 47) % 1000 / 1000
+          if (h3 < 0.28) continue // nem toda faixa tem raio
+          const c = i * RAY_GAP + (h1 - 0.5) * RAY_GAP * 0.7 + Math.sin(t * 0.12 + i * 1.3) * 14
+          const width = 56 + 80 * h2
+          const shimmer = 0.5 + 0.5 * Math.sin(t * (0.3 + 0.25 * h1) + i * 2.3)
+          // o ponto da reta (n·p = c) na altura do meio da tela, recuado até antes da tela
+          const midY = v.y + v.h / 2
+          const mx = (c - ny * midY) / nx
+          const back = len * 0.5
+          g.stamp(RAY, undefined, px(mx + Math.sin(sun.angle) * back), py(midY - Math.cos(sun.angle) * back), {
+            originX: 0.5, originY: 0, scaleX: (width * s) / 32, scaleY: (len * s) / 128,
+            rotation: sun.angle, tint: ray, alpha: 0.2 * warm * (0.45 + 0.55 * shimmer) * (0.6 + 0.4 * h2), blendMode: Phaser.BlendModes.ADD, skipBatch: true,
           })
         }
       }
@@ -678,6 +691,29 @@ function ensureTextures(scene: Phaser.Scene) {
     })
   }
   add(SOFT, softCanvas)
+  if (!tm.exists(RAY)) {
+    // raio de sol: macio nas laterais e nas pontas, parelho no meio (não some
+    // com a distância: tem que ficar parado no mapa, não na tela)
+    const c = document.createElement('canvas')
+    c.width = 32
+    c.height = 128
+    const ctx = c.getContext('2d', CPU)!
+    const img = ctx.createImageData(32, 128)
+    for (let y = 0; y < 128; y++) {
+      const ty = y / 127
+      const ends = Math.min(1, ty / 0.18, (1 - ty) / 0.18)
+      for (let x = 0; x < 32; x++) {
+        const dx = Math.abs(x / 31 - 0.5) * 2
+        const side = Math.pow(Math.max(0, 1 - dx * dx), 1.5)
+        const v = Math.round(255 * side * ends * ends * (3 - 2 * ends))
+        const i = (y * 32 + x) * 4
+        img.data[i] = img.data[i + 1] = img.data[i + 2] = v
+        img.data[i + 3] = 255
+      }
+    }
+    ctx.putImageData(img, 0, 0)
+    add(RAY, c)
+  }
   if (!tm.exists(BEAM)) {
     // facho: mais forte embaixo da janela, some no chão; bordas macias e alargando
     const c = document.createElement('canvas')

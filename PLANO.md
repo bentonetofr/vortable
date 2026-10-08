@@ -231,7 +231,7 @@ velocidade no relógio real, então a luz muda devagar (com dia de 24 min, 19h�
 Paleta do céu em 22 pontos (índigo → magenta → salmão → ouro no amanhecer; creme → âmbar →
 laranja → rosa → roxo no entardecer) e, nessas horas:
 - banho de luz quente por cima do mapa, clarão grande vindo do lado do sol e **raios de luz**
-  atravessando o mapa na direção das sombras (cintilando devagar)
+  atravessando o mapa na direção das sombras, **fixos no cenário** (a câmera passa por eles; só a luz cintila devagar)
 - sombras mais longas, fortes e **arroxeadas** (luz quente, sombra fria); cantos do mapa
   arroxeados; sombra de nuvens mais leve
 - **grãos de luz dourados** flutuando, **bandos de pássaros** cruzando o céu, água cintilando em
