@@ -282,6 +282,23 @@ await pool(missing, 12, async (f) => {
 
 items.sort((a, b) => a.slot.localeCompare(b.slot) || a.name.localeCompare(b.name))
 
+/**
+ * Tons que o LPC não tem (os castanhos dele puxam pro laranja e o marinho pro roxo).
+ * Cada rampa tem 6 cores, do escuro ao claro, como as do LPC.
+ */
+const EXTRA_PALETTES = {
+  hair: {
+    cocoa: ['#0d0806', '#1c120d', '#2e2018', '#433025', '#5c4535', '#7a5f4c'],
+  },
+  cloth: {
+    midnight: ['#07090f', '#0f1522', '#172136', '#20304c', '#2d4266', '#3d5882'],
+    oxblood: ['#120706', '#25100c', '#3a1a13', '#50241a', '#6a3324', '#874633'],
+    pale_gray: ['#2a272a', '#4f4b4f', '#76716f', '#989391', '#b3aeab', '#cdc8c4'],
+    espresso: ['#0c0605', '#1c0f0b', '#2d1a14', '#3f261c', '#573629', '#704733'],
+    steel_blue: ['#0a1219', '#142331', '#1f3547', '#2d4a60', '#41627b', '#587c97'],
+  },
+}
+
 const outDir = path.join(ROOT, 'public', 'assets', 'character')
 fs.mkdirSync(outDir, { recursive: true })
 fs.writeFileSync(path.join(outDir, 'catalog.json'), JSON.stringify({
@@ -292,9 +309,9 @@ fs.writeFileSync(path.join(outDir, 'catalog.json'), JSON.stringify({
   slots: SLOTS.map(({ id, label, group, required }) => ({ id, label, group, ...(required ? { required } : {}) })),
   items,
 }))
-// só a paleta ulpc vira opção de cor; a lpcr fica pra resolver cores-base
+// só a paleta ulpc vira opção de cor (mais as nossas, EXTRA_PALETTES); a lpcr fica pra resolver cores-base
 fs.writeFileSync(path.join(outDir, 'palettes.json'), JSON.stringify(
-  Object.fromEntries(MATERIALS.map((m) => [m, palettes[m].ulpc ?? {}])),
+  Object.fromEntries(MATERIALS.map((m) => [m, { ...(palettes[m].ulpc ?? {}), ...(EXTRA_PALETTES[m] ?? {}) }])),
 ))
 
 // créditos (a licença exige)

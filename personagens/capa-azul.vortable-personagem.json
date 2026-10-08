@@ -21,43 +21,53 @@
           "hair": {
             "id": "hair/short/hair_messy2",
             "colors": {
-              "color": "dark_brown"
+              "color": "cocoa"
             }
           },
           "clothes": {
-            "id": "torso/shirts/longsleeve/torso_clothes_longsleeve2",
+            "id": "torso/shirts/longsleeve/torso_clothes_longsleeve_formal",
             "colors": {
-              "color": "slate"
+              "color": "pale_gray"
             }
           },
           "neck": {
             "id": "headwear/neck/neck_jabot",
             "colors": {
-              "color": "navy"
+              "color": "steel_blue"
             }
+          },
+          "vest": {
+            "id": "torso/vest/torso_clothes_vest_open",
+            "variant": "black"
           },
           "cape": {
             "id": "torso/cape/cape_solid",
             "colors": {
-              "color": "navy"
+              "color": "midnight"
+            }
+          },
+          "arms": {
+            "id": "arms/wrists/wrists_cuffs",
+            "colors": {
+              "color": "midnight"
             }
           },
           "legs": {
-            "id": "legs/pants/legs_pants",
+            "id": "legs/pants/legs_pantaloons",
             "colors": {
-              "color": "navy"
+              "color": "midnight"
             }
           },
           "shoes": {
             "id": "feet/boots/feet_boots_revised",
             "colors": {
-              "color": "walnut"
+              "color": "espresso"
             }
           },
-          "scar_eye_l": {
-            "id": "body/wounds/wound_eye_left",
+          "scar_eye_r": {
+            "id": "body/wounds/wound_eye_right",
             "colors": {
-              "color": "maroon"
+              "color": "rose"
             }
           }
         }
