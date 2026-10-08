@@ -224,6 +224,16 @@ nova faz isso numa ação só, em qualquer forma:
   desenho); fumaça de chaminé (falta casa por fora); controle da hora pelo mestre (M4)
 - ✅ *Uma taverna à noite, com lareira e velas, parece aconchegante; uma masmorra, ameaçadora*
 
+#### Hora dourada (amanhecer e entardecer) ✅
+Paleta do céu em 22 pontos (índigo → magenta → salmão → ouro no amanhecer; creme → âmbar →
+laranja → rosa → roxo no entardecer) e, nessas horas:
+- banho de luz quente por cima do mapa, clarão grande vindo do lado do sol e **raios de luz**
+  atravessando o mapa na direção das sombras (cintilando devagar)
+- sombras mais longas, fortes e **arroxeadas** (luz quente, sombra fria); cantos do mapa
+  arroxeados; sombra de nuvens mais leve
+- **grãos de luz dourados** flutuando, **bandos de pássaros** cruzando o céu, água cintilando em
+  dourado; no amanhecer, **névoa baixa rosada** e **orvalho** brilhando na grama
+
 ### M3.6 — Vento e vida (animações do mundo) ✅ (concluído)
 O mundo parado parece foto: tudo que é leve mexe com o vento, e o fogo vive.
 - **Vento por zona** (Parado / Brisa / Ventania) com **rajadas** que atravessam o mapa como

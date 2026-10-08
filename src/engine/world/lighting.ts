@@ -26,7 +26,7 @@ import Phaser from 'phaser'
 import { objectDef, sheetTexture, type ObjectDef } from '../assets/objects'
 import { TILE, type ZoneData, type ZoneObject } from '../types'
 import { cornerTerrain } from './ground'
-import { ambientAt, darkness, daylight, hexToRgb, lightingOf, rgbToInt, sunAt, zoneHour, type RGB } from './daylight'
+import { ambientAt, darkness, daylight, golden, hexToRgb, lightingOf, rgbToInt, sunAt, zoneHour, type RGB } from './daylight'
 import { buildOcclusion, maskedLight, type Occlusion } from './shadowcast'
 import { DOT, PUFF, Particles, type FireSource, type LeafSource } from './particles'
 import { DEFAULT_WIND, Wind, setActiveWind, swayOf, swaySpec, type SwaySpec } from './wind'
@@ -51,6 +51,11 @@ const DEPTH_GLOW = 900_001
 const LIGHT_RES = 0.5
 /** Sombras do sol: quão escuras no dia pleno. */
 const SUN_SHADOW_ALPHA = 0.3
+const VIGNETTE = 'light:vignette'
+const VIG = 128
+/** Cores da luz da hora dourada: amanhecer (rosado) e entardecer (laranja). */
+const DAWN_LIGHT: RGB = [1, 0.62, 0.5]
+const DUSK_LIGHT: RGB = [1, 0.5, 0.2]
 /** Objetos mais baixos que isso (acima do pé) não fazem sombra comprida. */
 const SHADOW_MIN_H = 18
 
@@ -336,6 +341,11 @@ export class Lighting {
     // subterrâneo não tem céu: sem tempo
     const wth = (this.weatherNow = weatherOf(l.place === 'underground' ? undefined : l.weather))
     const sun = sunAt(hour)
+    // hora dourada: o céu aberto deixa a luz esquentar; chuva e neve apagam
+    const gold = golden(hour)
+    const open = Math.max(0, 1 - wth.rain * 0.9 - wth.snow * 0.6 - wth.cover * 0.3)
+    const warm = outdoor ? gold * open : 0
+    const dawn = hour < 12
     // dentro de casa não venta (mas o que é pendurado ainda balança de leve)
     this.wind.update(dt, outdoor ? Math.max(l.wind ?? DEFAULT_WIND, wth.minWind) : 0)
     setActiveWind(this.wind)
@@ -346,6 +356,7 @@ export class Lighting {
     this.weather.update(dt, {
       view: { x: v.x - 32, y: v.y - 32, w: v.w + 64, h: v.h + 64 },
       def: wth, wind: this.wind, outdoor, sunAngle: sun.angle, cloudX, cloudY,
+      mist: outdoor && dawn ? gold * 0.38 * Math.max(0, 1 - wth.rain - wth.snow) : 0,
       day: l.place === 'underground' ? 0 : daylight(hour),
     })
     // o tempo escurece/acinzenta a luz do dia (dentro de casa, a parte que vem das janelas)
@@ -366,7 +377,8 @@ export class Lighting {
     rt.setPosition(v.x, v.y).setScale(1 / s)
     paint(rt, rgbToInt(ambient))
     // sombra de nuvens passando com o vento (de dia, ao ar livre)
-    const clouds = cover ? day : 0
+    // (na hora dourada a sombra das nuvens é mais leve: não apaga o pôr do sol)
+    const clouds = cover ? day * (1 - 0.55 * warm) : 0
     if (clouds > 0.02) {
       const shadowKey = cloudTextures(this.scene, cover).shadow
       const ox = ((cloudX % CLOUD_TILE) + CLOUD_TILE) % CLOUD_TILE
@@ -379,6 +391,13 @@ export class Lighting {
           })
         }
       }
+    }
+    // hora dourada: cantos arroxeados e mais escuros (moldura de luz do pôr do sol)
+    if (warm > 0.02) {
+      rt.stamp(VIGNETTE, undefined, 0, 0, {
+        originX: 0, originY: 0, scaleX: rt.width / VIG, scaleY: rt.height / VIG, alpha: Math.min(1, warm * 1.1),
+        blendMode: Phaser.BlendModes.MULTIPLY, skipBatch: true,
+      })
     }
     if (this.emission) {
       const pulse = 0.85 + 0.15 * Math.sin(t * 1.3)
@@ -442,30 +461,64 @@ export class Lighting {
     }
     rt.endDraw()
 
-    // ── brilho (só quando escurece) ──
-    if (dark > 0.05) {
+    // ── brilho: o fogo que acende o ar quando escurece + a luz dourada do sol ──
+    if (dark > 0.05 || warm > 0.02) {
       const g = this.glow
       g.setVisible(true).setPosition(v.x, v.y).setScale(1 / s)
-      paint(g, 0x000000)
-      for (const L of this.live) {
-        if (!visible(L.x, L.y, L.radius)) continue
-        const f = flick(L)
-        g.stamp(SOFT, undefined, px(L.x), py(L.y), {
-          scale: (L.radius * 1.1 * f.k * s) / SOFT_SIZE, tint: L.color, alpha: L.intensity * f.a * 0.3 * dark,
-          blendMode: Phaser.BlendModes.ADD, skipBatch: true,
-        })
+      // a hora dourada banha tudo de um tom quente (soma por cima do mapa)
+      // (no fim do entardecer o laranja vira rosa-magenta)
+      const late = dawn ? 0 : Math.max(0, Math.min(1, (hour - 18.2) / 1.2))
+      const tone: RGB = dawn ? DAWN_LIGHT : [
+        DUSK_LIGHT[0] + (0.95 - DUSK_LIGHT[0]) * late, DUSK_LIGHT[1] + (0.3 - DUSK_LIGHT[1]) * late, DUSK_LIGHT[2] + (0.55 - DUSK_LIGHT[2]) * late,
+      ]
+      paint(g, rgbToInt([tone[0] * warm * 0.17, tone[1] * warm * 0.17, tone[2] * warm * 0.17]))
+      if (dark > 0.05) {
+        for (const L of this.live) {
+          if (!visible(L.x, L.y, L.radius)) continue
+          const f = flick(L)
+          g.stamp(SOFT, undefined, px(L.x), py(L.y), {
+            scale: (L.radius * 1.1 * f.k * s) / SOFT_SIZE, tint: L.color, alpha: L.intensity * f.a * 0.3 * dark,
+            blendMode: Phaser.BlendModes.ADD, skipBatch: true,
+          })
+        }
+        // o facho de sol também "brilha" (passa do claro normal, como poeira iluminada)
+        for (const b of beams) {
+          g.stamp(BEAM, undefined, px(b.x), py(b.y), {
+            originX: 0.5, originY: 0, scaleX: b.sx * s, scaleY: b.sy * s,
+            rotation: sun.angle * 0.3, tint: b.tint, alpha: 0.22 * day, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
+          })
+        }
+        if (this.emission) {
+          g.stamp(this.emission.key, undefined, px(-TILE / 2), py(-TILE / 2), {
+            originX: 0, originY: 0, scale: (TILE / 4) * s, alpha: 0.35 * dark, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
+          })
+        }
       }
-      // o facho de sol também "brilha" (passa do claro normal, como poeira iluminada)
-      for (const b of beams) {
-        g.stamp(BEAM, undefined, px(b.x), py(b.y), {
-          originX: 0.5, originY: 0, scaleX: b.sx * s, scaleY: b.sy * s,
-          rotation: sun.angle * 0.3, tint: b.tint, alpha: 0.22 * day, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
+      if (warm > 0.02) {
+        // o sol está do lado oposto ao das sombras: um clarão grande vindo de lá…
+        const reach = Math.max(v.w, v.h)
+        const cx = v.x + v.w / 2 + Math.sin(sun.angle) * reach * 0.62, cy = v.y + v.h / 2 - Math.cos(sun.angle) * reach * 0.55
+        const bloom = rgbToInt([tone[0], tone[1] * 0.92, tone[2] * 0.8])
+        g.stamp(SOFT, undefined, px(cx), py(cy), {
+          scale: (reach * 1.9 * s) / SOFT_SIZE, tint: bloom, alpha: 0.5 * warm, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
         })
-      }
-      if (this.emission) {
-        g.stamp(this.emission.key, undefined, px(-TILE / 2), py(-TILE / 2), {
-          originX: 0, originY: 0, scale: (TILE / 4) * s, alpha: 0.35 * dark, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
+        g.stamp(SOFT, undefined, px(cx), py(cy), {
+          scale: (reach * 0.8 * s) / SOFT_SIZE, tint: 0xfff0c8, alpha: 0.4 * warm, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
         })
+        // …e raios de luz atravessando o mapa, na direção das sombras
+        const rays = 7, len = reach * 1.5, lean = Math.tan(sun.angle) * (v.h / 2)
+        const ray = rgbToInt([1, 0.82, 0.55])
+        for (let i = 0; i < rays; i++) {
+          const along = (i + 0.5) / rays
+          const wob = Math.sin(t * 0.25 + i * 1.7)
+          const x0 = v.x - 40 + along * (v.w + 80) + lean + wob * 22
+          const width = 70 + 55 * ((i * 37) % 5) / 4
+          const shimmer = 0.55 + 0.45 * Math.sin(t * 0.45 + i * 2.3)
+          g.stamp(BEAM, undefined, px(x0), py(v.y - 30), {
+            originX: 0.5, originY: 0, scaleX: (width * s) / 64, scaleY: (len * s) / 128,
+            rotation: sun.angle, tint: ray, alpha: 0.2 * warm * shimmer, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
+          })
+        }
       }
       g.endDraw()
     }
@@ -474,7 +527,9 @@ export class Lighting {
     const sunShadow = l.place === 'outdoor' && l.sunShadows !== false ? sun.strength * wth.sun : 0
     if (sunShadow > 0.02) {
       const sh = this.shade, k = v.zoom
-      sh.setVisible(true).setPosition(v.x, v.y).setScale(1 / k).setAlpha(SUN_SHADOW_ALPHA * sunShadow)
+      // na hora dourada a sombra é mais forte e arroxeada (luz quente, sombra fria)
+      const shadeTint = rgbToInt([0.2 * gold, 0.08 * gold, 0.34 * gold])
+      sh.setVisible(true).setPosition(v.x, v.y).setScale(1 / k).setAlpha(SUN_SHADOW_ALPHA * (1 + 0.55 * gold) * sunShadow)
       sh.clear()
       sh.beginDraw()
       for (const c of this.casters) {
@@ -484,14 +539,14 @@ export class Lighting {
         const bend = c.sway ? swayOf(c.sway) / Math.max(8, (def.h - def.sort) * sun.length) : 0
         sh.stamp(sheetTexture(def.sheet), c.frame, (o.x - v.x) * k, (o.y - def.sort - v.y) * k, {
           originX: 0.5, originY: 1, scaleX: (o.flip ? -1 : 1) * k, scaleY: -sun.length * k, rotation: sun.angle - bend,
-          tint: 0x000000, skipBatch: true,
+          tint: shadeTint, skipBatch: true,
         })
       }
       for (const c of this.extraCasters()) {
         if (!visible(c.x, c.y, 64)) continue
         sh.stamp(c.key, c.frame, (c.x - v.x) * k, (c.y - v.y) * k, {
           originX: 0.5, originY: c.originY, scaleX: (c.flipX ? -1 : 1) * k, scaleY: -sun.length * k, rotation: sun.angle,
-          tint: 0x000000, skipBatch: true,
+          tint: shadeTint, skipBatch: true,
         })
       }
       sh.endDraw()
@@ -512,6 +567,8 @@ export class Lighting {
       trees: particles && outdoor ? this.trees : [],
       water: particles && l.place !== 'underground' ? this.water : [],
       day,
+      warm: particles ? warm : 0,
+      dew: particles && outdoor && dawn ? warm : 0,
       // vaga-lume não sai na chuva nem na neve
       fireflies: particles && outdoor && !wth.rain && !wth.snow ? Math.max(0, (dark - 0.45) / 0.4) : 0,
       dust: particles && l.place !== 'outdoor' ? 1 : 0,
@@ -623,6 +680,18 @@ function ensureTextures(scene: Phaser.Scene) {
   }
   if (!tm.exists(DOT)) add(DOT, radial(16, 16, (d) => [255, 255, 255, Math.pow(Math.max(0, 1 - d), 1.6)]))
   if (!tm.exists(PUFF)) add(PUFF, radial(32, 32, (d) => [255, 255, 255, Math.pow(Math.max(0, 1 - d), 1.3) * 0.9]))
+  if (!tm.exists(VIGNETTE)) {
+    // cantos arroxeados: transparente no centro, roxo escuro nas bordas
+    const c = document.createElement('canvas')
+    c.width = c.height = VIG
+    const ctx = c.getContext('2d', CPU)!
+    const grad = ctx.createRadialGradient(VIG / 2, VIG / 2, VIG * 0.28, VIG / 2, VIG / 2, VIG * 0.72)
+    grad.addColorStop(0, 'rgba(90,40,110,0)')
+    grad.addColorStop(1, 'rgba(90,40,110,0.62)')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, VIG, VIG)
+    add(VIGNETTE, c)
+  }
   if (!tm.exists(BLOB)) add(BLOB, radial(32, 14, (d) => [0, 0, 0, Math.pow(Math.max(0, 1 - d), 0.9) * 0.9]))
 }
 

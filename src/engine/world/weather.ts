@@ -211,6 +211,8 @@ export interface WeatherFrame {
   sunAngle: number
   /** Brilho das nuvens de dia/noite (de noite somem no escuro). */
   day: number
+  /** Névoa baixa do amanhecer (0–1), rosada, mesmo com o céu limpo. */
+  mist: number
   /** Onde está o desenho das nuvens agora (o mesmo da sombra delas). */
   cloudX: number
   cloudY: number
@@ -359,10 +361,11 @@ export class WeatherFx {
     } else {
       this.sky?.setVisible(false)
     }
-    if (w.fog > 0.01 && outdoor) {
+    const fogAmount = Math.max(w.fog, f.mist)
+    if (fogAmount > 0.01 && outdoor) {
       if (!this.fog) this.fog = this.scene.add.tileSprite(0, 0, 4, 4, mist).setOrigin(0, 0).setDepth(DEPTH_FOG).setTileScale(2)
-      // neblina anda devagar, mesmo sem vento
-      this.tile(this.fog, mist, v, this.time * (6 + 30 * S), this.time * 3, 512).setAlpha(w.fog * 0.55).setTint(w.fogColor)
+      // neblina anda devagar, mesmo sem vento; a do amanhecer é rosada
+      this.tile(this.fog, mist, v, this.time * (6 + 30 * S), this.time * 3, 512).setAlpha(fogAmount * 0.55).setTint(f.mist > w.fog ? 0xffcfc0 : w.fogColor)
     } else {
       this.fog?.setVisible(false)
     }

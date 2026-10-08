@@ -7,6 +7,9 @@
 //   folha          — cai da copa das árvores, pousa e o vento leva pelo chão;
 //                    a cor vem da própria copa (cerejeira solta pétala rosa)
 //   brilho         — reflexos piscando na água
+//   poeira dourada — grãozinhos de luz flutuando no entardecer e amanhecer
+//   orvalho        — brilhos na grama ao amanhecer
+//   pássaros       — bandos cruzando o céu na hora dourada
 // ────────────────────────────────────────────────────────
 
 import Phaser from 'phaser'
@@ -16,6 +19,7 @@ export const DOT = 'light:dot'
 export const PUFF = 'light:puff'
 const LEAF = 'fx:leaf'
 const GLINT = 'fx:glint'
+const BIRD = ['fx:bird0', 'fx:bird1']
 export const DEPTH_GLOWING = 900_010
 export const DEPTH_AIR = 800_000
 /** Folha voando: na frente das coisas, mas debaixo da escuridão. */
@@ -24,7 +28,7 @@ const DEPTH_LEAF_AIR = 700_000
 const DEPTH_LEAF_GROUND = -399_000
 const DEPTH_GLINT = -449_000
 
-type Kind = 'spark' | 'flame' | 'smoke' | 'fly' | 'dust' | 'leaf' | 'glint'
+type Kind = 'spark' | 'flame' | 'smoke' | 'fly' | 'dust' | 'leaf' | 'glint' | 'mote' | 'dew' | 'bird'
 
 interface P {
   img: Phaser.GameObjects.Image
@@ -81,6 +85,10 @@ export interface ParticleFrame {
   dust: number
   /** 0–1: quanto sol (reflexos na água mais fortes de dia). */
   day: number
+  /** Hora dourada ao ar livre (0–1): grãos de luz e pássaros. */
+  warm: number
+  /** Amanhecer (0–1): orvalho na grama. */
+  dew: number
 }
 
 const FLIES_MAX = 18
@@ -110,6 +118,9 @@ export function ensureParticleTextures(scene: Phaser.Scene) {
   // folha 5×3 (com um tom mais claro na ponta) e brilho em cruz
   pixels(LEAF, ['.##+.', '#####', '.+##.'])
   pixels(GLINT, ['..+..', '..#..', '+###+', '..#..', '..+..'])
+  // pássaro de longe: dois quadros (asas pra cima e pra baixo)
+  pixels(BIRD[0], ['#.....#', '.#...#.', '..#.#..', '...#...'])
+  pixels(BIRD[1], ['...#...', '..#.#..', '.#...#.', '#.....#'])
 }
 
 export class Particles {
@@ -124,11 +135,11 @@ export class Particles {
 
   private take(kind: Kind, x: number, y: number): P {
     const img = this.pool.pop() ?? this.scene.add.image(0, 0, DOT)
-    const glowing = kind === 'spark' || kind === 'fly' || kind === 'flame'
-    const tex = kind === 'smoke' ? PUFF : kind === 'leaf' ? LEAF : kind === 'glint' ? GLINT : DOT
-    img.setTexture(tex).setVisible(true).setAlpha(0).setRotation(0).setScale(1).clearTint()
-      .setBlendMode(glowing || kind === 'glint' ? Phaser.BlendModes.ADD : Phaser.BlendModes.NORMAL)
-      .setDepth(glowing ? DEPTH_GLOWING : kind === 'leaf' ? DEPTH_LEAF_AIR : kind === 'glint' ? DEPTH_GLINT : DEPTH_AIR)
+    const glowing = kind === 'spark' || kind === 'fly' || kind === 'flame' || kind === 'mote'
+    const tex = kind === 'smoke' ? PUFF : kind === 'leaf' ? LEAF : kind === 'glint' || kind === 'dew' ? GLINT : kind === 'bird' ? BIRD[0] : DOT
+    img.setTexture(tex).setVisible(true).setAlpha(0).setRotation(0).setScale(1).setFlipX(false).clearTint()
+      .setBlendMode(glowing || kind === 'glint' || kind === 'dew' ? Phaser.BlendModes.ADD : Phaser.BlendModes.NORMAL)
+      .setDepth(glowing ? DEPTH_GLOWING : kind === 'leaf' ? DEPTH_LEAF_AIR : kind === 'glint' || kind === 'dew' ? DEPTH_GLINT : kind === 'bird' ? DEPTH_LEAF_AIR : DEPTH_AIR)
     const p: P = { img, kind, x, y, vx: 0, vy: 0, life: 0, max: 1, phase: Math.random() * Math.PI * 2, size: 1 }
     this.list.push(p)
     return p
@@ -230,7 +241,8 @@ export class Particles {
 
     // ── reflexos na água ──
     if (f.water.length) {
-      const rate = Math.min(14, f.water.length * 0.02) * (0.25 + 0.75 * f.day)
+      // na hora dourada o sol faz a água cintilar mais, em dourado
+      const rate = Math.min(14, f.water.length * 0.02) * (0.25 + 0.75 * f.day) * (1 + 1.6 * f.warm)
       for (let n = this.emit('glint', rate, dt); n > 0; n--) {
         for (let tries = 0; tries < 6; tries++) {
           const w = f.water[Math.floor(Math.random() * f.water.length)]
@@ -238,11 +250,49 @@ export class Particles {
           const p = this.take('glint', Math.round(w.x + (Math.random() - 0.5) * 28), Math.round(w.y + (Math.random() - 0.5) * 28))
           p.max = 0.5 + Math.random() * 0.6
           p.size = Math.random() < 0.3 ? 1 : 0.6
-          p.img.setTint(f.day > 0.3 ? 0xffffff : 0xc8d8ff)
+          p.img.setTint(f.warm > 0.3 ? 0xffd9a0 : f.day > 0.3 ? 0xffffff : 0xc8d8ff)
           break
         }
       }
     }
+
+    // ── hora dourada: orvalho (amanhecer) e bandos de pássaros ──
+    const area = Math.min(4, (v.w * v.h) / (700 * 450))
+    if (f.dew > 0.05) {
+      for (let n = this.emit('dew', f.dew * 16 * area, dt); n > 0; n--) {
+        const p = this.take('dew', Math.round(v.x + Math.random() * v.w), Math.round(v.y + Math.random() * v.h))
+        p.max = 0.9 + Math.random() * 1.4
+        p.size = Math.random() < 0.25 ? 0.9 : 0.5
+        p.img.setTint(Math.random() < 0.5 ? 0xfff0cc : 0xffd0e0)
+      }
+    }
+    if (f.warm > 0.3 && wind.strength < 0.9) {
+      for (let n = this.emit('birds', f.warm * 0.05, dt); n > 0; n--) {
+        const dir = Math.random() < 0.5 ? 1 : -1
+        const y0 = v.y + v.h * (0.08 + Math.random() * 0.6), x0 = dir > 0 ? v.x - 24 : v.x + v.w + 24
+        const count = 3 + Math.floor(Math.random() * 5), speed = 38 + Math.random() * 22
+        const sway = Math.random() * 6.28
+        for (let i = 0; i < count; i++) {
+          // formação em V atrás do líder
+          const rank = Math.ceil(i / 2), side = i % 2 ? 1 : -1
+          const p = this.take('bird', x0 - dir * rank * 11, y0 + side * rank * 6)
+          p.vx = dir * speed * (0.96 + Math.random() * 0.08)
+          p.vy = (Math.random() - 0.5) * 3
+          p.max = (v.w + 80) / speed + 3
+          p.phase = sway + i * 0.3
+          p.size = 1
+          p.img.setTint(0x1c1226).setFlipX(dir < 0)
+        }
+      }
+    }
+    const motes = Math.round(22 * f.warm)
+    for (let n = count('mote'); n < motes; n++) {
+      const p = this.take('mote', v.x + Math.random() * v.w, v.y + Math.random() * v.h)
+      p.max = 8 + Math.random() * 10
+      p.size = 0.14 + Math.random() * 0.12
+      p.img.setTint(0xffdca0)
+    }
+    let extraMotes = count('mote') - motes
 
     // ── vaga-lumes e poeira: mantém a quantidade pedida espalhada pela tela ──
     const flies = Math.round(FLIES_MAX * f.fireflies), dust = Math.round(DUST_MAX * f.dust)
@@ -268,7 +318,8 @@ export class Particles {
       // sobrando (amanheceu, apagou): somem aos poucos, quando acabam a vida
       if (p.kind === 'fly' && extraFlies > 0 && p.life > p.max * 0.5) { extraFlies--; p.max = Math.min(p.max, p.life + 1) }
       if (p.kind === 'dust' && extraDust > 0 && p.life > p.max * 0.5) { extraDust--; p.max = Math.min(p.max, p.life + 1) }
-      const wanders = p.kind === 'fly' || p.kind === 'dust' || p.kind === 'leaf'
+      if (p.kind === 'mote' && extraMotes > 0 && p.life > p.max * 0.5) { extraMotes--; p.max = Math.min(p.max, p.life + 1) }
+      const wanders = p.kind === 'fly' || p.kind === 'dust' || p.kind === 'leaf' || p.kind === 'mote'
       const outside = p.kind === 'leaf' && (p.x < 0 || p.y < 0 || p.x > f.bounds.w || p.y > f.bounds.h)
       if (p.life >= p.max || outside || (wanders && !inView(p.x, p.y, 160))) {
         this.drop(i)
@@ -300,6 +351,18 @@ export class Particles {
       } else if (p.kind === 'dust') {
         p.vx += Math.sin(t * 0.5 + p.phase) * 0.6 * dt
         alpha = (0.3 + 0.25 * Math.sin(t * 1.3 + p.phase)) * Math.min(1, a * 5, (1 - a) * 5)
+      } else if (p.kind === 'mote') {
+        // sobe devagar, levado pelo vento, cintilando
+        p.vx = wind.dx * (3 + 12 * S) + Math.sin(t * 0.8 + p.phase) * 3
+        p.vy = -2.5 + Math.cos(t * 0.6 + p.phase) * 2
+        alpha = (0.35 + 0.35 * Math.sin(t * 2.2 + p.phase * 3)) * Math.min(1, a * 5, (1 - a) * 5) * Math.min(1, f.warm * 1.6)
+      } else if (p.kind === 'dew') {
+        alpha = Math.sin(a * Math.PI) * 0.9
+        scaleX = scaleY = p.size * (0.6 + 0.4 * Math.sin(a * Math.PI))
+      } else if (p.kind === 'bird') {
+        p.vy += Math.sin(t * 1.3 + p.phase) * 2 * dt
+        p.img.setTexture(BIRD[Math.floor(t * 5 + p.phase * 2) % 2])
+        alpha = 0.85 * Math.min(1, a * 6, (1 - a) * 6)
       } else if (p.kind === 'glint') {
         alpha = Math.sin(a * Math.PI)
         scaleX = scaleY = p.size * (0.6 + 0.4 * Math.sin(a * Math.PI))
@@ -332,7 +395,7 @@ export class Particles {
       p.x += p.vx * dt
       p.y += p.vy * dt
       // folha e brilho no pixel inteiro (arte pixelada); o resto é macio
-      const pixel = p.kind === 'leaf' || p.kind === 'glint'
+      const pixel = p.kind === 'leaf' || p.kind === 'glint' || p.kind === 'dew' || p.kind === 'bird'
       p.img.setPosition(pixel ? Math.round(p.x) : p.x, pixel ? Math.round(p.y) : p.y).setAlpha(alpha).setScale(scaleX, scaleY)
     }
   }

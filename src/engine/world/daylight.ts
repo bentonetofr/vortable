@@ -32,16 +32,23 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [a[0] + (b[0] - a[0]) * t, a[1] 
 const SKY: [number, string][] = [
   [0, '#262f5c'],
   [4, '#283260'],
-  [5.2, '#46407a'],
-  [6, '#b07a8c'],
-  [6.8, '#f0b890'],
-  [8, '#fff0dc'],
-  [10, '#ffffff'],
+  [4.8, '#2f3668'],
+  [5.3, '#4d4180'],
+  [5.7, '#8c5a96'],
+  [6.1, '#e48aa0'],
+  [6.5, '#fba88a'],
+  [6.9, '#ffbf88'],
+  [7.4, '#ffdcae'],
+  [8.2, '#fff1de'],
+  [9.5, '#ffffff'],
   [15.5, '#ffffff'],
-  [17, '#ffe2b0'],
-  [18, '#ffb070'],
-  [18.8, '#d0707a'],
-  [19.6, '#6a5490'],
+  [16.5, '#fff0d4'],
+  [17.2, '#ffddaa'],
+  [17.8, '#ffc486'],
+  [18.3, '#ffa270'],
+  [18.8, '#f0809a'],
+  [19.3, '#a868a4'],
+  [19.9, '#53498a'],
   [20.6, '#323a6c'],
   [22, '#262f5c'],
   [24, '#262f5c'],
@@ -99,13 +106,33 @@ export function darkness(ambient: RGB) {
  * comprimento (escala da silhueta). De manhã a sombra cai pra oeste
  * (esquerda) e é longa; ao meio-dia é curta; à tarde vai pro leste.
  */
+/**
+ * Hora dourada (0–1): o amanhecer (~5h–8h, pico 6h30) e o entardecer
+ * (~16h30–20h, pico 18h20). É quando a luz esquenta, as sombras esticam
+ * e o céu ganha cor.
+ */
+export function golden(hour: number) {
+  const h = ((hour % 24) + 24) % 24
+  const dawn = smooth(5, 6.1, h) * (1 - smooth(7.1, 8.5, h))
+  const dusk = smooth(16.4, 17.9, h) * (1 - smooth(19, 20.3, h))
+  return Math.max(dawn, dusk)
+}
+
+/**
+ * Sol: direção da sombra (radianos; 0 = pra baixo, + = pra esquerda) e
+ * comprimento (escala da silhueta). De manhã a sombra cai pra oeste
+ * (esquerda) e é longa; ao meio-dia é curta; à tarde vai pro leste.
+ * `strength` é a força da sombra: existe do nascer ao pôr do sol, mesmo
+ * quando a luz ainda é fraca (as sombras compridas do amanhecer).
+ */
 export function sunAt(hour: number) {
   const h = ((hour % 24) + 24) % 24
   const t = Math.max(0, Math.min(1, (h - 6) / 12)) // 0 = nascente, 1 = poente
   const angle = (0.5 - t) * 2 * 1.05
   const height = Math.sin(t * Math.PI) // 0 no horizonte, 1 ao meio-dia
-  const length = 0.32 + (1 - height) * 0.62
-  return { angle, length, strength: daylight(h) }
+  const length = 0.3 + Math.pow(1 - height, 1.5) * 0.95
+  const strength = smooth(5.7, 7, h) * (1 - smooth(18.3, 19.6, h))
+  return { angle, length, strength }
 }
 
 /**
