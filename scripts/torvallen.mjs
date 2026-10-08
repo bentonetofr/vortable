@@ -429,6 +429,11 @@ for (const f of [...floors, ...extras]) f.zone.lights = f.lights
 
 // ── os arquivos ──
 const zones = [...floors, ...extras].map((f) => f.zone)
+// mesmo objeto no mesmo ponto (papéis espalhados caindo no mesmo lugar) vira um só
+for (const z of zones) {
+  const seen = new Set()
+  z.objects = z.objects.filter((o) => { const k = `${o.kind}|${o.x}|${o.y}|${o.flip ? 1 : 0}|${o.z ?? 0}`; if (seen.has(k)) return false; seen.add(k); return true })
+}
 const world = {
   version: 1, id: 'mundo-torvallen', name: 'TORVALLEN', start: F1.zone.id,
   layout: {
