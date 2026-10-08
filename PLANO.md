@@ -337,7 +337,7 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
   costas), alinhados coluna por coluna, separados por becos de 3 tiles que se cruzam em linha reta; sem planta,
   jardim, chafariz ou totem. Térreo: nave com tapete, estátuas, mesas de leitura e **mesa gigante coberta de
   livros** no altar (pacote `livros`, arte própria); 4º andar: átrio com a mesa gigante. **Seis escadas de
-  degraus** (pacote `escadas`, arte própria) nos cruzamentos dos becos ligam os andares (subir/descer troca de
+  degraus** (pacote `escadas`, arte própria) só nos quatro cantos do mapa ligam os andares (subir/descer troca de
   zona); no Vorterium: Mundos → *Mundos prontos* → *Criar este mundo*, ou *Importar mundo*
 - Testado: loopback de WebRTC (mestre + 2 jogadores: relay, teleporte, expulsão) e duas abas do motor
 - ⏳ Falta: hora/clima do mestre pra todos, zonas em tempo real (mestre editando), chat no balão

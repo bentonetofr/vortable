@@ -9,7 +9,7 @@
 //    separados por becos de 3 tiles; os becos se cruzam em linha reta
 //  • as estantes de um bloco usam sempre os mesmos modelos, alinhados coluna por coluna (nada de falhas)
 //  • nada de planta, jardim, chafariz ou totem: é uma biblioteca fechada, dentro de um palácio
-//  • as escadas ficam no cruzamento dos becos, nas mesmas coordenadas dos dois andares que ligam
+//  • as escadas ficam só nos quatro cantos do mapa, nas mesmas coordenadas dos dois andares que ligam
 import fs from 'node:fs'
 import { applyRooms, encodeRoom } from '../src/engine/world/rooms.ts'
 
@@ -70,6 +70,9 @@ const bookProp = () => pick([O.bookStack3, O.bookStackTall, O.bookOpen, O.bookFl
 /** Modelo da estante na coluna `c`: sempre o mesmo naquela coluna (A, A, B, A...), então tudo fica alinhado. */
 const shelfAt = (c) => (c % 4 === 2 ? O.shelfB : O.shelfA)
 
+// faixas da parede norte ocupadas pelas escadas dos cantos (andares 2 e 3)
+const CORNER_SKIP = [[3, 5], [59, 61]]
+
 // ── um andar ──
 function makeFloor({ n, id, name, floor, wall, trim, hour }) {
   const zone = {
@@ -121,7 +124,7 @@ function northWall(f, { windows, big = true, skipShelves = null }) {
   }
   for (const tx of [4, 24, 40, 59]) f.putPx(O.lampWall, tx * TILE + 16, 186)
   for (let tx = 3; tx <= 60; tx++) {
-    if (skipShelves && tx >= skipShelves[0] && tx <= skipShelves[1]) continue
+    if (skipShelves && skipShelves.some(([a, b]) => tx >= a && tx <= b)) continue
     f.put(shelfAt(tx), tx, 7)
   }
 }
@@ -243,7 +246,7 @@ const F1 = makeFloor({ n: 1, id: 'torvallen-biblioteca-1', name: 'Biblioteca de 
   f.paint(27, 7, 37, 12, T.warm)
   f.rug(29, 8, 36, 53, T.rug)           // tapete da nave, da entrada ao altar
   f.rug(30, 9, 35, 11, T.rugAltar)
-  northWall(f, { windows: [[11, O.windowWide], [19, O.windowWide], [44, O.windowWide], [52, O.windowWide], [7, O.windowSmall1], [56, O.windowSmall2], [15, O.windowSmall2], [48, O.windowSmall1]], skipShelves: [26, 37] })
+  northWall(f, { windows: [[11, O.windowWide], [19, O.windowWide], [44, O.windowWide], [52, O.windowWide], [7, O.windowSmall1], [56, O.windowSmall2], [15, O.windowSmall2], [48, O.windowSmall1]], skipShelves: [[26, 37]] })
   f.put(O.clock, 26, 7); f.put(O.clock, 37, 7)
   f.put(O.organ, 21, 7, { dx: 24 })
   buildBlocks(f, matrixOf([
@@ -279,7 +282,7 @@ const F2 = makeFloor({ n: 2, id: 'torvallen-biblioteca-2', name: 'Biblioteca de 
 {
   const f = F2
   f.rug(25, 8, 27, 53, T.rug); f.rug(37, 8, 39, 53, T.rug)   // tapetes nos becos longos
-  northWall(f, { windows: [[11, O.windowWide], [19, O.windowWide], [44, O.windowWide], [52, O.windowWide], [7, O.windowSmall1], [56, O.windowSmall2]] })
+  northWall(f, { windows: [[11, O.windowWide], [19, O.windowWide], [44, O.windowWide], [52, O.windowWide], [7, O.windowSmall1], [56, O.windowSmall2]], skipShelves: CORNER_SKIP })
   buildBlocks(f, matrixOf([
     'S S S S S', 'S S S S S', 'S S T S S', 'S S S S S', 'S T S T S', 'S S S S S', 'S S T S S', 'S S S S S',
   ]))
@@ -289,7 +292,7 @@ const F2 = makeFloor({ n: 2, id: 'torvallen-biblioteca-2', name: 'Biblioteca de 
 const F3 = makeFloor({ n: 3, id: 'torvallen-biblioteca-3', name: 'Biblioteca de Torvallen — 3º andar (Arquivos Antigos)', floor: T.darkWood, wall: 'wall-209', trim: 'ceil-3', hour: 18.6 })
 {
   const f = F3
-  northWall(f, { windows: [[11, O.windowSmall1], [19, O.windowSmall2], [44, O.windowSmall2], [52, O.windowSmall1]], big: false })
+  northWall(f, { windows: [[11, O.windowSmall1], [19, O.windowSmall2], [44, O.windowSmall2], [52, O.windowSmall1]], big: false, skipShelves: CORNER_SKIP })
   buildBlocks(f, matrixOf([
     'S S S S S', 'S S S S S', 'S S S S S', 'S S T S S', 'S S S S S', 'S S S S S', 'S T S T S', 'S S S S S',
   ]))
@@ -313,19 +316,18 @@ const F4 = makeFloor({ n: 4, id: 'torvallen-biblioteca-4', name: 'Biblioteca de 
   f.light('atrio', cx, 28 * TILE, 330, '#fff0c8', 0.95, 0.06)
 }
 
-// ── escadas entre os andares (nos cruzamentos dos becos) ──
+// ── escadas entre os andares: só nos quatro cantos (colunas 4 e 60; fileiras 8 ao norte e 52 ao sul) ──
 const floors = [F1, F2, F3, F4]
 const links = [
-  { lo: 1, hi: 2, c: 14, r: 23, tag: 'oeste' },
-  { lo: 1, hi: 2, c: 50, r: 38, tag: 'leste' },
-  { lo: 2, hi: 3, c: 26, r: 13, tag: 'norte' },
-  { lo: 2, hi: 3, c: 38, r: 43, tag: 'sul' },
-  { lo: 3, hi: 4, c: 14, r: 33, tag: 'oeste' },
-  { lo: 3, hi: 4, c: 50, r: 18, tag: 'leste' },
+  { lo: 1, hi: 2, c: 4, r: 52, tag: 'sudoeste' },
+  { lo: 1, hi: 2, c: 60, r: 52, tag: 'sudeste' },
+  { lo: 2, hi: 3, c: 4, r: 8, tag: 'noroeste' },
+  { lo: 2, hi: 3, c: 60, r: 8, tag: 'nordeste' },
+  { lo: 3, hi: 4, c: 4, r: 52, tag: 'sudoeste' },
+  { lo: 3, hi: 4, c: 60, r: 52, tag: 'sudeste' },
 ]
 const ordinal = ['', 'térreo', '2º andar', '3º andar', '4º andar']
 for (const L of links) {
-  if (!ALLEY_C.includes(L.c) || !ALLEY_R.includes(L.r)) throw new Error(`Escada fora do cruzamento dos becos: ${L.c},${L.r}`)
   const lo = floors[L.lo - 1], hi = floors[L.hi - 1]
   const upId = `sobe-${L.tag}-${L.lo}`, downId = `desce-${L.tag}-${L.hi}`
   const rect = { x: (L.c - 1) * TILE, y: L.r * TILE, w: 3 * TILE, h: TILE }
