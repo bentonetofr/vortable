@@ -295,8 +295,10 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
 #### M4.1 — Integração com o Vorterium ✅ (falta aplicar a migration e testar logado)
 - `npm run vorterium` gera o motor como biblioteca (`vite.lib.config.ts`, `tsconfig.lib.json`) e
   copia pro Vorterium: código em `src/vendor/vortable`, assets em `public/vortable/assets`
-- Vorterium: o Vortable **substitui a transmissão de tela** na sub-aba **Mesa** da Sessão
-  (a transmissão foi apagada; artes e documentos da Mesa ficam guardados no código, sem uso)
+- Vorterium: o Vortable **substitui a transmissão de tela** (apagada). A sub-aba **Mesa** da
+  Sessão tem o botão **Entrar no Vortable** (abre `/campanhas/:id/vortable` em tela cheia,
+  fora do layout do site, com "Sair" e "Tela cheia") e as **artes recentes** da mesa
+  (documentos da Mesa ficam guardados no código, sem uso)
   - **Jogador**: só a tela do jogo com o boneco dele; na primeira vez abre o criador (um boneco só)
   - **Mestre**: *Editar mundo | Testar | Personagens | Jogadores*; em Jogadores troca o boneco
     de cada um (até um criado por ele) ou apaga; bonecos sem jogador listados à parte
