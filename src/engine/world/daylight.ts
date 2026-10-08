@@ -47,24 +47,37 @@ const SKY: [number, string][] = [
   [17.8, '#ffc486'],
   [18.3, '#ffa270'],
   [18.8, '#f0809a'],
-  [19.3, '#a868a4'],
-  [19.9, '#53498a'],
-  [20.6, '#323a6c'],
-  [22, '#262f5c'],
+  [19.3, '#b86ca6'],
+  [19.8, '#8a5aa0'],
+  [20.3, '#66509a'],
+  [20.9, '#4a4784'],
+  [21.6, '#363d72'],
+  [22.5, '#2b3466'],
+  [23.5, '#262f5c'],
   [24, '#262f5c'],
 ]
 const SKY_RGB = SKY.map(([h, c]) => [h, hexToRgb(c)] as const)
 
 function skyAt(hour: number): RGB {
   const h = ((hour % 24) + 24) % 24
-  for (let i = 1; i < SKY_RGB.length; i++) {
-    const [h1, c1] = SKY_RGB[i]
-    if (h <= h1) {
-      const [h0, c0] = SKY_RGB[i - 1]
-      const t = (h - h0) / (h1 - h0)
-      // suaviza a passagem entre chaves (sem "quinas" na mudança de cor)
-      return mix(c0, c1, t * t * (3 - 2 * t))
+  const n = SKY_RGB.length
+  for (let i = 1; i < n; i++) {
+    if (h > SKY_RGB[i][0]) continue
+    // curva suave que passa por todas as chaves (Catmull-Rom): sem degrau
+    // nem quina onde uma cor vira a outra
+    const [h0, c0] = SKY_RGB[i - 1], [h1, c1] = SKY_RGB[i]
+    const [hp, cp] = SKY_RGB[Math.max(0, i - 2)], [hn, cn] = SKY_RGB[Math.min(n - 1, i + 1)]
+    const span = h1 - h0
+    const t = (h - h0) / span
+    const t2 = t * t, t3 = t2 * t
+    const out: RGB = [0, 0, 0]
+    for (let k = 0; k < 3; k++) {
+      const m0 = hp === h0 ? (c1[k] - c0[k]) / span : (c1[k] - cp[k]) / (h1 - hp)
+      const m1 = hn === h1 ? (c1[k] - c0[k]) / span : (cn[k] - c0[k]) / (hn - h0)
+      const v = (2 * t3 - 3 * t2 + 1) * c0[k] + (t3 - 2 * t2 + t) * span * m0 + (-2 * t3 + 3 * t2) * c1[k] + (t3 - t2) * span * m1
+      out[k] = Math.max(0, Math.min(1, v))
     }
+    return out
   }
   return SKY_RGB[0][1]
 }
@@ -76,7 +89,7 @@ const INDOOR_NIGHT: RGB = hexToRgb('#2a2638')
 /** Quanto de sol há (0 = noite, 1 = dia pleno), suave na aurora e no pôr do sol. */
 export function daylight(hour: number) {
   const h = ((hour % 24) + 24) % 24
-  const up = smooth(5.4, 8, h), down = 1 - smooth(17, 19.8, h)
+  const up = smooth(5.4, 8, h), down = 1 - smooth(17, 20.8, h)
   return Math.max(0, Math.min(up, down))
 }
 
@@ -114,7 +127,7 @@ export function darkness(ambient: RGB) {
 export function golden(hour: number) {
   const h = ((hour % 24) + 24) % 24
   const dawn = smooth(5, 6.1, h) * (1 - smooth(7.1, 8.5, h))
-  const dusk = smooth(16.4, 17.9, h) * (1 - smooth(19, 20.3, h))
+  const dusk = smooth(16.4, 17.9, h) * (1 - smooth(19, 21.2, h))
   return Math.max(dawn, dusk)
 }
 
@@ -131,7 +144,7 @@ export function sunAt(hour: number) {
   const angle = (0.5 - t) * 2 * 1.05
   const height = Math.sin(t * Math.PI) // 0 no horizonte, 1 ao meio-dia
   const length = 0.3 + Math.pow(1 - height, 1.5) * 0.95
-  const strength = smooth(5.7, 7, h) * (1 - smooth(18.3, 19.6, h))
+  const strength = smooth(5.7, 7, h) * (1 - smooth(18.3, 20.2, h))
   return { angle, length, strength }
 }
 
