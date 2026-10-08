@@ -263,6 +263,8 @@ Primeiro sintetizado (rejeitado: "não gostei muito"), depois **gravações livr
 - Passos: *Impact Sounds* (Kenney, CC0) + *Footsteps on different surfaces* (congusbongus, CC BY
   3.0); trovão: Jerimee (CC BY 3.0). Créditos em `credits/CREDITS-audio.txt`
 - **Painel Sons** em cartões com ícone: 15 camadas, automático, volume, mudo, passos por chão
+- **Passos sincronizados com a animação**: um som a cada quadro em que o pé toca o chão (andando:
+  quadros 2 e 6; correndo: 0 e 4), com a gravação do chão sob os pés
 - Automático segue tempo, hora, árvores; trovão a cada relâmpago; fogo/lago/pântano pela
   distância e lado; abafado dentro de casa; eco de sala/caverna
 - ⏳ Depois: música (M7), sons de interação (M5)

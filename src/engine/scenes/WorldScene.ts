@@ -38,9 +38,11 @@ const FADE_MS = 220
 /** Quanto a câmera anda até o jogador por quadro (0–1). */
 const FOLLOW_LERP = 0.15
 const CLOCK_MS = 500
-/** Um passo a cada tantos px andados (correndo, passada mais longa). */
-const STEP_WALK = 22
-const STEP_RUN = 34
+/**
+ * Quadros do ciclo em que o pé toca o chão (medidos nas folhas LPC):
+ * andando, os quadros 2 e 6 de 1–8; correndo, o 0 e o 4 de 0–7.
+ */
+const FOOTFALLS: Record<string, number[]> = { walk: [2, 6], run: [0, 4] }
 
 export class WorldScene extends Phaser.Scene {
   private player?: Player
@@ -58,8 +60,6 @@ export class WorldScene extends Phaser.Scene {
   private clockAt = 0
   private audio: ZoneAudio | null = null
   /** Quanto andou desde o último passo, e onde estava no quadro anterior. */
-  private stride = 0
-  private lastFoot: { x: number; y: number } | null = null
 
   constructor() {
     super('world')
@@ -76,8 +76,6 @@ export class WorldScene extends Phaser.Scene {
     this.ground = undefined
     this.clockAt = 0
     this.audio = null
-    this.stride = 0
-    this.lastFoot = null
   }
 
   async create() {
@@ -125,6 +123,7 @@ export class WorldScene extends Phaser.Scene {
     const at = door ? { x: door.x + door.w / 2, y: door.y + door.h / 2 + 5 } : zone.spawn
     this.player = new Player(this, PLAYER_KEY, at.x, at.y, arrival?.dir ?? 'down')
     this.physics.add.collider(this.player.sprite, solids)
+    this.syncFootsteps(this.player.sprite)
     cam.centerOn(at.x, at.y)
     // sombra macia sob os pés (o boneco LPC não tem) + a sombra comprida do sol
     this.blob = this.add.image(at.x, at.y, BLOB).setScale(0.75, 0.6).setAlpha(0.32)
@@ -154,6 +153,20 @@ export class WorldScene extends Phaser.Scene {
       if (!w.debugGraphic) w.createDebugGraphic()
       w.debugGraphic.clear().setDepth(1e9).setVisible(w.drawDebug)
     })
+  }
+
+  /** Um passo a cada vez que o quadro da animação é o de um pé tocando o chão. */
+  private syncFootsteps(sprite: Phaser.GameObjects.Sprite) {
+    const onFrame = (anim: Phaser.Animations.Animation, frame: Phaser.Animations.AnimationFrame) => {
+      const kind = anim.key.split(':')[2] // `${chave}:${walk|run}:${direção}`
+      const feet = FOOTFALLS[kind]
+      if (!feet || !this.audio || !this.lighting) return
+      const cols = kind === 'walk' ? 9 : 8
+      if (!feet.includes(Number(frame.textureFrame) % cols)) return
+      this.audio.step(sprite.x, sprite.y - 2, kind === 'run', this.lighting.weatherNow)
+    }
+    sprite.on(Phaser.Animations.Events.ANIMATION_START, onFrame)
+    sprite.on(Phaser.Animations.Events.ANIMATION_UPDATE, onFrame)
   }
 
   /** Troca a aparência do jogador sem recarregar a cena. */
@@ -194,19 +207,6 @@ export class WorldScene extends Phaser.Scene {
       this.audio.update(this.game.loop.delta / 1000, {
         x: listener.x, y: listener.y, hour: lighting.hour, wind: lighting.wind.strength, weather: lighting.weatherNow, strikes: lighting.strikes,
       })
-      // passos: pela distância andada, com o chão de baixo dos pés
-      if (s && moving) {
-        if (this.lastFoot) this.stride += Math.hypot(s.x - this.lastFoot.x, s.y - this.lastFoot.y)
-        const running = (s.body as Phaser.Physics.Arcade.Body).velocity.length() > 120
-        if (this.stride >= (running ? STEP_RUN : STEP_WALK)) {
-          this.stride = 0
-          this.audio.step(s.x, s.y - 2, running, lighting.weatherNow)
-        }
-      } else {
-        // parou: o próximo passo sai logo no começo da andada
-        this.stride = STEP_WALK * 0.7
-      }
-      this.lastFoot = s ? { x: s.x, y: s.y } : null
     }
     const now = this.time.now
     if (this.cfg.onClock && now - this.clockAt > CLOCK_MS) {
