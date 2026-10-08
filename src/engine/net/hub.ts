@@ -8,6 +8,7 @@
 //   state     {id, zone, x, y, dir, anim}   onde estou (≈10×/s)
 //   bye       {id}                     saí
 //   teleport  {zone, x, y}             o mestre leva ESTE jogador pra outro lugar
+//   zone      {id}                     o mestre salvou esta zona: quem está nela recarrega
 //   env       {zone, hour, weather, wind}   o mestre muda hora/tempo/vento ao vivo
 //                                      (zone '*' = todas as zonas; null = o padrão da zona)
 //
@@ -24,6 +25,7 @@ export interface NetState { t: 'state'; id: string; zone: string; x: number; y: 
 export interface NetEnv { t: 'env'; zone: string; hour: number | null; weather: string | null; wind: number | null }
 export type NetMsg =
   | NetEnv
+  | { t: 'zone'; id: string }
   | NetHello
   | { t: 'who' }
   | NetState
@@ -67,6 +69,7 @@ export function parseNet(raw: unknown): NetMsg | null {
         anim: ANIMS.includes(m.anim as NetAnim) ? (m.anim as NetAnim) : 'idle',
       }
     case 'bye': return typeof m.id === 'string' ? { t: 'bye', id: m.id } : null
+    case 'zone': return typeof m.id === 'string' && m.id ? { t: 'zone', id: m.id.slice(0, 80) } : null
     case 'env':
       if (typeof m.zone !== 'string' || !m.zone) return null
       return {
@@ -87,6 +90,7 @@ export class NetHub {
   readonly envs = new Map<string, NetEnv>()
   /** Mudou quem está na sala (entrou, saiu, trocou de boneco). */
   private roster = new Set<() => void>()
+  private zoneChanges = new Set<(id: string) => void>()
   private teleports = new Set<(m: { zone: string; x: number; y: number }) => void>()
   private hello: NetHello | null = null
   private asked = false
@@ -139,6 +143,7 @@ export class NetHub {
     this.envs.clear()
     this.roster.clear()
     this.teleports.clear()
+    this.zoneChanges.clear()
   }
 
   /** Chegou uma mensagem da rede. */
@@ -173,12 +178,21 @@ export class NetHub {
       case 'env':
         this.envs.set(msg.zone, msg)
         break
+      case 'zone':
+        this.zoneChanges.forEach((fn) => fn(msg.id))
+        break
     }
   }
 
   onRoster(fn: () => void) {
     this.roster.add(fn)
     return () => { this.roster.delete(fn) }
+  }
+
+  /** O mestre salvou uma zona (o jogo recarrega se for a que está aberta). */
+  onZoneChanged(fn: (id: string) => void) {
+    this.zoneChanges.add(fn)
+    return () => { this.zoneChanges.delete(fn) }
   }
 
   onTeleport(fn: (m: { zone: string; x: number; y: number }) => void) {

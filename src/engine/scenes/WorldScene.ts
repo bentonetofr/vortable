@@ -39,6 +39,8 @@ export interface WorldSceneData {
   hub?: NetHub
   /** Aparece neste ponto (teletransporte do mestre), no lugar da saída ou do início. */
   at?: { x: number; y: number }
+  /** Aviso mostrado quando a cena abre (ex.: "o mestre atualizou o mapa"). */
+  notice?: string
   /** Câmera do mestre: sem boneco, câmera livre, só observa os jogadores. */
   watch?: boolean
 }
@@ -89,6 +91,7 @@ export class WorldScene extends Phaser.Scene {
     this.ground = undefined
     this.clockAt = 0
     this.audio = null
+    this.reloading = false
     this.remotes = undefined
     this.netAt = 0
     this.netSent = ''
@@ -123,6 +126,12 @@ export class WorldScene extends Phaser.Scene {
     if (W * 2 < cam.width || H * 2 < cam.height) cam.removeBounds()
     if (arrival) cam.fadeIn(FADE_MS)
     this.cfg.onZone?.(zone)
+    if (this.cfg.notice) this.toast(this.cfg.notice)
+    // o mestre salvou ESTA zona: recarrega com a versão nova, sem sair do lugar
+    if (this.cfg.hub) {
+      const off = this.cfg.hub.onZoneChanged((id) => { if (id === zone.id) void this.reloadZone() })
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, off)
+    }
     if (this.cfg.watch) return this.startWatch(zone, W, H)
 
     try {
@@ -250,7 +259,7 @@ export class WorldScene extends Phaser.Scene {
     if (!this.cfg.watch || id === this.cfg.zone.id) return
     const zone = await this.cfg.loadZone(id).catch(() => null)
     if (!zone || !this.sys.isActive()) return
-    this.scene.restart({ ...this.cfg, zone } satisfies WorldSceneData)
+    this.scene.restart({ ...this.cfg, zone, notice: undefined } satisfies WorldSceneData)
   }
 
   /** Enquadra a zona inteira na tela. */
@@ -287,6 +296,21 @@ export class WorldScene extends Phaser.Scene {
     }))
   }
 
+  private reloading = false
+
+  /** Relê a zona atual (o mestre salvou) e reabre a cena no mesmo ponto. */
+  private async reloadZone() {
+    if (this.reloading || this.travelling) return
+    this.reloading = true
+    const fresh = await this.cfg.loadZone(this.cfg.zone.id).catch(() => null)
+    if (!fresh || !this.sys.isActive()) { this.reloading = false; return }
+    const s = this.player?.sprite
+    this.scene.restart({
+      ...this.cfg, zone: fresh, arrival: undefined, at: s ? { x: s.x, y: s.y } : undefined,
+      notice: this.cfg.watch ? undefined : 'O mestre atualizou o mapa.',
+    } satisfies WorldSceneData)
+  }
+
   /** O mestre levou este jogador pra (x, y) de uma zona. */
   private async teleportTo(zoneId: string, x: number, y: number) {
     const player = this.player
@@ -306,7 +330,7 @@ export class WorldScene extends Phaser.Scene {
       this.toast('O mestre tentou te levar a uma zona que não existe.')
       return
     }
-    this.scene.restart({ ...this.cfg, zone, arrival: undefined, at: { x, y } } satisfies WorldSceneData)
+    this.scene.restart({ ...this.cfg, zone, arrival: undefined, at: { x, y }, notice: undefined } satisfies WorldSceneData)
   }
 
   /** Troca a aparência do jogador sem recarregar a cena. */
@@ -423,7 +447,7 @@ export class WorldScene extends Phaser.Scene {
       this.armed = false
       return
     }
-    this.scene.restart({ ...this.cfg, zone, arrival: { portal: to.portal, dir: player.facing } } satisfies WorldSceneData)
+    this.scene.restart({ ...this.cfg, zone, arrival: { portal: to.portal, dir: player.facing }, at: undefined, notice: undefined } satisfies WorldSceneData)
   }
 
   private toast(msg: string) {
