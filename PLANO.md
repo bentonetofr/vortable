@@ -332,9 +332,10 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
   um conjunto de zonas; migration `20240194_vortable_mundos`); *Abrir pros jogadores* coloca todos no
   mundo escolhido na hora (tempo real), *Editar* leva o editor pra ele, *+* cria, renomear e apagar
 - **Mundo TORVALLEN** (`scripts/torvallen.mjs` → `maps/torvallen.mundo.json`): a Grande Biblioteca do palácio
-  (64×56 tiles, ~490 objetos, 31 luzes: nave com tapete, mesas de leitura, alas de estantes, altar com
-  vitral, cantos de leitura com lareira); no Vorterium: Mundos → *Mundos prontos* → *Criar este mundo*,
-  ou *Importar mundo* com o arquivo
+  em **4 andares** (térreo / Galeria dos Corredores / Arquivos Antigos / Torre dos Pergaminhos), ~1000 objetos
+  e 16–39 luzes por andar: blocos de estantes (9×3) separados por becos de 3 tiles, praças de leitura, jardim,
+  cantos com lareira, nave com altar e vitral no térreo, átrio no 4º andar. **Seis escadas** ligam os andares
+  (subir/descer troca de zona); no Vorterium: Mundos → *Mundos prontos* → *Criar este mundo*, ou *Importar mundo*
 - Testado: loopback de WebRTC (mestre + 2 jogadores: relay, teleporte, expulsão) e duas abas do motor
 - ⏳ Falta: hora/clima do mestre pra todos, zonas em tempo real (mestre editando), chat no balão
 
