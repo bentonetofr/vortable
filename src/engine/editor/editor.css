@@ -737,3 +737,65 @@
 .vt-chipbtn:hover { border-color: var(--vt-accent); color: var(--vt-text); }
 .vt-mutebtn svg { width: 16px; height: 16px; }
 .vt-tab { min-width: 0; padding-left: 2px; padding-right: 2px; }
+
+/* ── Gerador de NPCs ───────────────────────────── */
+.vt-npc {
+  position: absolute;
+  top: 52px;
+  left: 12px;
+  z-index: 30;
+  width: 420px;
+  max-width: calc(100% - 24px);
+  max-height: calc(100% - 64px);
+  display: flex;
+  flex-direction: column;
+  background: var(--vt-surface);
+  border: 1px solid var(--vt-border);
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  user-select: none;
+}
+.vt-npc[hidden] { display: none; }
+.vt-npc-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid var(--vt-border-dim); }
+.vt-npc-title { display: flex; align-items: center; gap: 8px; color: var(--vt-accent-bright); }
+.vt-npc-title svg { width: 18px; height: 18px; }
+.vt-npc-body { display: flex; flex-direction: column; gap: 10px; padding: 10px; overflow-y: auto; }
+.vt-npc-body h4 { margin: 4px 0 0; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--vt-muted); }
+.vt-npc-analysis { display: flex; flex-direction: column; gap: 4px; }
+.vt-npc-analysis b { color: var(--vt-text); }
+.vt-npc-analysis small { color: var(--vt-muted); }
+.vt-npc-analysis .vt-select { margin-top: 4px; }
+.vt-npc-actions { display: flex; gap: 6px; }
+.vt-npc-note { margin: 0; color: var(--vt-muted); }
+.vt-npc-note.vt-error { color: var(--vt-danger); }
+
+.vt-npc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.vt-npc-card > * { max-width: 100%; }
+.vt-npc-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px 6px;
+  background: var(--vt-elevated);
+  border: 1px solid var(--vt-border-dim);
+  border-radius: 8px;
+  text-align: center;
+}
+.vt-npc-thumb { width: 96px; height: 96px; image-rendering: pixelated; }
+.vt-npc-reroll { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; padding: 0; }
+.vt-npc-reroll svg { width: 14px; height: 14px; }
+.vt-npc-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.vt-npc-card small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--vt-muted); }
+.vt-npc-row { display: flex; gap: 4px; margin-top: 4px; width: 100%; justify-content: center; padding: 0 2px; }
+.vt-npc-row .vt-btn { padding: 4px 8px; }
+.vt-npc-row .vt-primary { flex: 1 1 auto; min-width: 0; }
+
+.vt-npc-list { display: flex; flex-direction: column; gap: 4px; }
+.vt-npc-item { display: flex; align-items: center; gap: 6px; padding: 3px 6px; background: var(--vt-elevated); border: 1px solid var(--vt-border-dim); border-radius: 8px; }
+.vt-npc-item.vt-on { border-color: var(--vt-accent); background: var(--vt-accent-glow); }
+.vt-npc-mini { width: 36px; height: 36px; flex: none; image-rendering: pixelated; }
+.vt-npc-info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.vt-npc-info b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.vt-npc-info small { color: var(--vt-muted); }

@@ -7,7 +7,8 @@
 // ────────────────────────────────────────────────────────
 
 import { WEATHERS } from './world/weather'
-import { DAY_MINUTES, LIGHT_RADIUS_MAX, LIGHT_RADIUS_MIN, TILE, ZONE_MAX, ZONE_MIN, Z_MAX, newId, type Portal, type WorldData, type WorldSky, type ZoneData, type ZoneLight, type ZoneLighting, type ZoneSound } from './types'
+import { parseCharacter } from './character/storage'
+import { DAY_MINUTES, LIGHT_RADIUS_MAX, LIGHT_RADIUS_MIN, TILE, ZONE_MAX, ZONE_MIN, Z_MAX, newId, type Portal, type WorldData, type WorldSky, type ZoneData, type ZoneLight, type ZoneLighting, type ZoneNpc, type ZoneSound } from './types'
 
 export interface ZoneSummary {
   id: string
@@ -181,6 +182,7 @@ export function parseZone(json: unknown): ZoneData {
     ...parseLighting(z.lighting),
     ...parseSound(z.sound),
     ...(Array.isArray(z.lights) && z.lights.length ? { lights: parseLights(z.lights, W, H) } : {}),
+    ...(Array.isArray(z.npcs) && z.npcs.length ? { npcs: parseNpcs(z.npcs, W, H) } : {}),
     portals: portals.map((p) => ({
       id: p.id,
       name: typeof p.name === 'string' ? p.name : 'Saída',
@@ -189,6 +191,26 @@ export function parseZone(json: unknown): ZoneData {
     })),
     spawn: { x: Math.round(spawn.x), y: Math.round(spawn.y) },
   }
+}
+
+/** NPCs vindos de fora: só os que têm aparência válida e ficam dentro da zona. */
+function parseNpcs(list: unknown[], W: number, H: number): ZoneNpc[] {
+  const out: ZoneNpc[] = []
+  for (const raw of list) {
+    const n = raw as Partial<ZoneNpc> | null
+    if (!n || typeof n !== 'object' || !num(n.x) || !num(n.y)) continue
+    const parsed = parseCharacter({ id: 'x', name: n.name, appearance: n.appearance })
+    if (!parsed) continue
+    out.push({
+      id: typeof n.id === 'string' && n.id ? n.id.slice(0, 60) : newId('npc'),
+      name: typeof n.name === 'string' && n.name.trim() ? n.name.trim().slice(0, 60) : 'NPC',
+      role: typeof n.role === 'string' ? n.role.slice(0, 60) : '',
+      appearance: parsed.appearance,
+      x: clamp(Math.round(n.x), 0, W), y: clamp(Math.round(n.y), 0, H),
+      dir: n.dir === 'up' || n.dir === 'left' || n.dir === 'right' ? n.dir : 'down',
+    })
+  }
+  return out
 }
 
 const COLOR = /^#[0-9a-f]{6}$/i

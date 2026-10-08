@@ -146,6 +146,7 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
 
   if (mode === 'edit') {
     state = new EditorState(opts.zone ?? newZone('Nova zona', 40, 30))
+    state.assetBase = assetBase
     ui = new EditorUI(parent, state, storage, {
       assetBase,
       textureImage: (key) => game.textures.get(key).getSourceImage() as CanvasImageSource,

@@ -8,6 +8,7 @@ import css from './editor.css?inline'
 import { h, injectStyle } from '../ui/dom'
 import { creditsBody } from '../ui/credits'
 import { ICONS } from './icons'
+import { NpcPanel } from './NpcPanel'
 import type { EditorState, Tool } from './EditorState'
 import { ZOOM_MAX, ZOOM_MIN, type EditorScene } from './EditorScene'
 import { ROOM_HEIGHT_MAX, ROOM_PRESETS, encodeRoom, type RoomStyle } from '../world/rooms'
@@ -123,6 +124,8 @@ export class EditorUI {
   private testing = false
   private modals: (() => void)[] = []
   private zoomLabel!: HTMLButtonElement
+  private npcPanel!: NpcPanel
+  private npcButton!: HTMLButtonElement
   private zoomSlider!: HTMLInputElement
   private offState: () => void
   private onKey = (e: KeyboardEvent) => this.handleKey(e)
@@ -132,7 +135,12 @@ export class EditorUI {
 
   constructor(parent: HTMLElement, private state: EditorState, private storage: WorldStorage, private hooks: EditorHooks) {
     injectStyle('editor', css)
-    this.stage = h('div', { class: 'vt-stage' }, this.buildZoomBar(), this.buildQuick())
+    this.npcPanel = new NpcPanel(state, {
+      assetBase: hooks.assetBase,
+      focus: (x, y) => hooks.scene()?.focusAt(x, y),
+      toast: (msg, error) => this.toast(msg, error),
+    })
+    this.stage = h('div', { class: 'vt-stage' }, this.buildZoomBar(), this.buildQuick(), this.npcPanel.el)
     this.root = h('div', { class: `vt-root${readDrawer() ? ' vt-drawer-open' : ''}` },
       this.buildTools(),
       this.buildDrawer(),
@@ -205,6 +213,7 @@ export class EditorUI {
 
   destroy() {
     this.offState()
+    this.npcPanel.destroy()
     window.removeEventListener('keydown', this.onKey)
     window.removeEventListener('beforeunload', this.onBeforeUnload)
     this.root.remove()
@@ -305,6 +314,9 @@ export class EditorUI {
     toggle(ICONS.sound, 'Ouvir os sons da zona no editor (U)', () => readPrefs().editor, () => this.toggleEditorSound())
     toggle(ICONS.snap, 'Encaixar objetos na grade (N)', () => this.state.snap, () => this.state.set({ snap: !this.state.snap }))
     el.append(h('button', { class: 'vt-tool', title: 'Centralizar a zona (Home)', html: ICONS.center, onclick: () => this.hooks.centerOnZone() }))
+    // gerador de NPCs: analisa a zona e cria gente que combina com o lugar
+    this.npcButton = h('button', { class: 'vt-tool', title: 'Gerador de NPCs', html: ICONS.npc, onclick: () => { this.npcPanel.toggle(); this.refresh() } }) as HTMLButtonElement
+    el.append(this.npcButton)
     return el
   }
 
@@ -1281,6 +1293,7 @@ export class EditorUI {
     const s = this.state
     for (const [id, b] of this.toolButtons) b.classList.toggle('vt-on', s.tool === id)
     for (const t of this.toggles) t.el.classList.toggle('vt-on', t.on())
+    this.npcButton?.classList.toggle('vt-on', this.npcPanel.isOpen || this.state.tool === 'npc')
     for (const [id, b] of this.tabButtons) b.classList.toggle('vt-on', this.tab === id)
     for (const [id, c] of this.terrainCells) c.classList.toggle('vt-on', s.terrain === id && (s.tool === 'brush' || s.tool === 'fill'))
     const chosen = s.tool === 'object' && s.objectKind ? objectDef(s.objectKind) : undefined
@@ -1309,6 +1322,7 @@ export class EditorUI {
       select: s.selected.length ? 'Arraste pra mover · setas empurram · F espelha · Ctrl D duplica · Del apaga' : 'Clique num objeto (Shift soma) ou arraste um retângulo pra selecionar',
       portal: s.selectedPortal ? 'Escolha o destino no painel · arraste pra mover · Del apaga' : 'Arraste pra desenhar uma saída · clique numa saída pra editar',
       spawn: 'Clique onde o jogador deve aparecer',
+      npc: s.npcDraft?.id ? 'Clique no novo lugar do NPC · Esc cancela' : 'Clique no mapa pra pôr o NPC · Esc cancela',
       light: s.selectedLight ? 'Arraste a luz pra mover · ajuste no painel · Del apaga' : 'Clique pra pôr uma luz · clique numa luz pra editar · I liga/desliga a prévia',
       room: { room: 'Cômodo: arraste pra criar · clique aplica o estilo · Alt + clique copia · Ctrl + arrastar apaga', wall: 'Parede interna: risque uma linha dentro do cômodo', door: 'Porta: arraste sobre uma parede pra abrir um vão' }[s.roomMode],
     }[s.tool]
@@ -1887,7 +1901,7 @@ export class EditorUI {
     else if (e.key === 'Escape') {
       // primeiro solta a seleção; de novo, volta pra ferramenta de seleção
       if (this.state.selected.length) this.state.set({ selected: [] })
-      else this.state.set({ tool: 'select' })
+      else this.state.set({ tool: 'select', npcDraft: null })
     }
     else if (e.key === ' ') e.preventDefault()
   }

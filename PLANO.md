@@ -361,6 +361,12 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
   canto inferior esquerdo que segue mostrando a sessão enquanto ele anda pelo site (espectador sem som, foco do mestre ou 1º jogador;
   recolher, voltar ao Vortable, fechar). Fecha sozinha quando a sessão acaba. Código: `vortable/pip/pipStore.ts`, `VortablePip.tsx`.
 
+- **Gerador de NPCs** (editor, botão de bonequinho embaixo de *Centralizar a zona*): analisa a zona (nome, terrenos, objetos, ambiente) e
+  escolhe o estilo (biblioteca/palácio, taverna, vila, mercado, fazenda, floresta, cemitério, masmorra, neve, geral; dá pra trocar).
+  Sorteia 6 pessoas por vez com rosto, cabelo e roupa diferentes, ocupações do lugar, pele só branca/parda/negra e cores naturais.
+  *Adicionar* → clique no mapa; o NPC fica parado na zona (`zone.npcs`, com colisão e nome quando alguém chega perto) até o mestre
+  remover (lista no painel: ver, virar, mover, remover; desfazer vale). Código: `src/engine/npc/`, `editor/NpcPanel.ts`, `world/npcs.ts`.
+
 #### M4.3 — Ficha, chat e dados (⏳)
 - Boneco ligado à ficha (nome, vida, retrato); chat com balão sobre a cabeça; dados no histórico
 - ✅ *Sessão real com amigos*

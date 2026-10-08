@@ -289,6 +289,7 @@ items.sort((a, b) => a.slot.localeCompare(b.slot) || a.name.localeCompare(b.name
 const EXTRA_PALETTES = {
   hair: {
     cocoa: ['#0d0806', '#1c120d', '#2e2018', '#433025', '#5c4535', '#7a5f4c'],
+    umber: ['#0a0605', '#1a0f0a', '#2b1a12', '#3d281c', '#573a29', '#6f4e38'],
   },
   cloth: {
     midnight: ['#07090f', '#0f1522', '#172136', '#20304c', '#2d4266', '#3d5882'],

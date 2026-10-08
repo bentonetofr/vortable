@@ -30,6 +30,8 @@ import { Lighting } from '../world/lighting'
 import { ZoneAudio } from '../audio/ZoneAudio'
 import { readPrefs } from '../audio/engine'
 import { skyOf } from '../world/daylight'
+import { NpcLayer } from '../world/npcs'
+import { buildCharacter } from '../character/compose'
 import type { EditorState } from './EditorState'
 import { applyRooms, connectedRoom, decodeRoom, encodeRoom, roomRoles } from '../world/rooms'
 
@@ -124,6 +126,10 @@ export class EditorScene extends Phaser.Scene {
     this.lightGfx = this.add.graphics().setDepth(1e8 + 1)
     this.rebuildObjects()
     this.lighting = new Lighting(this, this.state.zone)
+    // NPCs da zona (sempre com o nome à mostra: o mestre se localiza)
+    this.npcs = new NpcLayer(this, this.state.assetBase, 'always')
+    this.npcs.set(this.state.zone.npcs ?? [])
+    void this.refreshNpcGhost()
     this.audio = ZoneAudio.create(this, this.state.zone)
     this.events.on(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
     this.refreshOverlays()
@@ -160,6 +166,7 @@ export class EditorScene extends Phaser.Scene {
       if (c === 'world' || c === 'edit') this.drawPortals()
       if (c === 'edit') this.drawLights()
       if (c === 'objects') this.syncObjects()
+      if (c === 'npcs') this.npcs.set(this.state.zone.npcs ?? [])
       if (c === 'edit' || c === 'objects' || c === 'catalog') this.scheduleLights()
       if (c === 'catalog') {
         this.rebuildObjects()
@@ -316,6 +323,7 @@ export class EditorScene extends Phaser.Scene {
     this.fences.setZone(this.state.zone)
     this.lastStrokeEnd = null
     this.rebuildObjects()
+    this.npcs.set(this.state.zone.npcs ?? [])
     this.lighting.setZone(this.state.zone)
     this.audio?.setZone(this.state.zone)
     this.fitBounds()
@@ -363,6 +371,7 @@ export class EditorScene extends Phaser.Scene {
 
   private onUiChange() {
     this.applySelection()
+    void this.refreshNpcGhost()
     this.refreshOverlays()
     if (this.state.tool === 'object' && this.state.objectKind) {
       const def = objectDef(this.state.objectKind)
@@ -562,6 +571,11 @@ export class EditorScene extends Phaser.Scene {
       const { x, y } = this.snapped(wx, wy)
       this.ghost.setPosition(x, y).setVisible(true)
     }
+    if (tool === 'npc' && this.npcGhost) {
+      const { x, y } = this.snapped(wx, wy)
+      this.npcGhost.setPosition(x, y).setDepth(1e8 + 3).setVisible(this.inside(x, y))
+      g.lineStyle(px * 2, 0xffc174, 0.7).strokeEllipse(x, y, 20, 9)
+    }
   }
 
   // ── Mouse ──────────────────────────────────────────────
@@ -575,6 +589,12 @@ export class EditorScene extends Phaser.Scene {
     }
     const { tool } = this.state
     const wx = p.worldX, wy = p.worldY
+
+    // NPC esperando lugar: o clique o põe na zona
+    if (tool === 'npc') {
+      this.placeNpc(wx, wy)
+      return
+    }
 
     if (ev.altKey) {
       this.eyedropper(p)
@@ -1303,6 +1323,51 @@ export class EditorScene extends Phaser.Scene {
   /** Muda o tamanho do pincel (+1/−1). */
   brushBy(d: number) {
     this.state.set({ brush: Phaser.Math.Clamp(this.state.brush + d, 1, BRUSH_MAX) })
+  }
+
+  // ── NPCs ────────────────────────────────────────────────
+
+  private npcs!: NpcLayer
+  private npcGhost?: Phaser.GameObjects.Sprite
+  private npcGhostSig = ''
+
+  /** O boneco-fantasma que acompanha o mouse enquanto o NPC espera lugar. */
+  private async refreshNpcGhost() {
+    const d = this.state.npcDraft
+    if (this.state.tool !== 'npc' || !d) { this.npcGhost?.setVisible(false); return }
+    const sig = JSON.stringify(d.appearance)
+    if (this.npcGhostSig !== sig) {
+      this.npcGhostSig = sig
+      try { await buildCharacter(this, 'char:npc-ghost', this.state.assetBase, d.appearance) } catch { return }
+      if (this.npcGhostSig !== sig || !this.sys.isActive()) return
+      if (!this.npcGhost) this.npcGhost = this.add.sprite(0, 0, 'char:npc-ghost:idle', 0).setOrigin(0.5, 62 / 64).setAlpha(0.75).setVisible(false)
+      else this.npcGhost.setTexture('char:npc-ghost:idle', 0)
+    }
+    this.npcGhost?.anims.play(`char:npc-ghost:idle:${d.dir ?? 'down'}`, true)
+    this.cursorGfx.clear()
+  }
+
+  /** Põe o NPC do gerador onde o mestre clicou (a ferramenta volta pra seleção). */
+  private placeNpc(wx: number, wy: number) {
+    const d = this.state.npcDraft
+    if (!d) return
+    const { x, y } = this.snapped(wx, wy)
+    if (!this.inside(x, y)) return
+    this.state.checkpoint()
+    const z = this.state.zone
+    // movendo um que já existe: troca a posição dele (mesmo id); senão, NPC novo
+    if (d.id) z.npcs = (z.npcs ?? []).filter((n) => n.id !== d.id)
+    ;(z.npcs ??= []).push({ id: d.id ?? newId('npc'), name: d.name, role: d.role, appearance: d.appearance, x, y, dir: d.dir ?? 'down' })
+    this.npcGhost?.setVisible(false)
+    this.state.set({ tool: 'select', npcDraft: null })
+    this.state.emit('npcs')
+    this.state.edited()
+  }
+
+  /** Leva a câmera até um ponto (a lista de NPCs usa pra "ver"). */
+  focusAt(x: number, y: number) {
+    this.cameras.main.centerOn(x, y)
+    this.afterView()
   }
 
   centerOnZone() {

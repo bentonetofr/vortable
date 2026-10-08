@@ -42,6 +42,8 @@ export interface ZoneData {
   sound?: ZoneSound
   /** Luzes soltas (ferramenta Luz), além das que os objetos já têm. */
   lights?: ZoneLight[]
+  /** NPCs fixos (gerador de NPCs do editor): ficam parados na zona até o mestre remover. */
+  npcs?: ZoneNpc[]
   /** Saídas: áreas que levam a outra zona (porta, escada, borda do mapa). */
   portals: Portal[]
   /** Onde o jogador aparece quando entra no mundo por esta zona, em pixels. */
@@ -107,6 +109,18 @@ export const DAY_MINUTES = 24
 export interface ZoneSound {
   auto?: boolean
   layers?: Record<string, number>
+}
+
+/** Um NPC parado na zona: o boneco (aparência de personagem comum) e onde ele fica, em px (os pés). */
+export interface ZoneNpc {
+  id: string
+  name: string
+  /** Ocupação, só pra mestre se localizar ("Bibliotecária", "Guarda do palácio"...). */
+  role: string
+  appearance: Appearance
+  x: number
+  y: number
+  dir: Dir
 }
 
 /** Uma luz solta no mapa, em px; o brilho dos objetos vem do catálogo. */

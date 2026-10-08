@@ -13,6 +13,7 @@ import { Occluders, addObjectSolids, createObjectSprite } from '../world/objects
 import { FenceLayer, fenceSolids } from '../world/fences'
 import { Player, isTyping } from '../world/Player'
 import { Remotes } from '../net/remotes'
+import { NpcLayer } from '../world/npcs'
 import type { NetHub } from '../net/hub'
 import { BLOB, Lighting } from '../world/lighting'
 import { ZoneAudio } from '../audio/ZoneAudio'
@@ -80,6 +81,7 @@ export class WorldScene extends Phaser.Scene {
   private clockAt = 0
   private audio: ZoneAudio | null = null
   private remotes?: Remotes
+  private npcs?: NpcLayer
   private netAt = 0
   private netSent = ''
   /** Quanto andou desde o último passo, e onde estava no quadro anterior. */
@@ -103,6 +105,7 @@ export class WorldScene extends Phaser.Scene {
     this.switching = false
     this.reactions = 0
     this.remotes = undefined
+    this.npcs = undefined
     this.netAt = 0
     this.netSent = ''
   }
@@ -129,6 +132,10 @@ export class WorldScene extends Phaser.Scene {
     const solids = this.physics.add.staticGroup()
     for (const r of [...solidTerrainRects(zone), ...fenceSolids(zone)]) solids.add(this.add.zone(r.x + r.w / 2, r.y + r.h / 2, r.w, r.h))
     addObjectSolids(this, zone.objects, solids)
+    // NPCs parados: o jogador não atravessa
+    for (const n of zone.npcs ?? []) solids.add(this.add.zone(n.x, n.y - 3, 18, 10))
+    this.npcs = new NpcLayer(this, assetBase, this.cfg.watch ? 'always' : 'near')
+    this.npcs.set(zone.npcs ?? [])
 
     this.physics.world.setBounds(0, 0, W, H)
     const cam = this.cameras.main
@@ -420,6 +427,7 @@ export class WorldScene extends Phaser.Scene {
     const s = player?.sprite
     const moving = !!s && (s.body as Phaser.Physics.Arcade.Body).velocity.lengthSq() > 1
     this.remotes?.update(this.game.loop.delta / 1000)
+    this.npcs?.update(player?.sprite)
     if (this.following) {
       const p = this.cfg.hub?.peers.get(this.following)
       if (p?.state && p.state.zone === this.cfg.zone.id) {
