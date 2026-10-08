@@ -257,19 +257,15 @@ O mestre escolhe o tempo de cada zona (aba **Clima**):
 - ✅ *Uma tempestade à noite na vila assusta; uma nevasca esconde o caminho*
 
 ### M3.8 — Sons ✅ (concluído)
-Tudo sintetizado com Web Audio (ruído filtrado, osciladores, rajadas curtas): livre de licença,
-nada pra baixar, cada som sai um pouco diferente.
-- **Painel Sons** por zona: automático (segue tempo, hora, árvores, fogo e água perto) + camadas
-  à mão com volume: floresta (pássaros de dia; grilos e coruja à noite), vento (assobia na
-  ventania), chuva, trovões (também sem chuva), neve, riacho, mar, caverna (gotas + eco), fogueira
-- Trovão sincronizado com cada relâmpago (chega um pouco depois da luz); fogo e água com volume
-  pela distância e lado (estéreo); dentro de casa o de fora soa abafado + eco de sala; caverna
-  com eco longo
-- **Passos** em 9 chãos (grama, terra, areia, cascalho, neve, pedra, madeira, tapete, água),
-  ritmo pela distância andada (correndo, passada mais longa); chuva molha, neve cobre
-- Volume geral, mudo (M) e volume dos passos por jogador; prévia de som no editor (U)
-- ⏳ Depois: trocar camadas por gravações CC0 (o motor aceita), música (M7), sons de interação (M5)
-- ✅ *De olhos fechados dá pra saber se é dia na floresta, noite de tempestade ou uma caverna*
+Primeiro sintetizado (rejeitado: "não gostei muito"), depois **gravações livres**:
+- Ambientes: *Nature Ambient Pack Vol 1* (JC Sounds, CC BY 4.0) — 15 laços em MP3 112 kb/s com
+  emenda cruzada (16 MB, baixados só quando a camada toca)
+- Passos: *Impact Sounds* (Kenney, CC0) + *Footsteps on different surfaces* (congusbongus, CC BY
+  3.0); trovão: Jerimee (CC BY 3.0). Créditos em `credits/CREDITS-audio.txt`
+- **Painel Sons** em cartões com ícone: 15 camadas, automático, volume, mudo, passos por chão
+- Automático segue tempo, hora, árvores; trovão a cada relâmpago; fogo/lago/pântano pela
+  distância e lado; abafado dentro de casa; eco de sala/caverna
+- ⏳ Depois: música (M7), sons de interação (M5)
 
 ### M4 — Integração Vorterium + multiplayer
 - Aba **Vortable** na campanha do Vorterium; login e papéis vindos de `campaign_members`

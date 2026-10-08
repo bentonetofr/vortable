@@ -1,12 +1,12 @@
 // ────────────────────────────────────────────────────────
 // O som de uma zona. No modo automático (padrão) as camadas seguem o
-// mundo: pássaros onde há árvores, grilos à noite, vento conforme o vento,
-// chuva/neve conforme o tempo, um trovão a cada relâmpago, fogo e água
-// quando o jogador chega perto (do lado em que estão). Dentro de casa, o
-// que é de fora soa abafado e há um eco de sala; nas cavernas, eco longo.
-// O painel Sons soma camadas à mão (trovões sem chuva, mar, caverna...).
+// mundo: floresta onde há árvores (pássaros de dia, grilos à noite), vento
+// conforme o vento, chuva/tempestade/neve conforme o tempo, um trovão a
+// cada relâmpago, fogo, lago e pântano quando o jogador chega perto (do
+// lado em que estão). Dentro de casa o de fora soa abafado e há eco de
+// sala; nas cavernas, eco longo. O painel Sons soma camadas à mão.
 //
-// Passos: um a cada tantos px andados, com o timbre do chão sob os pés.
+// Passos: um a cada tantos px andados, com a gravação do chão sob os pés.
 // ────────────────────────────────────────────────────────
 
 import Phaser from 'phaser'
@@ -18,7 +18,7 @@ import { daylight, lightingOf } from '../world/daylight'
 import type { WeatherDef } from '../world/weather'
 import { AudioEngine, readPrefs } from './engine'
 import { LAYERS, Layer, type LayerId } from './ambience'
-import { footstep, type Surface } from './synths'
+import { Steps, type Surface } from './steps'
 
 /** Até onde se ouve o fogo e a água (px). */
 const FIRE_RANGE = 240
@@ -43,17 +43,21 @@ export function soundOf(zone: ZoneData): ZoneSound {
 export class ZoneAudio {
   private layers = new Map<LayerId, Layer>()
   private fires: { x: number; y: number }[] = []
+  private torches: { x: number; y: number }[] = []
   private water: { x: number; y: number }[] = []
+  private swamp: { x: number; y: number }[] = []
+  private steps: Steps
   private trees = 0
   private strikes = -1
   private pending: { at: number; distance: number }[] = []
   private stepSide = 1
-  private nearCache = { at: 0, fire: 0, firePan: 0, water: 0, waterPan: 0 }
+  private nearCache = { at: 0, fire: { level: 0, pan: 0 }, torch: { level: 0, pan: 0 }, lake: { level: 0, pan: 0 }, swamp: { level: 0, pan: 0 } }
   /** Silencia tudo (editor com a prévia de som desligada). */
   enabled = true
 
   constructor(private engine: AudioEngine, private zone: ZoneData) {
     for (const l of LAYERS) this.layers.set(l.id, new Layer(engine, l.id))
+    this.steps = new Steps(engine)
     this.setZone(zone)
   }
 
@@ -65,17 +69,22 @@ export class ZoneAudio {
   setZone(zone: ZoneData) {
     this.zone = zone
     this.fires = []
+    this.torches = []
     this.trees = 0
     for (const o of zone.objects) {
       const def = objectDef(o.kind)
       if (!def) continue
-      if (def.light && def.light.flicker >= 0.2) this.fires.push({ x: o.x, y: o.y - (o.z ?? 0) + def.light.y })
+      // fogo grande (fogueira, lareira) crepita; pequeno (tocha) só chia
+      if (def.light && def.light.flicker >= 0.2) (def.light.radius >= 110 ? this.fires : this.torches).push({ x: o.x, y: o.y - (o.z ?? 0) + def.light.y })
       if (def.category === 'Árvores') this.trees++
     }
     this.water = []
+    this.swamp = []
     for (let vy = 0; vy <= zone.height; vy++) {
       for (let vx = 0; vx <= zone.width; vx++) {
-        if (isWater(cornerTerrain(zone, vx, vy))) this.water.push({ x: vx * TILE, y: vy * TILE })
+        const t = cornerTerrain(zone, vx, vy)
+        if (t.id === 'swamp') this.swamp.push({ x: vx * TILE, y: vy * TILE })
+        else if (/^water/.test(t.id)) this.water.push({ x: vx * TILE, y: vy * TILE })
       }
     }
     this.nearCache.at = -1
@@ -90,7 +99,7 @@ export class ZoneAudio {
 
   /** Ouvir um passo num chão (botões do painel). */
   previewStep(surface: Surface) {
-    footstep(this.engine, this.engine.dry, surface, Math.max(0.3, readPrefs().steps), 0)
+    this.steps.play(surface, Math.max(0.4, readPrefs().steps))
   }
 
   /** Ouvir um trovão agora (botão do painel). */
@@ -111,37 +120,38 @@ export class ZoneAudio {
     const near = this.near(f.x, f.y)
 
     // automático: o que o mundo pede
-    const a: Record<LayerId, number> = { forest: 0, wind: 0, rain: 0, thunder: 0, snow: 0, water: 0, sea: 0, cave: 0, fire: 0 }
+    const a = Object.fromEntries(LAYERS.map((l) => [l.id, 0])) as Record<LayerId, number>
+    // chuva forte vira a gravação de tempestade; garoa/chuva, a de chuva
+    const rain = w.lightning ? 0 : w.rain, storm = w.lightning ? w.rain : 0
     if (auto) {
       if (outdoor) {
-        a.forest = this.trees >= 3 ? 0.7 : this.trees ? 0.45 : 0.25
-        if (w.rain > 0.5 || w.snow > 0.5) a.forest *= 0.3
-        a.wind = 0.15 + 0.6 * f.wind
-        a.rain = w.rain
-        a.snow = w.snow
+        a.forest = this.trees >= 3 ? 0.6 : this.trees ? 0.4 : 0.2
+        if (w.rain > 0.5 || w.snow > 0.5) a.forest *= 0.25
+        a.wind = 0.1 + 0.5 * f.wind
+        a.rain = rain
+        a.storm = storm
+        a.snow = w.snow * 0.9
       } else if (indoor) {
-        a.wind = w.minWind >= 0.9 ? 0.5 : 0
-        a.rain = w.rain * 0.9
+        a.wind = w.minWind >= 0.9 ? 0.4 : 0
+        a.rain = rain * 0.9
+        a.storm = storm * 0.9
         a.snow = w.snow * 0.4
       } else {
-        a.cave = 0.75
+        a.cave = 0.6
       }
-      a.fire = near.fire
-      a.water = near.water
+      a.fire = near.fire.level
+      a.torch = near.torch.level * 0.6
+      a.lake = near.lake.level * 0.7
+      a.swamp = near.swamp.level * 0.8
     }
     // camadas postas à mão somam (o maior vale)
     const manual = (this.enabled && sound.layers) || {}
     const muffledOutside = indoor
     for (const [id, layer] of this.layers) {
       const level = this.enabled ? Math.max(a[id], manual[id] ?? 0) : 0
-      const outside = id === 'rain' || id === 'thunder' || id === 'wind' || id === 'snow'
-      layer.update(dt, {
-        level,
-        day,
-        wind: id === 'wind' && manual.wind ? Math.max(f.wind, 0.5) : f.wind,
-        pan: id === 'fire' ? near.firePan : id === 'water' ? near.waterPan : 0,
-        muffled: muffledOutside && outside,
-      })
+      const outside = id === 'rain' || id === 'storm' || id === 'thunder' || id === 'wind' || id === 'snow'
+      const spot = id === 'fire' || id === 'torch' || id === 'lake' || id === 'swamp' ? near[id] : null
+      layer.update(dt, { level, day, pan: spot && spot.level >= (manual[id] ?? 0) ? spot.pan : 0, muffled: muffledOutside && outside })
     }
 
     // um trovão pra cada relâmpago (o som chega um pouco depois da luz)
@@ -171,11 +181,10 @@ export class ZoneAudio {
       const k = 1 - best / range
       return { level: k * k, pan: Math.max(-0.8, Math.min(0.8, bx / range)) }
     }
-    const fire = closest(this.fires, FIRE_RANGE), water = closest(this.water, WATER_RANGE)
-    c.fire = fire.level
-    c.firePan = fire.pan
-    c.water = water.level * 0.8
-    c.waterPan = water.pan
+    c.fire = closest(this.fires, FIRE_RANGE)
+    c.torch = closest(this.torches, FIRE_RANGE * 0.6)
+    c.lake = closest(this.water, WATER_RANGE)
+    c.swamp = closest(this.swamp, WATER_RANGE)
     return c
   }
 
@@ -187,17 +196,13 @@ export class ZoneAudio {
     let surface = surfaceAt(this.zone, x, y)
     if (outdoor && weather.snow >= 0.6 && (surface === 'grass' || surface === 'dirt' || surface === 'sand')) surface = 'snow'
     this.stepSide = -this.stepSide
-    footstep(this.engine, this.engine.dry, surface, prefs.steps * (running ? 0.9 : 0.65), this.stepSide * 0.08, outdoor && weather.rain > 0.2)
+    this.steps.play(surface, prefs.steps * (running ? 0.9 : 0.7), this.stepSide * 0.08, outdoor && weather.rain > 0.2)
   }
 
   destroy() {
     for (const l of this.layers.values()) l.destroy()
     this.layers.clear()
   }
-}
-
-function isWater(t: TerrainDef) {
-  return /^water/.test(t.id) || t.id === 'swamp'
 }
 
 /** Que chão está sob os pés: tapete/moldura por cima, senão o terreno do vértice mais perto. */

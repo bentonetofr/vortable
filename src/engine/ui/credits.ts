@@ -7,6 +7,7 @@ import { CATALOG_URL, objectCatalog, type ObjectCatalog, type PackInfo } from '.
 const FIXED = [
   { title: 'Personagens', file: 'credits/CREDITS-character.md' },
   { title: 'Terrenos e interiores', file: 'credits/CREDITS-terrain.txt' },
+  { title: 'Sons', file: 'credits/CREDITS-audio.txt' },
 ]
 
 /** Conteúdo da janela de créditos (carrega os textos na hora). */

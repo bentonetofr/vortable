@@ -662,15 +662,43 @@
 .vt-weather.vt-on { border-color: var(--vt-accent); background: var(--vt-accent-glow); color: var(--vt-accent-bright); }
 
 /* ── Sons ───────────────────────────────────────── */
-.vt-soundrows { display: grid; gap: 2px; margin-top: 8px; }
-.vt-soundrow { display: grid; grid-template-columns: 64px 1fr 36px; align-items: center; gap: 6px; position: relative; padding-bottom: 4px; }
-.vt-soundrow label { font-size: 12px; color: var(--vt-text-2); }
-.vt-soundrow .vt-range { width: 100%; min-width: 0; accent-color: var(--vt-accent); }
-.vt-soundrow b { font-size: 11px; font-weight: 600; color: var(--vt-text-2); text-align: right; font-variant-numeric: tabular-nums; }
-.vt-meter { grid-column: 2 / 3; height: 2px; border-radius: 1px; background: var(--vt-border-dim); overflow: hidden; }
-.vt-meter-fill { display: block; height: 100%; width: 0; background: var(--vt-accent); transition: width 0.2s; }
-.vt-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-.vt-chipbtn { padding: 4px 8px; border-radius: 999px; border: 1px solid var(--vt-border-dim); background: var(--vt-bg); color: var(--vt-text-2); font: inherit; font-size: 11px; cursor: pointer; }
+.vt-soundbar { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; background: var(--vt-bg); border: 1px solid var(--vt-border-dim); }
+.vt-soundbar .vt-range { flex: 1; min-width: 0; accent-color: var(--vt-accent); }
+.vt-switchrow { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--vt-text-2); cursor: pointer; user-select: none; }
+.vt-switch {
+  appearance: none; -webkit-appearance: none; flex: none; position: relative; margin: 0;
+  width: 30px; height: 17px; border-radius: 999px; background: var(--vt-border-dim); cursor: pointer; transition: background 0.15s;
+}
+.vt-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: var(--vt-text-2); transition: transform 0.15s, background 0.15s; }
+.vt-switch:checked { background: var(--vt-accent); }
+.vt-switch:checked::after { transform: translateX(13px); background: #2a1700; }
+.vt-iconbtn { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 28px; height: 28px; padding: 0; border-radius: 7px; border: 1px solid var(--vt-border-dim); background: var(--vt-elevated); color: var(--vt-text-2); cursor: pointer; }
+.vt-iconbtn:hover { color: var(--vt-text); border-color: var(--vt-border); }
+.vt-iconbtn.vt-on { color: var(--vt-accent-bright); border-color: var(--vt-accent); }
+.vt-iconbtn svg { width: 15px; height: 15px; }
+.vt-grouphead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.vt-grouphead h4 { margin: 0; }
+.vt-grouphead .vt-range { width: 120px; accent-color: var(--vt-accent); }
+.vt-soundtiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.vt-soundtile {
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 8px 2px 7px; border-radius: 8px;
+  border: 1px solid var(--vt-border-dim); background: var(--vt-bg);
+  color: var(--vt-muted); font: inherit; font-size: 11px; cursor: pointer;
+}
+.vt-soundtile:hover { color: var(--vt-text); border-color: var(--vt-border); }
+.vt-soundtile.vt-on { color: var(--vt-accent-bright); border-color: var(--vt-accent); background: var(--vt-accent-glow); }
+.vt-soundtile.vt-picked { box-shadow: 0 0 0 1px var(--vt-accent-bright) inset; }
+.vt-soundtile-icon { display: flex; }
+.vt-soundtile-icon svg { width: 18px; height: 18px; }
+.vt-soundtile-meter { position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--vt-accent); transition: width 0.2s; }
+.vt-soundpick { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 7px 9px; border-radius: 8px; background: var(--vt-elevated); border: 1px solid var(--vt-border-dim); color: var(--vt-accent-bright); }
+.vt-soundpick label { font-size: 12px; font-weight: 600; color: var(--vt-text); min-width: 64px; }
+.vt-soundpick .vt-range { flex: 1; min-width: 0; accent-color: var(--vt-accent); }
+.vt-soundpick b { min-width: 34px; text-align: right; font-size: 11px; color: var(--vt-text-2); font-variant-numeric: tabular-nums; }
+.vt-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.vt-chipbtn { padding: 4px 9px; border-radius: 999px; border: 1px solid var(--vt-border-dim); background: var(--vt-bg); color: var(--vt-text-2); font: inherit; font-size: 11px; cursor: pointer; }
 .vt-chipbtn:hover { border-color: var(--vt-accent); color: var(--vt-text); }
 .vt-mutebtn svg { width: 16px; height: 16px; }
 .vt-tab { min-width: 0; padding-left: 2px; padding-right: 2px; }

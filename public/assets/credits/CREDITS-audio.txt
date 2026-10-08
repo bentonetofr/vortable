@@ -1,0 +1,25 @@
+SONS DO VORTABLE
+================
+
+Ambientes (floresta, floresta sombria, vento, chuva, tempestade, neve,
+riacho, lago, cachoeira, pântano, mar, caverna, fogueira, tocha)
+  "Nature Ambient Pack Vol 1" — JC Sounds
+  CC BY 4.0 - Credit: JC Sounds
+  https://opengameart.org/content/jc-sounds-nature-ambient-pack-vol-1
+  (convertidos para MP3 112 kb/s, com emenda em laço)
+
+Passos (grama, neve, madeira, tapete, pedra)
+  "Impact Sounds" — Kenney (www.kenney.nl)
+  CC0 (domínio público)
+  https://kenney.nl/assets/impact-sounds
+
+Passos (cascalho, água rasa)
+  "Footsteps on different surfaces" — congusbongus
+  CC BY 3.0 — https://opengameart.org/content/footsteps-on-different-surfaces
+  Cascalho: derivado de "Gravel Footsteps" de Ali_6868 (freesound.org, CC BY 3.0)
+  Água: derivado de "Water Footsteps" de EminYILDIRIM e "footstep-concrete.wav"
+  de swuing (freesound.org, CC BY 3.0)
+
+Trovão
+  "Thunder" (thunderclap) — Jerimee
+  CC BY 3.0 — https://opengameart.org/content/thunder

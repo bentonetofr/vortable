@@ -103,16 +103,16 @@ Aba **Clima**:
 
 ### Sons
 
-Todos os sons são **sintetizados no navegador** (nada pra baixar, nenhuma licença). Aba **Sons**:
-- **Automático** (padrão): pássaros onde há árvores, grilos e coruja à noite, vento conforme o
-  vento, chuva e neve conforme o tempo, **um trovão a cada relâmpago**, fogo crepitando e água
-  correndo quando o jogador chega perto (do lado em que estão). Dentro de casa o que é de fora
-  soa abafado e há eco de sala; caverna tem eco longo e gotas pingando.
-- **Camadas à mão** (somam ao automático): Floresta, Vento, Chuva, Trovões (mesmo sem chuva),
-  Neve, Riacho, Mar, Caverna, Fogueira — cada uma com volume e uma barrinha do que toca agora.
-- **Passos**: o som muda com o chão (grama, terra, areia, cascalho, neve, pedra, madeira,
-  tapete, água rasa); na chuva o chão respinga; com neve, tudo vira neve. Botões pra ouvir cada um.
-- Volume, mudo e volume dos passos são de quem joga (ficam no navegador).
+Gravações livres (créditos na tela de Créditos): ambientes do *Nature Ambient Pack* (JC Sounds,
+CC BY 4.0), passos *Impact Sounds* (Kenney, CC0) e *Footsteps on different surfaces*
+(congusbongus, CC BY 3.0), trovão de Jerimee (CC BY 3.0). Aba **Sons**:
+- **Automático** (padrão): floresta onde há árvores (pássaros de dia, grilos à noite), vento,
+  chuva/tempestade/neve conforme o tempo, um trovão a cada relâmpago; fogueira, tocha, lago e
+  pântano quando o jogador chega perto. Dentro de casa o de fora soa abafado.
+- **15 camadas** em cartões (clique liga/desliga e mostra o volume): Floresta, Sombria, Vento,
+  Chuva, Tempestade, Trovões (também sem chuva), Neve, Riacho, Lago, Cachoeira, Pântano, Mar,
+  Caverna, Fogueira, Tocha.
+- **Passos** gravados por chão: grama, terra, areia, cascalho, neve, pedra, madeira, tapete, água.
 
 ### Terrenos, paredes, tapetes e cercas
 

@@ -1,8 +1,7 @@
 // ────────────────────────────────────────────────────────
-// Motor de som. Tudo é SINTETIZADO no navegador (Web Audio): ruídos
-// filtrados (chuva, vento, mar, fogo), osciladores (pássaros, grilos,
-// coruja, gotas) e rajadas curtas (passos). Nada pra baixar, nenhuma
-// licença, e cada som sai um pouco diferente do anterior.
+// Motor de som (Web Audio). Os sons são GRAVAÇÕES livres (public/assets/
+// audio, créditos em credits/CREDITS-audio.txt), baixadas só quando tocam
+// pela primeira vez e guardadas decodificadas.
 //
 // Usa o AudioContext do Phaser (ele já destrava o som no primeiro clique).
 // Saída: tudo passa por `master`; o que manda para `reverbSend` ganha eco
@@ -12,10 +11,18 @@
 import Phaser from 'phaser'
 import { readPrefs, writePrefs } from './prefs'
 
-export type NoiseKind = 'white' | 'pink' | 'brown'
 export type Room = 'none' | 'room' | 'cave'
 
 const engines = new WeakMap<Phaser.Game, AudioEngine | null>()
+let base = './assets/'
+
+/** Onde ficam os assets (mountVortable avisa). */
+export function setAudioBase(assetBase: string) {
+  base = assetBase
+}
+
+/** Um som carregado e os pontos de laço (sem o silêncio que o MP3 põe nas pontas). */
+export interface Clip { buffer: AudioBuffer; start: number; end: number }
 
 export class AudioEngine {
   readonly ctx: AudioContext
@@ -25,8 +32,8 @@ export class AudioEngine {
   readonly reverbSend: GainNode
   private reverb: ConvolverNode
   private room: Room = 'none'
-  private noises = new Map<NoiseKind, AudioBuffer>()
   private irs = new Map<Room, AudioBuffer>()
+  private clips = new Map<string, Promise<Clip | null>>()
 
   /** O motor do jogo (um por jogo); null se o navegador não tem Web Audio. */
   static of(scene: Phaser.Scene): AudioEngine | null {
@@ -90,50 +97,32 @@ export class AudioEngine {
     return buf
   }
 
-  /** 4 s de ruído (branco, rosa, marrom), gerados uma vez e tocados em laço. */
-  noise(kind: NoiseKind) {
-    const cached = this.noises.get(kind)
-    if (cached) return cached
-    const sr = this.ctx.sampleRate, len = sr * 4
-    const buf = this.ctx.createBuffer(1, len, sr)
-    const d = buf.getChannelData(0)
-    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0, last = 0
-    for (let i = 0; i < len; i++) {
-      const w = Math.random() * 2 - 1
-      if (kind === 'white') d[i] = w * 0.5
-      else if (kind === 'pink') {
-        // filtro de Paul Kellet
-        b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759; b2 = 0.969 * b2 + w * 0.153852
-        b3 = 0.8665 * b3 + w * 0.3104856; b4 = 0.55 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.016898
-        d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11
-        b6 = w * 0.115926
-      } else {
-        last = (last + 0.02 * w) / 1.02
-        d[i] = last * 3.5
-      }
+  /** Carrega (uma vez) audio/<nome>.mp3. null = não deu (sem rede, arquivo faltando). */
+  clip(name: string): Promise<Clip | null> {
+    let p = this.clips.get(name)
+    if (!p) {
+      p = fetch(`${base}audio/${name}.mp3`)
+        .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
+        .then((data) => this.ctx.decodeAudioData(data))
+        .then((buffer) => ({ buffer, ...edges(buffer) }))
+        .catch((err) => {
+          console.warn('[vortable] som não carregou:', name, err)
+          return null
+        })
+      this.clips.set(name, p)
     }
-    // emenda o fim no começo (laço sem estalo)
-    const fade = Math.floor(sr * 0.05)
-    for (let i = 0; i < fade; i++) d[len - fade + i] *= 1 - i / fade
-    this.noises.set(kind, buf)
-    return buf
+    return p
   }
 
-  /** Fonte de ruído em laço, começando num ponto qualquer (camadas iguais não ficam em fase). */
-  loop(kind: NoiseKind, rate = 1) {
+  /** Toca um som uma vez. */
+  play(clip: Clip, dest: AudioNode, volume = 1, rate = 1, at = this.now) {
     const src = this.ctx.createBufferSource()
-    src.buffer = this.noise(kind)
-    src.loop = true
+    src.buffer = clip.buffer
     src.playbackRate.value = rate
-    src.start(this.now, Math.random() * 3.5)
-    return src
-  }
-
-  /** Um trecho curto de ruído (passos, estalos, trovão). */
-  burst(kind: NoiseKind, at: number, dur: number) {
-    const src = this.ctx.createBufferSource()
-    src.buffer = this.noise(kind)
-    src.start(at, Math.random() * 3.5, dur + 0.05)
+    const g = this.gain(volume)
+    src.connect(g)
+    g.connect(dest)
+    src.start(at, clip.start)
     return src
   }
 
@@ -149,12 +138,6 @@ export class AudioEngine {
     const g = this.ctx.createGain()
     g.gain.value = v
     return g
-  }
-
-  /** Liga em série: a → b → c ... e devolve o último. */
-  chain(...nodes: AudioNode[]) {
-    for (let i = 0; i < nodes.length - 1; i++) nodes[i].connect(nodes[i + 1])
-    return nodes[nodes.length - 1]
   }
 
   /** Saída de um som: seco no master e uma parte no eco. */
@@ -173,6 +156,15 @@ export class AudioEngine {
       s.connect(this.reverbSend)
     }
   }
+}
+
+/** Onde o som começa e acaba de verdade (o MP3 põe um pouco de silêncio nas pontas). */
+function edges(b: AudioBuffer) {
+  const d = b.getChannelData(0), limit = 0.0008
+  let i = 0, j = d.length - 1
+  while (i < d.length - 1 && Math.abs(d[i]) < limit) i++
+  while (j > i && Math.abs(d[j]) < limit) j--
+  return { start: i / b.sampleRate, end: (j + 1) / b.sampleRate }
 }
 
 export { readPrefs, writePrefs }

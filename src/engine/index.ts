@@ -19,7 +19,7 @@ import { setObjectCatalog, type ObjectCatalog } from './assets/objects'
 import { registerObjectArt } from './world/objects'
 import { lightingOf, worldHour } from './world/daylight'
 import { DAY_MINUTES } from './types'
-import { AudioEngine } from './audio/engine'
+import { AudioEngine, setAudioBase } from './audio/engine'
 
 import { CreatorUI } from './character/CreatorUI'
 import { LocalCharacterStorage, type CharacterStorage } from './character/storage'
@@ -60,6 +60,7 @@ export interface VortableHandle {
 
 export function mountVortable(parent: HTMLElement, opts: VortableOptions): VortableHandle {
   const assetBase = opts.assetBase ?? './assets/'
+  setAudioBase(assetBase)
   const mode = opts.mode ?? 'play'
   const storage = opts.storage ?? new LocalWorldStorage()
   let appearance = opts.appearance

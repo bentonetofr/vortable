@@ -26,7 +26,7 @@ import type { LightLook } from './EditorState'
 import { DEFAULT_WIND, WIND_LEVELS } from '../world/wind'
 import { WEATHERS, WEATHER_ORDER } from '../world/weather'
 import { LAYERS, type LayerId } from '../audio/ambience'
-import { SURFACE_LABELS, type Surface } from '../audio/synths'
+import { SURFACE_LABELS, type Surface } from '../audio/steps'
 import { soundOf } from '../audio/ZoneAudio'
 import { readPrefs, writePrefs } from '../audio/prefs'
 import { solidTerrainRects } from '../world/ground'
@@ -90,6 +90,8 @@ export class EditorUI {
   private tab: 'terrains' | 'objects' | 'rooms' | 'light' | 'sound' = 'terrains'
   /** Atualiza as barrinhas de nível do painel Sons. */
   private meterTimer = 0
+  /** Camada escolhida no painel Sons (mostra a régua dela). */
+  private soundPick: LayerId | null = null
   /** Qual luz solta o painel Luz está mostrando (só redesenha quando troca). */
   private shownLight: string | null = null
   private testClockEl!: HTMLElement
@@ -548,9 +550,9 @@ export class EditorUI {
       onclick: () => { s.set({ roomMode: id, tool: 'room' }); this.renderPane() },
     }, label)))
     const modeHelp = {
-      room: 'Arraste no mapa pra criar. Encostado num cômodo de outro estilo, nasce uma parede fina entre os dois; do mesmo estilo, vira um cômodo maior.',
-      wall: 'Risque uma linha dentro de um cômodo: vira uma parede interna (com a face, se a parede tiver altura).',
-      door: 'Arraste sobre a parede entre dois cômodos (ou na borda, pra fazer a entradinha da porta) pra abrir um vão.',
+      room: 'Arraste no mapa pra criar.',
+      wall: 'Risque uma linha pra dividir.',
+      door: 'Arraste sobre uma parede pra abrir.',
     }[s.roomMode]
 
     this.paneEl.append(
@@ -559,16 +561,8 @@ export class EditorUI {
       h('div', { class: 'vt-group' }, h('h4', {}, 'Estilo do cômodo'),
         h('div', { class: 'vt-styleparts' }, part('Parede', style.wall, 'wall'), part('Piso', style.floor, 'floor'), part('Moldura', style.trim, 'trim')),
         h('div', { class: 'vt-row vt-heightrow' }, h('label', {}, 'Altura da parede'), height, heightOut),
-        h('small', { class: 'vt-note' }, style.height ? `A face da parede ocupa ${style.height} tile${style.height > 1 ? 's' : ''} abaixo de cada borda de cima.` : 'Sem face: só a borda em volta (corredores vistos de cima).'),
       ),
-      h('div', { class: 'vt-group vt-roomhelp' }, h('h4', {}, 'Como usar'),
-        h('ul', {},
-          h('li', {}, h('b', {}, 'Clique'), ' num cômodo (modo Cômodo) aplica este estilo nele.'),
-          h('li', {}, h('b', {}, 'Alt + clique'), ' copia o estilo de um cômodo.'),
-          h('li', {}, h('b', {}, 'Ctrl + arrastar'), ' apaga um pedaço (a parede em volta se refaz).'),
-          h('li', {}, 'Depois, decore com ', h('b', {}, 'Objetos'), ': janelas e quadros na parede, móveis no piso.'),
-        ),
-      ),
+      h('small', { class: 'vt-note' }, 'Alt + clique copia um estilo; Ctrl + arrastar apaga.'),
     )
   }
 
@@ -637,7 +631,7 @@ export class EditorUI {
       tint.addEventListener('change', () => { saved = false; this.renderPane() })
       timeBlock.push(
         h('div', { class: 'vt-row' }, h('label', {}, 'Cor do escuro'), tint),
-        h('small', { class: 'vt-note' }, 'Sem sol: a hora não muda nada aqui. Quanto mais escura a cor, mais breu — só tochas e velas clareiam.'),
+        h('small', { class: 'vt-note' }, 'Sem sol: só tochas e velas clareiam.'),
       )
     } else {
       timeBlock.push(seg([
@@ -681,8 +675,8 @@ export class EditorUI {
       onclick: () => weatherId !== id && setLighting({ weather: id === 'clear' ? undefined : id }),
     }, h('span', { html: id === 'clear' ? ICONS.sun : id === 'cloudy' ? ICONS.cloud : ICONS[id] }), h('span', {}, WEATHERS[id].label))))
     const weatherNote = cur.place === 'indoor'
-      ? 'Dentro não chove nem neva: a luz das janelas fica mais fraca e os relâmpagos piscam nelas.'
-      : WEATHERS[weatherId as keyof typeof WEATHERS].minWind >= 0.9 ? 'Esse tempo sopra forte, qualquer que seja o vento escolhido.' : ''
+      ? 'Dentro, o tempo só aparece nas janelas.'
+      : ''
 
     // vento: o mais próximo dos três níveis fica marcado
     const wind = cur.wind ?? DEFAULT_WIND
@@ -699,13 +693,12 @@ export class EditorUI {
         ? [h('div', { class: 'vt-group' }, h('h4', {}, 'Tempo'), weathers, weatherNote ? h('small', { class: 'vt-note vt-modehelp' }, weatherNote) : null)]
         : []),
       ...(cur.place === 'outdoor'
-        ? [h('div', { class: 'vt-group' }, h('h4', {}, 'Vento'), windSeg,
-          h('small', { class: 'vt-note vt-modehelp' }, 'Árvores, plantas e placas balançam; ondas correm pela grama; folhas caem e rolam pelo chão.'))]
+        ? [h('div', { class: 'vt-group' }, h('h4', {}, 'Vento'), windSeg)]
         : []),
       h('div', { class: 'vt-group' }, h('h4', {}, cur.place === 'underground' ? 'Escuridão' : 'Hora'), ...timeBlock),
       h('div', { class: 'vt-group' }, extras),
       this.lightLookGroup(),
-      ...(s.lightPreview ? [] : [h('small', { class: 'vt-note' }, 'A prévia da iluminação está desligada (I ou o sol na barra da esquerda).')]),
+      ...(s.lightPreview ? [] : [h('small', { class: 'vt-note' }, 'Prévia desligada (I).')]),
     )
   }
 
@@ -747,8 +740,8 @@ export class EditorUI {
     return h('div', { class: 'vt-group' },
       h('h4', {}, sel ? 'Luz selecionada' : 'Luzes soltas', h('span', { class: 'vt-acc-count' }, ` ${total} solta${total === 1 ? '' : 's'} · ${objLights} em objetos`)),
       h('small', { class: 'vt-note vt-modehelp' }, sel
-        ? 'Arraste a luz no mapa pra mover · Del apaga.'
-        : 'Ferramenta Luz (L): clique no mapa pra pôr uma luz assim. Tochas, velas e lareiras dos Objetos já vêm acesas.'),
+        ? 'Arraste pra mover; Del apaga.'
+        : 'Clique no mapa pra pôr uma luz (L).'),
       swatches,
       slider('Alcance', LIGHT_RADIUS_MIN, LIGHT_RADIUS_MAX, 8, look.radius, (v) => `${(v / TILE).toFixed(1).replace('.0', '')} tiles`, 'radius'),
       slider('Força', 0, 100, 5, look.intensity, (v) => `${Math.round(v * 100)}%`, 'intensity', 100),
@@ -781,9 +774,16 @@ export class EditorUI {
     this.muteBtn.classList.toggle('vt-on', !muted)
   }
 
+  /** Interruptor (liga/desliga) no estilo do editor. */
+  private switchEl(on: boolean, flip: (v: boolean) => void, title = '') {
+    const box = h('input', { type: 'checkbox', checked: on, class: 'vt-switch', title }) as HTMLInputElement
+    box.addEventListener('change', () => flip(box.checked))
+    return box
+  }
+
   /**
-   * Sons da zona: automático (segue tempo, hora, árvores, fogo e água) e
-   * camadas à mão com volume; os passos e o volume são de quem joga.
+   * Sons: camadas em cartões (clique liga/desliga; o escolhido mostra o
+   * volume), automático, passos e o volume de quem joga.
    */
   private renderSound() {
     const s = this.state
@@ -791,42 +791,59 @@ export class EditorUI {
     const cur = soundOf(z)
     const prefs = readPrefs()
     let saved = false
-    const setSound = (patch: { auto?: boolean; layers?: Record<string, number> }, live = false) => {
+    const setLayers = (layers: Record<string, number>, live = false) => {
       if (!saved) { s.checkpoint(); saved = true }
-      const next = { ...soundOf(z), ...patch }
-      if (next.auto !== false) delete next.auto
-      if (next.layers) for (const k of Object.keys(next.layers)) if (!next.layers[k]) delete next.layers[k]
-      if (next.layers && !Object.keys(next.layers).length) delete next.layers
+      const next = { ...soundOf(z), layers: { ...soundOf(z).layers, ...layers } }
+      for (const k of Object.keys(next.layers)) if (!next.layers[k]) delete next.layers[k]
+      if (!Object.keys(next.layers).length) delete (next as { layers?: unknown }).layers
       if (Object.keys(next).length) z.sound = next
       else delete z.sound
       s.edited()
       if (!live) { saved = false; this.renderPane() }
     }
-    const range = (value: number, onLive: (v: number) => void, onDone: (v: number) => void) => {
-      const input = h('input', { type: 'range', min: 0, max: 100, step: 5, value: Math.round(value * 100), class: 'vt-range' }) as HTMLInputElement
+    const setAuto = (on: boolean) => {
+      s.checkpoint()
+      const next = { ...soundOf(z) }
+      if (on) delete next.auto
+      else next.auto = false
+      if (Object.keys(next).length) z.sound = next
+      else delete z.sound
+      s.edited()
+      this.renderPane()
+    }
+    const range = (value: number, onLive: (v: number) => void, onDone: (v: number) => void, title = '') => {
+      const input = h('input', { type: 'range', min: 0, max: 100, step: 5, value: Math.round(value * 100), class: 'vt-range', title }) as HTMLInputElement
       input.addEventListener('input', () => onLive(Number(input.value) / 100))
       input.addEventListener('change', () => onDone(Number(input.value) / 100))
       return input
     }
-    const check = (label: string, on: boolean, flip: (v: boolean) => void, title = '') => {
-      const box = h('input', { type: 'checkbox', checked: on }) as HTMLInputElement
-      box.addEventListener('change', () => flip(box.checked))
-      return h('label', { class: 'vt-check', title }, box, h('span', {}, label))
-    }
 
-    // camadas: régua (à mão) + barrinha do que está tocando agora
+    // ── ouvir: interruptor, volume e mudo ──
+    const hear = h('div', { class: 'vt-soundbar' },
+      h('label', { class: 'vt-switchrow', title: 'Tocar os sons enquanto edita (U)' }, this.switchEl(prefs.editor, () => this.toggleEditorSound()), h('span', {}, 'Ouvir')),
+      range(prefs.master, (v) => { writePrefs({ master: v }); this.applySound() }, () => this.applySound(), 'Volume geral'),
+      h('button', { class: `vt-iconbtn${prefs.muted ? ' vt-on' : ''}`, title: prefs.muted ? 'Ligar o som' : 'Mudo', html: prefs.muted ? ICONS.mute : ICONS.sound, onclick: () => { this.toggleMute(); this.renderPane() } }),
+    )
+
+    // ── camadas ──
+    const manual = cur.layers ?? {}
+    const pick = this.soundPick && LAYERS.some((l) => l.id === this.soundPick) ? this.soundPick : null
     const meters = new Map<LayerId, HTMLElement>()
-    const rows = LAYERS.map((l) => {
-      const meter = h('span', { class: 'vt-meter-fill' })
+    const tiles = LAYERS.map((l) => {
+      const on = (manual[l.id] ?? 0) > 0
+      const meter = h('span', { class: 'vt-soundtile-meter' })
       meters.set(l.id, meter)
-      const value = cur.layers?.[l.id] ?? 0
-      const out = h('b', {}, value ? `${Math.round(value * 100)}%` : '—')
-      const input = range(value,
-        (v) => { out.textContent = v ? `${Math.round(v * 100)}%` : '—'; setSound({ layers: { ...soundOf(z).layers, [l.id]: v } }, true) },
-        (v) => setSound({ layers: { ...soundOf(z).layers, [l.id]: v } }))
-      return h('div', { class: 'vt-soundrow', title: l.hint },
-        h('label', {}, l.label), input, out,
-        h('span', { class: 'vt-meter' }, meter))
+      return h('button', {
+        class: `vt-soundtile${on ? ' vt-on' : ''}${pick === l.id ? ' vt-picked' : ''}`,
+        title: l.label,
+        onclick: () => {
+          this.soundPick = l.id
+          if (!readPrefs().editor) writePrefs({ editor: true })
+          // clique no escolhido liga/desliga; em outro, só escolhe (e liga se estava desligado)
+          if (pick === l.id || !on) setLayers({ [l.id]: on ? 0 : 0.7 })
+          else this.renderPane()
+        },
+      }, h('span', { class: 'vt-soundtile-icon', html: ICONS[l.icon as keyof typeof ICONS] ?? ICONS.sound }), h('span', {}, l.label), meter)
     })
     const tick = () => {
       const levels = this.hooks.scene()?.audio?.levels() ?? {}
@@ -835,35 +852,38 @@ export class EditorUI {
     tick()
     this.meterTimer = window.setInterval(tick, 200)
 
+    let picked: Node | null = null
+    if (pick) {
+      const layer = LAYERS.find((l) => l.id === pick)!
+      const value = manual[pick] ?? 0
+      const out = h('b', {}, value ? `${Math.round(value * 100)}%` : 'auto')
+      picked = h('div', { class: 'vt-soundpick' },
+        h('span', { class: 'vt-soundtile-icon', html: ICONS[layer.icon as keyof typeof ICONS] ?? ICONS.sound }),
+        h('label', {}, layer.label),
+        range(value,
+          (v) => { out.textContent = v ? `${Math.round(v * 100)}%` : 'auto'; setLayers({ [pick]: v }, true) },
+          (v) => setLayers({ [pick]: v })),
+        out,
+        pick === 'thunder' ? h('button', { class: 'vt-iconbtn', title: 'Ouvir um trovão', html: ICONS.play, onclick: () => this.hooks.scene()?.audio?.thunderNow() }) : null,
+      )
+    }
+
     const steps = (Object.keys(SURFACE_LABELS) as Surface[]).map((surface) => h('button', {
-      class: 'vt-chipbtn', title: 'Ouvir um passo',
+      class: 'vt-chipbtn', title: 'Ouvir',
       onclick: () => this.hooks.scene()?.audio?.previewStep(surface),
     }, SURFACE_LABELS[surface]))
 
     this.paneEl.append(
-      h('div', { class: 'vt-group' }, h('h4', {}, 'Ouvir'),
-        h('div', { class: 'vt-checks' },
-          check('Tocar os sons no editor', prefs.editor, () => this.toggleEditorSound(), 'Liga/desliga o som enquanto edita (U). No teste, o som sempre toca.'),
-          check('Mudo', prefs.muted, () => this.toggleMute()),
-        ),
-        h('div', { class: 'vt-row vt-soundrow' }, h('label', {}, 'Volume'), range(prefs.master,
-          (v) => { writePrefs({ master: v }); this.applySound() }, () => this.applySound()), h('b', {}, '')),
+      h('div', { class: 'vt-group' }, hear),
+      h('div', { class: 'vt-group' },
+        h('div', { class: 'vt-grouphead' }, h('h4', {}, 'Ambiente'),
+          h('label', { class: 'vt-switchrow', title: 'Segue o tempo, a hora e o que há perto' }, h('span', {}, 'Automático'), this.switchEl(cur.auto !== false, setAuto))),
+        h('div', { class: 'vt-soundtiles' }, ...tiles),
+        picked ?? h('small', { class: 'vt-note' }, 'Clique numa camada pra ligar e ajustar.'),
       ),
-      h('div', { class: 'vt-group' }, h('h4', {}, 'Ambiente desta zona'),
-        check('Automático', cur.auto !== false, (v) => setSound({ auto: v }), ''),
-        h('small', { class: 'vt-note vt-modehelp' }, cur.auto !== false
-          ? 'Segue o mundo: pássaros onde há árvores, grilos e coruja à noite, vento, chuva e neve conforme o tempo, um trovão a cada relâmpago, fogo e água quando o jogador chega perto. As réguas abaixo somam camadas à mão.'
-          : 'Só toca o que você ligar nas réguas abaixo.'),
-        h('div', { class: 'vt-soundrows' }, ...rows),
-        h('div', { class: 'vt-row' },
-          h('button', { class: 'vt-btn', style: 'flex:1', onclick: () => { if (!readPrefs().editor) this.toggleEditorSound(); this.hooks.scene()?.audio?.thunderNow() } }, 'Ouvir um trovão'),
-        ),
-        h('small', { class: 'vt-note' }, 'A barrinha laranja mostra o que está tocando agora (com o som ligado no editor).'),
-      ),
-      h('div', { class: 'vt-group' }, h('h4', {}, 'Passos'),
-        h('div', { class: 'vt-row vt-soundrow' }, h('label', {}, 'Volume'), range(prefs.steps,
-          (v) => writePrefs({ steps: v }), () => undefined), h('b', {}, '')),
-        h('small', { class: 'vt-note vt-modehelp' }, 'O som de cada passo muda com o chão sob o boneco. Na chuva o chão respinga; com neve, tudo vira neve. Clique pra ouvir:'),
+      h('div', { class: 'vt-group' },
+        h('div', { class: 'vt-grouphead' }, h('h4', {}, 'Passos'),
+          range(prefs.steps, (v) => writePrefs({ steps: v }), () => undefined, 'Volume dos passos')),
         h('div', { class: 'vt-chips' }, ...steps),
       ),
     )
