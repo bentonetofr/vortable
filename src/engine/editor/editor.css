@@ -531,7 +531,8 @@
 /* ── Zoom (canto do palco) ──────────────────────── */
 .vt-zoombar {
   position: absolute;
-  right: 10px;
+  left: 50%;
+  transform: translateX(-50%);
   bottom: 10px;
   z-index: 5;
   display: flex;
