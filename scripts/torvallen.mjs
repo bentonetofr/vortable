@@ -52,6 +52,8 @@ const O = {
   chalice: 'base-cup@0,10', skull: 'int@295,32', flasks: 'int@289,128', goblet: 'int@202,1', bottle: 'int@172,1', tray: 'int@167,34',
   stairUp: 'stairs@0,0', stairDown: 'stairs@0,64',   // escadas de degraus (pacote "escadas", arte do Vortable)
   papers: 'int@289,66',
+  // portas (pacote "portas e janelas"): a trancada com fechadura dourada e o portão grande de duas folhas
+  doorGold: 'wd@899,740', doorGrand: 'wd@896,800',
 }
 for (const [k, id] of Object.entries(O)) if (!catalog.has(id)) throw new Error(`Objeto não existe no catálogo: ${k} = ${id}`)
 const T = { stone: 'floor-35', wood: 'floor-14', warm: 'floor-11', darkWood: 'floor-2', rug: 'rug-6', rugLounge: 'rug-10', rugAltar: 'rug-30' }
@@ -74,23 +76,24 @@ const shelfAt = (c) => (c % 4 === 2 ? O.shelfB : O.shelfA)
 const CORNER_SKIP = [[3, 5], [59, 61]]
 
 // ── um andar ──
-function makeFloor({ n, id, name, floor, wall, trim, hour }) {
+function makeFloor({ n, id, name, floor, wall, trim, hour, w = W, h = H }) {
+  const vw = w + 1
   const zone = {
-    version: 1, id, name, width: W, height: H, base: floor,
-    corners: new Array((W + 1) * (H + 1)).fill(''), objects: [], portals: [],
-    spawn: { x: 32 * TILE + 16, y: 52 * TILE + 20 },
+    version: 1, id, name, width: w, height: h, base: floor,
+    corners: new Array(vw * (h + 1)).fill(''), objects: [], portals: [],
+    spawn: { x: (w / 2) * TILE + 16, y: (h - 4) * TILE + 20 },
   }
   const room = encodeRoom({ floor, wall, trim, height: 4 })
-  zone.rooms = new Array((W + 1) * (H + 1)).fill('')
-  for (let y = 2; y <= 54; y++) for (let x = 2; x <= 61; x++) zone.rooms[y * VW + x] = room
-  applyRooms(zone, new Array((W + 1) * (H + 1)).fill(''))
-  zone.overlay = zone.overlay ?? new Array((W + 1) * (H + 1)).fill('')
+  zone.rooms = new Array(vw * (h + 1)).fill('')
+  for (let y = 2; y <= h - 2; y++) for (let x = 2; x <= w - 3; x++) zone.rooms[y * vw + x] = room
+  applyRooms(zone, new Array(vw * (h + 1)).fill(''))
+  zone.overlay = zone.overlay ?? new Array(vw * (h + 1)).fill('')
   const lights = []
   const api = {
     zone, lights, n,
-    isFloor: (x, y) => y >= 7 && y <= 54 && x >= 2 && x <= 61,
-    paint(x0, y0, x1, y1, tid) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (api.isFloor(x, y)) zone.corners[y * VW + x] = tid },
-    rug(x0, y0, x1, y1, tid) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (api.isFloor(x, y)) zone.overlay[y * VW + x] = tid },
+    isFloor: (x, y) => y >= 7 && y <= h - 2 && x >= 2 && x <= w - 3,
+    paint(x0, y0, x1, y1, tid) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (api.isFloor(x, y)) zone.corners[y * vw + x] = tid },
+    rug(x0, y0, x1, y1, tid) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (api.isFloor(x, y)) zone.overlay[y * vw + x] = tid },
     put(kind, tx, ty, e = {}) {
       zone.objects.push({ kind, x: Math.round(tx * TILE + TILE / 2 + (e.dx ?? 0)), y: Math.round((ty + 1) * TILE + (e.dy ?? 0)), ...(e.flip ? { flip: true } : {}), ...(e.z ? { z: e.z } : {}) })
     },
@@ -103,7 +106,7 @@ function makeFloor({ n, id, name, floor, wall, trim, hour }) {
 }
 
 // parede norte: janelas, cortinas, lampiões e a fileira de estantes encostada nela
-function northWall(f, { windows, big = true, skipShelves = null }) {
+function northWall(f, { windows, big = true, skipShelves = null, centerDoor = false }) {
   const WALL_BASE = 184
   for (const [tx, id] of windows) {
     f.putPx(id, tx * TILE + 16, WALL_BASE)
@@ -111,7 +114,7 @@ function northWall(f, { windows, big = true, skipShelves = null }) {
   }
   if (big) {
     const cx = 32 * TILE + 16
-    for (const dx of [0, -64, 64]) f.putPx(O.windowWide, cx + dx, WALL_BASE)
+    for (const dx of centerDoor ? [-64, 64] : [0, -64, 64]) f.putPx(O.windowWide, cx + dx, WALL_BASE)
     for (const dx of [-112, 112]) f.putPx(O.windowTall, cx + dx, WALL_BASE)
     f.putPx(O.curtainsTied, cx - 150, 198)
     f.putPx(O.curtainsTied, cx + 150, 198, { flip: true })
@@ -246,7 +249,7 @@ const F1 = makeFloor({ n: 1, id: 'torvallen-biblioteca-1', name: 'Biblioteca de 
   f.paint(27, 7, 37, 12, T.warm)
   f.rug(29, 8, 36, 53, T.rug)           // tapete da nave, da entrada ao altar
   f.rug(30, 9, 35, 11, T.rugAltar)
-  northWall(f, { windows: [[11, O.windowWide], [19, O.windowWide], [44, O.windowWide], [52, O.windowWide], [7, O.windowSmall1], [56, O.windowSmall2], [15, O.windowSmall2], [48, O.windowSmall1]], skipShelves: [[26, 37]] })
+  northWall(f, { windows: [[11, O.windowWide], [19, O.windowWide], [44, O.windowWide], [52, O.windowWide], [7, O.windowSmall1], [56, O.windowSmall2], [15, O.windowSmall2], [48, O.windowSmall1]], skipShelves: [[26, 37]], centerDoor: true })
   f.put(O.clock, 26, 7); f.put(O.clock, 37, 7)
   f.put(O.organ, 21, 7, { dx: 24 })
   buildBlocks(f, matrixOf([
@@ -260,10 +263,15 @@ const F1 = makeFloor({ n: 1, id: 'torvallen-biblioteca-1', name: 'Biblioteca de 
   for (const cx of [26.5 * TILE, 38.5 * TILE]) for (const ty of [15, 21, 27, 33, 39]) readingTable(f, cx, (ty + 1) * TILE)
   // altar: a mesa gigante, cheia de livros, entre estátuas
   const altar = 9
-  f.put(O.statueAngel, 26, altar); f.put(O.statueAngel, 38, altar, { flip: true })
+  f.put(O.statueAngel, 25, altar - 1); f.put(O.statueAngel, 39, altar - 1, { flip: true })
   f.put(O.statueMaiden, 24, altar + 1); f.put(O.statueMaiden, 40, altar + 1, { flip: true })
   giantDesk(f, 32 * TILE + 16, (altar + 1) * TILE + 12)
   f.put(O.candleTable, 29, 11); f.put(O.candleTable, 35, 11)
+  // atrás da mesa: a porta trancada da Seção Proibida (só o imperador e os superiores entram)
+  f.putPx(O.doorGold, 32 * TILE + 16, 7 * TILE + 6)
+  f.put(O.torchPost, 29, 7); f.put(O.torchPost, 35, 7)
+  f.light('porta-proibida', 32 * TILE + 16, 7 * TILE - 8, 130, '#ffc060', 0.7, 0.3)
+  f.zone.portals.push({ id: 'secao-proibida', name: 'Seção Proibida (somente o imperador e os superiores)', x: 31 * TILE, y: 7 * TILE, w: 3 * TILE, h: TILE, to: { zone: 'torvallen-secao-proibida', portal: 'saida-secao' } })
   f.light('altar', 32 * TILE + 16, 9 * TILE, 200, '#ffd9a0', 0.7, 0.1)
   for (const ty of [11, 20, 29, 38, 46]) f.light(`lustre-${ty}`, 32 * TILE + 16, ty * TILE, 270, '#ffd49a', 0.85, 0.14)
   // entrada ao sul: mesa da bibliotecária e postes de luz
@@ -274,7 +282,8 @@ const F1 = makeFloor({ n: 1, id: 'torvallen-biblioteca-1', name: 'Biblioteca de 
   f.put(O.torchPost, 28, 52); f.put(O.torchPost, 36, 52)
   f.light('entrada-e', 28 * TILE + 16, 52 * TILE - 20, 150, '#ffb25e', 0.8, 0.6)
   f.light('entrada-d', 36 * TILE + 16, 52 * TILE - 20, 150, '#ffb25e', 0.8, 0.6)
-  f.zone.portals.push({ id: 'saida-palacio', name: 'Saída para o palácio', x: 30 * TILE, y: 53 * TILE, w: 5 * TILE, h: TILE, to: null })
+  f.putPx(O.doorGrand, 32 * TILE + 16, 54 * TILE - 2)
+  f.zone.portals.push({ id: 'saida-palacio', name: 'Saída para o saguão do palácio', x: 31 * TILE, y: 53 * TILE, w: 3 * TILE, h: TILE, to: { zone: 'torvallen-saguao-palacio', portal: 'porta-biblioteca' } })
 }
 
 // ═══ ANDAR 2: a Galeria dos Corredores ═══
@@ -316,6 +325,74 @@ const F4 = makeFloor({ n: 4, id: 'torvallen-biblioteca-4', name: 'Biblioteca de 
   f.light('atrio', cx, 28 * TILE, 330, '#fff0c8', 0.95, 0.06)
 }
 
+// ═══ SEÇÃO PROIBIDA: o arquivo do imperador, atrás do altar do térreo ═══
+const SECAO = makeFloor({ n: 6, id: 'torvallen-secao-proibida', name: 'Seção Proibida — Arquivo Imperial', floor: T.darkWood, wall: 'wall-209', trim: 'ceil-3', hour: 19, w: 44, h: 44 })
+{
+  const f = SECAO
+  const cx = 22 * TILE + 16
+  const COLS = [4, 14, 24, 34], ROWS = [16, 21, 26, 31, 36]
+  f.rug(21, 15, 23, 42, T.rug)                 // tapete do corredor central
+  f.rug(14, 8, 30, 13, T.rugAltar)             // o estrado do imperador
+  for (let tx = 3; tx <= 40; tx++) f.put(shelfAt(tx), tx, 7)
+  for (const tx of [7, 13, 31, 37]) f.putPx(O.lampWall, tx * TILE + 16, 186)
+  for (const c0 of COLS) for (const r0 of ROWS) for (let r = 0; r < 2; r++) for (let c = 0; c < 7; c++) f.put(shelfAt(c0 + c), c0 + c, r0 + r)
+  // estrado: mesa do imperador com a cadeira alta, estátuas e lareiras de vela
+  readingTable(f, cx, 12 * TILE)
+  f.putPx(O.chairHigh, cx, 12 * TILE - 40)
+  f.put(O.statueAngel, 14, 9); f.put(O.statueAngel, 30, 9, { flip: true })
+  f.put(O.statueMaiden, 17, 11); f.put(O.statueMaiden, 27, 11, { flip: true })
+  f.put(O.candleTable, 19, 9); f.put(O.candleTable, 25, 9)
+  for (const [tx, flip] of [[8, false], [36, true]]) {
+    f.put(O.armchair, tx, 11, { flip })
+    f.putPx(O.coffee, (tx + (flip ? -2 : 2)) * TILE + 16, 12 * TILE)
+  }
+  f.light('estrado', cx, 9 * TILE, 260, '#ffd9a0', 0.8, 0.12)
+  // postes de tocha nos cruzamentos dos becos
+  for (const c of [12, 32]) for (const r of [14, 19, 24, 29, 34]) {
+    f.put(O.torchPost, c, r)
+    f.light(`beco-${c}-${r}`, c * TILE + 16, r * TILE + 8, 190, '#ffb870', 0.95, 0.2)
+  }
+  for (const r of [19, 29]) f.light(`corredor-${r}`, cx, r * TILE, 220, '#ffcf8a', 0.85, 0.15)
+  // porta de saída (a mesma fechadura dourada, vista por dentro)
+  f.putPx(O.doorGold, cx, 43 * TILE - 6)
+  f.put(O.torchPost, 20, 41); f.put(O.torchPost, 24, 41)
+  f.light('porta-saida', cx, 41 * TILE, 150, '#ffb25e', 0.8, 0.4)
+  f.zone.spawn = { x: cx, y: 40 * TILE }
+  f.zone.portals.push({ id: 'saida-secao', name: 'Voltar à biblioteca', x: 21 * TILE, y: 41 * TILE, w: 3 * TILE, h: TILE, to: { zone: 'torvallen-biblioteca-1', portal: 'secao-proibida' } })
+}
+
+// ═══ SAGUÃO DO PALÁCIO: pra onde a porta da biblioteca leva ═══
+const SAGUAO = makeFloor({ n: 5, id: 'torvallen-saguao-palacio', name: 'Saguão do Palácio', floor: T.stone, wall: 'wall-49', trim: 'ceil-25', hour: 15.2, w: 40, h: 32 })
+{
+  const f = SAGUAO
+  const cx = 20 * TILE + 16
+  f.paint(14, 7, 25, 30, T.warm)
+  f.rug(18, 8, 22, 30, T.rug)
+  f.rug(18, 8, 22, 12, T.rugAltar)
+  for (const tx of [6, 12, 28, 34]) {
+    f.putPx(O.windowWide, tx * TILE + 16, 184)
+    f.putPx(O.curtainsOpen, tx * TILE + 16 - 40, 190)
+    f.putPx(O.curtainsOpen, tx * TILE + 16 + 40, 190, { flip: true })
+    f.light(`jan-${tx}`, tx * TILE + 16, 292, 130, '#9cc4ff', 0.42, 0)
+  }
+  for (const tx of [4, 9, 31, 36]) f.putPx(O.lampWall, tx * TILE + 16, 186)
+  f.putPx(O.doorGrand, cx, 7 * TILE + 6)
+  f.put(O.torchPost, 17, 8); f.put(O.torchPost, 23, 8)
+  f.light('porta-biblioteca', cx, 7 * TILE, 170, '#ffd9a0', 0.8, 0.2)
+  ;[13, 18, 23, 28].forEach((ty, i) => {
+    f.put(i % 2 ? O.statueHood : O.statueMaiden, 16, ty)
+    f.put(i % 2 ? O.statueHood : O.statueMaiden, 24, ty, { flip: true })
+  })
+  for (const ty of [12, 21, 29]) f.light(`lustre-${ty}`, cx, ty * TILE, 260, '#ffd49a', 0.8, 0.14)
+  for (const [tx, flip] of [[6, false], [33, true]]) {
+    f.put(O.sofa3, tx, 20)
+    f.put(O.candleTable, tx + (flip ? -2 : 4), 19)
+    f.light(`sofa-${tx}`, (tx + 1) * TILE, 19 * TILE, 120, '#ffc980', 0.6, 0.2)
+  }
+  f.zone.spawn = { x: cx, y: 10 * TILE }
+  f.zone.portals.push({ id: 'porta-biblioteca', name: 'Entrar na Biblioteca de Torvallen', x: 19 * TILE, y: 7 * TILE, w: 3 * TILE, h: TILE, to: { zone: 'torvallen-biblioteca-1', portal: 'saida-palacio' } })
+}
+
 // ── escadas entre os andares: só nos quatro cantos (colunas 4 e 60; fileiras 8 ao norte e 52 ao sul) ──
 const floors = [F1, F2, F3, F4]
 const links = [
@@ -343,15 +420,19 @@ alleyLights(F2, { every: 2, intensity: 0.75 }); papers(F2, 18)
 alleyLights(F3, { every: 3, intensity: 0.6, color: '#ffb870', radius: 130 }); papers(F3, 22)
 alleyLights(F4, { every: 3, intensity: 0.8, color: '#ffe3b0', radius: 160 }); papers(F4, 12)
 
-for (const f of floors) f.zone.lights = f.lights
+const extras = [SAGUAO, SECAO]
+for (const f of [...floors, ...extras]) f.zone.lights = f.lights
 
 // ── os arquivos ──
-const zones = floors.map((f) => f.zone)
+const zones = [...floors, ...extras].map((f) => f.zone)
 const world = {
   version: 1, id: 'mundo-torvallen', name: 'TORVALLEN', start: F1.zone.id,
-  layout: Object.fromEntries(zones.map((z, i) => [z.id, { x: 0, y: -i }])),
+  layout: {
+    ...Object.fromEntries(floors.map((f, i) => [f.zone.id, { x: 0, y: -i }])),
+    [SAGUAO.zone.id]: { x: 0, y: 1 }, [SECAO.zone.id]: { x: 1, y: 0 },
+  },
 }
 fs.mkdirSync('maps', { recursive: true })
-for (const f of floors) fs.writeFileSync(`maps/torvallen-andar-${f.n}.zona.json`, JSON.stringify(f.zone))
+for (const f of [...floors, ...extras]) fs.writeFileSync(`maps/torvallen-${f.n <= 4 ? `andar-${f.n}` : f.n === 5 ? 'saguao' : 'secao-proibida'}.zona.json`, JSON.stringify(f.zone))
 fs.writeFileSync('maps/torvallen.mundo.json', JSON.stringify({ format: 'vortable-world', version: 1, world, zones }))
 for (const z of zones) console.log(`${z.name}: ${z.objects.length} objetos, ${z.lights.length} luzes, ${z.portals.length} saídas`)
