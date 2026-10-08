@@ -22,9 +22,9 @@
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-columns: 52px 1fr 288px;
-  grid-template-rows: 48px 1fr 26px;
-  grid-template-areas: 'top top top' 'tools stage panel' 'status status status';
+  grid-template-columns: 52px 0 1fr;
+  grid-template-rows: 1fr 26px;
+  grid-template-areas: 'tools drawer stage' 'status status status';
   background: var(--vt-bg);
   color: var(--vt-text);
   font-family: var(--vt-font);
@@ -33,10 +33,11 @@
   user-select: none;
 }
 .vt-root * { box-sizing: border-box; }
-.vt-root.vt-testing { grid-template-columns: 0 1fr 0; grid-template-rows: 0 1fr 0; }
-.vt-root.vt-testing .vt-top,
+.vt-root.vt-drawer-open { grid-template-columns: 52px 300px 1fr; }
+.vt-root.vt-testing { grid-template-columns: 0 0 1fr; grid-template-rows: 1fr 0; }
 .vt-root.vt-testing .vt-tools,
-.vt-root.vt-testing .vt-panel,
+.vt-root.vt-testing .vt-drawer,
+.vt-root.vt-testing .vt-quick,
 .vt-root.vt-testing .vt-status { display: none; }
 
 /* ── Barra superior ─────────────────────────────── */
@@ -97,6 +98,47 @@
 .vt-btn.vt-danger:hover:not(:disabled) { border-color: var(--vt-danger); color: var(--vt-danger); }
 .vt-btn svg { width: 16px; height: 16px; flex: none; }
 
+/* ── Gaveta da esquerda (ações + painel) ────────── */
+.vt-drawer {
+  grid-area: drawer;
+  display: none;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--vt-surface);
+  border-right: 1px solid var(--vt-border);
+}
+.vt-root.vt-drawer-open .vt-drawer { display: flex; }
+.vt-drawer-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-bottom: 1px solid var(--vt-border);
+}
+.vt-drawer-title { display: flex; align-items: center; justify-content: space-between; }
+.vt-drawer-title .vt-brand { margin: 0; }
+.vt-drawer .vt-name { width: 100%; }
+.vt-drawer-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.vt-drawer-actions .vt-primary { margin-left: auto; }
+.vt-icononly { padding: 0 8px; }
+
+/* gaveta fechada: um cantinho no palco, no lugar da barra de cima */
+.vt-quick {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 5;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: color-mix(in srgb, var(--vt-surface) 88%, transparent);
+  border: 1px solid var(--vt-border);
+  border-radius: 10px;
+  backdrop-filter: blur(4px);
+}
+.vt-root.vt-drawer-open .vt-quick { display: none; }
+
 /* ── Ferramentas ────────────────────────────────── */
 .vt-tools {
   grid-area: tools;
@@ -133,12 +175,11 @@
 
 /* ── Painel da direita ──────────────────────────── */
 .vt-panel {
-  grid-area: panel;
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-height: 0;
   background: var(--vt-surface);
-  border-left: 1px solid var(--vt-border);
 }
 .vt-tabs { display: flex; border-bottom: 1px solid var(--vt-border-dim); }
 .vt-tab {
@@ -392,18 +433,11 @@
   100% { opacity: 0; }
 }
 
-/* telas médias: botões do topo só com ícone (o Testar continua com texto) */
-@media (max-width: 1240px) {
-  .vt-top .vt-btn:not(.vt-primary) .vt-label { display: none; }
-  .vt-top .vt-btn:not(.vt-primary) { padding: 0 8px; }
-}
-
+/* telas estreitas: a gaveta aberta cobre o palco (não divide a tela) */
 @media (max-width: 760px) {
-  .vt-root { grid-template-columns: 48px 1fr; grid-template-rows: 48px 1fr 220px 26px;
-    grid-template-areas: 'top top' 'tools stage' 'panel panel' 'status status'; }
-  .vt-name { width: 110px; }
-  .vt-top .vt-label { display: none; }
-  .vt-brand { display: none; }
+  .vt-root, .vt-root.vt-drawer-open { grid-template-columns: 48px 0 1fr; }
+  .vt-root.vt-drawer-open .vt-drawer { position: absolute; z-index: 20; top: 0; bottom: 26px; left: 48px; width: min(320px, calc(100% - 48px)); }
+  .vt-quick .vt-label { display: none; }
 }
 
 /* ── Saída selecionada ──────────────────────────── */

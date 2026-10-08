@@ -57,7 +57,7 @@ npm run dev
 - Cada zona é um pedaço do mundo; só a zona atual fica carregada.
 - **Saídas** (ferramenta `X`) levam a outra zona. No painel, escolha *Leva para* e *Chega em*;
   **Ligar ida e volta** faz a saída de lá trazer de volta (e cria uma, se não existir).
-- **Mundo** (barra de cima) mostra o mapa do mundo: zonas como cartões, setas pras saídas,
+- **Mundo** (painel da esquerda) mostra o mapa do mundo: zonas como cartões, setas pras saídas,
   ★ = onde os jogadores começam. Arraste os cartões pra organizar.
 - **Nova → Interior** cria uma zona pequena com fundo escuro; use os terrenos de *Interior*
   (pisos, tapetes, paredes).

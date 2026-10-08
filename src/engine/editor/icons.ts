@@ -51,6 +51,8 @@ export const ICONS = {
   redo: svg('<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>'),
   play: svg('<path d="m6 3 14 9-14 9Z"/>'),
   stop: svg('<rect x="5" y="5" width="14" height="14" rx="2"/>'),
+  menu: svg('<path d="M4 6h16M4 12h16M4 18h16"/>'),
+  close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
   plus: svg('<path d="M12 5v14M5 12h14"/>'),
   open: svg('<path d="m6 14 1.5-2.9A2 2 0 0 1 9.2 10H20a2 2 0 0 1 1.9 2.5l-1.5 6A2 2 0 0 1 18.5 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4l2 3h7a2 2 0 0 1 2 2v2"/>'),
   save: svg('<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/>'),

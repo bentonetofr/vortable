@@ -65,6 +65,11 @@ const TOOLS: { id: Tool; label: string; key: string }[] = [
 
 const BRUSH_MAX = 8
 const FAV_KEY = 'vortable:objects:favorites'
+const DRAWER_KEY = 'vortable:editor:drawer'
+/** A gaveta do editor começa fechada (o mapa fica livre); lembra como a pessoa deixou. */
+function readDrawer() {
+  try { return localStorage.getItem(DRAWER_KEY) === '1' } catch { return false }
+}
 const RECENT_KEY = 'vortable:objects:recent'
 const RECENT_MAX = 24
 /** Cores prontas das luzes soltas: [nome, cor, tremulação]. */
@@ -127,12 +132,11 @@ export class EditorUI {
 
   constructor(parent: HTMLElement, private state: EditorState, private storage: WorldStorage, private hooks: EditorHooks) {
     injectStyle('editor', css)
-    this.stage = h('div', { class: 'vt-stage' }, this.buildZoomBar())
-    this.root = h('div', { class: 'vt-root' },
-      this.buildTop(),
+    this.stage = h('div', { class: 'vt-stage' }, this.buildZoomBar(), this.buildQuick())
+    this.root = h('div', { class: `vt-root${readDrawer() ? ' vt-drawer-open' : ''}` },
       this.buildTools(),
+      this.buildDrawer(),
       this.stage,
-      this.buildPanel(),
       this.buildStatus(),
       h('div', { class: 'vt-testbar' },
         this.testZoneEl = h('b', { class: 'vt-testzone' }),
@@ -226,25 +230,47 @@ export class EditorUI {
     this.undoBtn = h('button', { class: 'vt-btn', title: 'Desfazer (Ctrl+Z)', html: ICONS.undo, onclick: () => this.state.undo() })
     this.redoBtn = h('button', { class: 'vt-btn', title: 'Refazer (Ctrl+Y)', html: ICONS.redo, onclick: () => this.state.redo() })
     const importInput = h('input', { type: 'file', accept: '.json,application/json', style: 'display:none', onchange: (e: Event) => this.importFile(e) })
-    return h('header', { class: 'vt-top' },
-      h('span', { class: 'vt-brand' }, 'Vortable'),
+    return h('header', { class: 'vt-drawer-head' },
+      h('div', { class: 'vt-drawer-title' },
+        h('span', { class: 'vt-brand' }, 'Vortable'),
+        h('button', { class: 'vt-btn vt-icononly', title: 'Fechar o painel', html: ICONS.close, onclick: () => this.setDrawer(false) }),
+      ),
       this.nameInput,
-      h('span', { class: 'vt-sep' }),
-      this.iconBtn(ICONS.plus, 'Nova', () => this.openNewModal()),
-      this.iconBtn(ICONS.open, 'Abrir', () => this.openOpenModal()),
-      this.iconBtn(ICONS.world, 'Mundo', () => this.openWorldModal()),
-      this.iconBtn(ICONS.save, 'Salvar', () => this.save()),
-      h('span', { class: 'vt-sep' }),
-      this.iconBtn(ICONS.download, 'Exportar', () => this.exportZone()),
-      this.iconBtn(ICONS.upload, 'Importar', () => importInput.click()),
-      importInput,
-      h('span', { class: 'vt-sep' }),
-      this.undoBtn,
-      this.redoBtn,
-      h('span', { class: 'vt-spacer' }),
-      this.hooks.editCharacter ? this.iconBtn(ICONS.person, 'Personagem', () => this.openCharacter()) : null,
-      this.iconBtn(ICONS.play, 'Testar', () => this.startTest(), 'vt-primary'),
+      h('div', { class: 'vt-drawer-actions' },
+        this.iconBtn(ICONS.plus, 'Nova', () => this.openNewModal()),
+        this.iconBtn(ICONS.open, 'Abrir', () => this.openOpenModal()),
+        this.iconBtn(ICONS.world, 'Mundo', () => this.openWorldModal()),
+        this.iconBtn(ICONS.save, 'Salvar', () => this.save()),
+        this.iconBtn(ICONS.download, 'Exportar', () => this.exportZone()),
+        this.iconBtn(ICONS.upload, 'Importar', () => importInput.click()),
+        importInput,
+        this.undoBtn,
+        this.redoBtn,
+        this.hooks.editCharacter ? this.iconBtn(ICONS.person, 'Personagem', () => this.openCharacter()) : null,
+        this.iconBtn(ICONS.play, 'Testar', () => this.startTest(), 'vt-primary'),
+      ),
     )
+  }
+
+  /** Gaveta da esquerda: nome da zona e ações em cima, painel de terrenos/objetos embaixo. */
+  private buildDrawer() {
+    return h('aside', { class: 'vt-drawer' }, this.buildTop(), this.buildPanel())
+  }
+
+  /** Canto do palco com a gaveta fechada: abre o painel, salva e testa. */
+  private buildQuick() {
+    return h('div', { class: 'vt-quick' },
+      h('button', { class: 'vt-btn', title: 'Abrir o painel', html: `${ICONS.menu}<span class="vt-label">Vortable</span>`, onclick: () => this.setDrawer(true) }),
+      h('button', { class: 'vt-btn vt-icononly', title: 'Salvar (Ctrl+S)', html: ICONS.save, onclick: () => this.save() }),
+      h('button', { class: 'vt-btn vt-primary', title: 'Testar', html: `${ICONS.play}<span class="vt-label">Testar</span>`, onclick: () => this.startTest() }),
+    )
+  }
+
+  private setDrawer(open: boolean) {
+    this.root.classList.toggle('vt-drawer-open', open)
+    try { localStorage.setItem(DRAWER_KEY, open ? '1' : '0') } catch { /* sem storage */ }
+    // o palco mudou de largura: o Phaser acompanha o evento de resize
+    requestAnimationFrame(() => window.dispatchEvent(new Event('resize')))
   }
 
   private buildTools() {
