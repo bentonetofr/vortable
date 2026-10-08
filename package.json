@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "vorterium": "node scripts/sync-vorterium.mjs",
     "catalog": "node scripts/build-catalog.mjs",
     "catalog:character": "node scripts/build-character-catalog.mjs"
   },

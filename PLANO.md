@@ -290,10 +290,25 @@ Primeiro sintetizado (rejeitado: "não gostei muito"), depois **gravações livr
 - ⏳ Depois: música (M7), sons de interação (M5)
 
 ### M4 — Integração Vorterium + multiplayer
-- Aba **Vortable** na campanha do Vorterium; login e papéis vindos de `campaign_members`
-- Migrations `vortable_*`; zonas e aparências salvas no Supabase
-- Mestre inicia sessão ao vivo → jogadores avisados pelas notificações do site
-- Host WebRTC no navegador do mestre; movimento com interpolação; zonas diferentes por jogador
+Dividido em três partes (decisão: tudo grátis; começar pela integração, sem rede ao vivo).
+
+#### M4.1 — Integração com o Vorterium ✅ (falta aplicar a migration e testar logado)
+- `npm run vorterium` gera o motor como biblioteca (`vite.lib.config.ts`, `tsconfig.lib.json`) e
+  copia pro Vorterium: código em `src/vendor/vortable`, assets em `public/vortable/assets`
+- Vorterium: seção **Vortable** na campanha (`features/vortable`), carregada só ao abrir
+  (chunk separado); mestre vê *Editar mundo | Jogar | Meu personagem*, jogador *Jogar | Meu personagem*
+- Migration `20240192000000_vortable_base.sql`: `vortable_worlds`, `vortable_zones`,
+  `vortable_characters` (RLS: membro lê; só o mestre mexe no mundo e nas zonas; cada um nos seus bonecos)
+- Pontes `WorldStorage` e `CharacterStorage` em Supabase (`vortableService.ts`)
+- ⏳ Falta: aplicar a migration no Supabase, testar logado, publicar no Vercel
+
+#### M4.2 — Multiplayer ao vivo (⏳)
+- Transporte grátis: **WebRTC P2P** (host = navegador do mestre), sinalização pelo Supabase
+  Realtime e STUN público; TURN grátis só se a rede exigir
+- Mestre inicia sessão → jogadores avisados pelas notificações do site
+- Movimento com interpolação; zonas diferentes por jogador; hora/clima do mestre pra todos
+
+#### M4.3 — Ficha, chat e dados (⏳)
 - Boneco ligado à ficha (nome, vida, retrato); chat com balão sobre a cabeça; dados no histórico
 - ✅ *Sessão real com amigos*
 
