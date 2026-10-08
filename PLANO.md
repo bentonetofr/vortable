@@ -324,6 +324,10 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
 - Vorterium (`features/vortable/net`): `VortableNet` (mestre e jogador), ligado ao jogo do
   jogador e ao *Testar* do mestre; aviso "N online" na barra
 - Aba **Jogadores** do mestre: bolinha de online, **Levar a… (zona)** e **Expulsar**
+- **Controle do mestre** (aba nova, durante a sessão; o *Editar mundo* é a criação antes dela): câmera
+  livre sem boneco (`mode: 'watch'`), troca de zona, mapa inteiro, seguir um jogador e **hora / tempo /
+  vento ao vivo** pra todos (mensagem `env`, por zona ou todas; quem entra depois recebe); o botão
+  *Testar* do editor leva o mestre ao mundo junto com os jogadores
 - Testado: loopback de WebRTC (mestre + 2 jogadores: relay, teleporte, expulsão) e duas abas do motor
 - ⏳ Falta: hora/clima do mestre pra todos, zonas em tempo real (mestre editando), chat no balão
 
