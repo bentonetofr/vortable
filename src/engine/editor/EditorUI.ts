@@ -25,6 +25,10 @@ import { LIGHT_PRESETS, UNDERGROUND_TINT, ambientAt, daylight, formatHour, light
 import type { LightLook } from './EditorState'
 import { DEFAULT_WIND, WIND_LEVELS } from '../world/wind'
 import { WEATHERS, WEATHER_ORDER } from '../world/weather'
+import { LAYERS, type LayerId } from '../audio/ambience'
+import { SURFACE_LABELS, type Surface } from '../audio/synths'
+import { soundOf } from '../audio/ZoneAudio'
+import { readPrefs, writePrefs } from '../audio/prefs'
 import { solidTerrainRects } from '../world/ground'
 import { fenceSolids } from '../world/fences'
 
@@ -41,6 +45,8 @@ export interface EditorHooks {
   scene(): EditorScene | null
   /** Abrir o criador de personagem (se quem montou o editor oferecer). */
   editCharacter?: () => void
+  /** O volume mudou (o motor de som relê as preferências). */
+  applySound?: () => void
   /** Curadoria (só no desenvolvimento): grava o ajuste de uma peça no pacote e recarrega o catálogo. */
   curate?: (pack: string, id: string, override: CurateOverride) => Promise<void>
 }
@@ -81,10 +87,13 @@ export class EditorUI {
   private undoBtn!: HTMLButtonElement
   private redoBtn!: HTMLButtonElement
   private statusEl!: HTMLElement
-  private tab: 'terrains' | 'objects' | 'rooms' | 'light' = 'terrains'
+  private tab: 'terrains' | 'objects' | 'rooms' | 'light' | 'sound' = 'terrains'
+  /** Atualiza as barrinhas de nível do painel Sons. */
+  private meterTimer = 0
   /** Qual luz solta o painel Luz está mostrando (só redesenha quando troca). */
   private shownLight: string | null = null
   private testClockEl!: HTMLElement
+  private muteBtn!: HTMLButtonElement
   /** Seção aberta de cada lista (só uma por vez). */
   private openSection = { terrains: 'Grama', objects: 'Árvores' }
   private tabButtons = new Map<string, HTMLButtonElement>()
@@ -126,6 +135,7 @@ export class EditorUI {
       h('div', { class: 'vt-testbar' },
         this.testZoneEl = h('b', { class: 'vt-testzone' }),
         this.testClockEl = h('span', { class: 'vt-testclock' }),
+        this.muteBtn = h('button', { class: 'vt-btn vt-mutebtn', title: 'Som (M)', onclick: () => this.toggleMute() }),
         h('span', {}, h('kbd', {}, 'WASD'), ' anda, ', h('kbd', {}, 'Shift'), ' corre, ', h('kbd', {}, 'C'), ' colisões'),
         h('button', { class: 'vt-btn vt-primary', html: `${ICONS.stop}<span>Voltar ao editor</span>`, onclick: () => this.stopTest() }),
       ),
@@ -262,6 +272,7 @@ export class EditorUI {
     toggle(ICONS.grid, 'Mostrar grade (H)', () => this.state.showGrid, () => this.state.set({ showGrid: !this.state.showGrid }))
     toggle(ICONS.collision, 'Mostrar colisões (K)', () => this.state.showCollision, () => this.state.set({ showCollision: !this.state.showCollision }))
     toggle(ICONS.sun, 'Ver iluminação: hora, luzes e sombras (I)', () => this.state.lightPreview, () => this.state.set({ lightPreview: !this.state.lightPreview }))
+    toggle(ICONS.sound, 'Ouvir os sons da zona no editor (U)', () => readPrefs().editor, () => this.toggleEditorSound())
     toggle(ICONS.snap, 'Encaixar objetos na grade (N)', () => this.state.snap, () => this.state.set({ snap: !this.state.snap }))
     el.append(h('button', { class: 'vt-tool', title: 'Centralizar a zona (Home)', html: ICONS.center, onclick: () => this.hooks.centerOnZone() }))
     return el
@@ -301,13 +312,15 @@ export class EditorUI {
 
   private buildPanel() {
     const tabs = h('div', { class: 'vt-tabs' })
-    for (const [id, label] of [['terrains', 'Terrenos'], ['objects', 'Objetos'], ['rooms', 'Cômodos'], ['light', 'Clima']] as const) {
+    for (const [id, label] of [['terrains', 'Terrenos'], ['objects', 'Objetos'], ['rooms', 'Cômodos'], ['light', 'Clima'], ['sound', 'Sons']] as const) {
       const b = h('button', {
         class: 'vt-tab',
         onclick: () => {
           this.tab = id
           if (id === 'rooms') this.state.set({ tool: 'room' })
           if (id === 'light') this.state.set({ tool: 'light' })
+          // abrir o painel Sons liga a prévia de som no editor
+          if (id === 'sound' && !readPrefs().editor) writePrefs({ editor: true })
           this.renderPane()
           this.refresh()
         },
@@ -330,12 +343,14 @@ export class EditorUI {
   // ── Painel: terrenos e objetos ─────────────────────────
 
   private renderPane() {
+    clearInterval(this.meterTimer)
     this.paneEl.replaceChildren()
     this.terrainCells.clear()
     this.objectCells.clear()
     if (this.tab === 'terrains') this.renderTerrains()
     else if (this.tab === 'objects') this.renderObjects()
     else if (this.tab === 'light') this.renderLight()
+    else if (this.tab === 'sound') this.renderSound()
     else this.renderRooms()
   }
 
@@ -742,6 +757,115 @@ export class EditorUI {
         h('button', { class: 'vt-btn', style: 'flex:1', onclick: () => s.set({ selectedLight: null }) }, 'Soltar seleção'),
         h('button', { class: 'vt-btn vt-danger', title: 'Apagar luz (Del)', html: ICONS.trash, onclick: () => this.hooks.deleteSelected() }),
       ) : null,
+    )
+  }
+
+  // ── Painel: sons ───────────────────────────────────
+
+  private toggleEditorSound() {
+    writePrefs({ editor: !readPrefs().editor })
+    if (this.tab === 'sound') this.renderPane()
+    this.refresh()
+  }
+
+  private toggleMute() {
+    writePrefs({ muted: !readPrefs().muted })
+    this.applySound()
+  }
+
+  /** Volume novo vale na hora (o motor lê as preferências). */
+  private applySound() {
+    this.hooks.applySound?.()
+    const muted = readPrefs().muted
+    this.muteBtn.innerHTML = muted ? ICONS.mute : ICONS.sound
+    this.muteBtn.classList.toggle('vt-on', !muted)
+  }
+
+  /**
+   * Sons da zona: automático (segue tempo, hora, árvores, fogo e água) e
+   * camadas à mão com volume; os passos e o volume são de quem joga.
+   */
+  private renderSound() {
+    const s = this.state
+    const z = s.zone
+    const cur = soundOf(z)
+    const prefs = readPrefs()
+    let saved = false
+    const setSound = (patch: { auto?: boolean; layers?: Record<string, number> }, live = false) => {
+      if (!saved) { s.checkpoint(); saved = true }
+      const next = { ...soundOf(z), ...patch }
+      if (next.auto !== false) delete next.auto
+      if (next.layers) for (const k of Object.keys(next.layers)) if (!next.layers[k]) delete next.layers[k]
+      if (next.layers && !Object.keys(next.layers).length) delete next.layers
+      if (Object.keys(next).length) z.sound = next
+      else delete z.sound
+      s.edited()
+      if (!live) { saved = false; this.renderPane() }
+    }
+    const range = (value: number, onLive: (v: number) => void, onDone: (v: number) => void) => {
+      const input = h('input', { type: 'range', min: 0, max: 100, step: 5, value: Math.round(value * 100), class: 'vt-range' }) as HTMLInputElement
+      input.addEventListener('input', () => onLive(Number(input.value) / 100))
+      input.addEventListener('change', () => onDone(Number(input.value) / 100))
+      return input
+    }
+    const check = (label: string, on: boolean, flip: (v: boolean) => void, title = '') => {
+      const box = h('input', { type: 'checkbox', checked: on }) as HTMLInputElement
+      box.addEventListener('change', () => flip(box.checked))
+      return h('label', { class: 'vt-check', title }, box, h('span', {}, label))
+    }
+
+    // camadas: régua (à mão) + barrinha do que está tocando agora
+    const meters = new Map<LayerId, HTMLElement>()
+    const rows = LAYERS.map((l) => {
+      const meter = h('span', { class: 'vt-meter-fill' })
+      meters.set(l.id, meter)
+      const value = cur.layers?.[l.id] ?? 0
+      const out = h('b', {}, value ? `${Math.round(value * 100)}%` : '—')
+      const input = range(value,
+        (v) => { out.textContent = v ? `${Math.round(v * 100)}%` : '—'; setSound({ layers: { ...soundOf(z).layers, [l.id]: v } }, true) },
+        (v) => setSound({ layers: { ...soundOf(z).layers, [l.id]: v } }))
+      return h('div', { class: 'vt-soundrow', title: l.hint },
+        h('label', {}, l.label), input, out,
+        h('span', { class: 'vt-meter' }, meter))
+    })
+    const tick = () => {
+      const levels = this.hooks.scene()?.audio?.levels() ?? {}
+      for (const [id, el] of meters) el.style.width = `${Math.round(Math.min(1, levels[id] ?? 0) * 100)}%`
+    }
+    tick()
+    this.meterTimer = window.setInterval(tick, 200)
+
+    const steps = (Object.keys(SURFACE_LABELS) as Surface[]).map((surface) => h('button', {
+      class: 'vt-chipbtn', title: 'Ouvir um passo',
+      onclick: () => this.hooks.scene()?.audio?.previewStep(surface),
+    }, SURFACE_LABELS[surface]))
+
+    this.paneEl.append(
+      h('div', { class: 'vt-group' }, h('h4', {}, 'Ouvir'),
+        h('div', { class: 'vt-checks' },
+          check('Tocar os sons no editor', prefs.editor, () => this.toggleEditorSound(), 'Liga/desliga o som enquanto edita (U). No teste, o som sempre toca.'),
+          check('Mudo', prefs.muted, () => this.toggleMute()),
+        ),
+        h('div', { class: 'vt-row vt-soundrow' }, h('label', {}, 'Volume'), range(prefs.master,
+          (v) => { writePrefs({ master: v }); this.applySound() }, () => this.applySound()), h('b', {}, '')),
+      ),
+      h('div', { class: 'vt-group' }, h('h4', {}, 'Ambiente desta zona'),
+        check('Automático', cur.auto !== false, (v) => setSound({ auto: v }), ''),
+        h('small', { class: 'vt-note vt-modehelp' }, cur.auto !== false
+          ? 'Segue o mundo: pássaros onde há árvores, grilos e coruja à noite, vento, chuva e neve conforme o tempo, um trovão a cada relâmpago, fogo e água quando o jogador chega perto. As réguas abaixo somam camadas à mão.'
+          : 'Só toca o que você ligar nas réguas abaixo.'),
+        h('div', { class: 'vt-soundrows' }, ...rows),
+        h('div', { class: 'vt-row' },
+          h('button', { class: 'vt-btn', style: 'flex:1', onclick: () => { if (!readPrefs().editor) this.toggleEditorSound(); this.hooks.scene()?.audio?.thunderNow() } }, 'Ouvir um trovão'),
+        ),
+        h('small', { class: 'vt-note' }, 'A barrinha laranja mostra o que está tocando agora (com o som ligado no editor).'),
+      ),
+      h('div', { class: 'vt-group' }, h('h4', {}, 'Passos'),
+        h('div', { class: 'vt-row vt-soundrow' }, h('label', {}, 'Volume'), range(prefs.steps,
+          (v) => writePrefs({ steps: v }), () => undefined), h('b', {}, '')),
+        h('small', { class: 'vt-note vt-modehelp' }, 'O som de cada passo muda com o chão sob o boneco. Na chuva o chão respinga; com neve, tudo vira neve. Clique pra ouvir:'),
+        h('div', { class: 'vt-chips' }, ...steps),
+      ),
     )
   }
 
@@ -1296,6 +1420,8 @@ export class EditorUI {
         ['Alt + clique', 'Conta-gotas (copia terreno ou objeto)'],
         ['H · K · N', 'Grade · colisões · encaixe na grade'],
         ['I', 'Ver iluminação (hora, luzes, sombras)'],
+        ['U', 'Ouvir os sons da zona no editor'],
+        ['M (no teste)', 'Ligar/desligar o som'],
       ],
       [
         ['Arrastar (objeto)', 'Carimba vários seguidos; com Shift, variantes e espelho sorteados'],
@@ -1338,6 +1464,7 @@ export class EditorUI {
     if (this.spawnBlocked()) this.toast('Atenção: o ponto de início está dentro de algo sólido — o boneco pode ficar preso.', true)
     this.testing = true
     this.root.classList.add('vt-testing')
+    this.applySound()
     this.hooks.startTest()
   }
 
@@ -1681,6 +1808,7 @@ export class EditorUI {
     else if (k === 'k') this.state.set({ showCollision: !this.state.showCollision })
     else if (k === 'n') this.state.set({ snap: !this.state.snap })
     else if (k === 'i') this.state.set({ lightPreview: !this.state.lightPreview })
+    else if (k === 'u') this.toggleEditorSound()
     else if (k === 'f') this.flip()
     else if (e.key === ',' || e.key === '<') scene?.cycleVariant(-1)
     else if (e.key === '.' || e.key === '>') scene?.cycleVariant(1)

@@ -38,6 +38,8 @@ export interface ZoneData {
   objects: ZoneObject[]
   /** Luz e hora da zona. Ausente = ao ar livre, seguindo o ciclo dia/noite. */
   lighting?: ZoneLighting
+  /** Som ambiente (painel Sons). Ausente = automático. */
+  sound?: ZoneSound
   /** Luzes soltas (ferramenta Luz), além das que os objetos já têm. */
   lights?: ZoneLight[]
   /** Saídas: áreas que levam a outra zona (porta, escada, borda do mapa). */
@@ -88,6 +90,16 @@ export interface ZoneLighting {
 }
 
 export const DAY_MINUTES = 24
+
+/**
+ * Som da zona. auto (padrão): as camadas seguem o mundo (tempo, hora,
+ * árvores, fogo e água perto). layers: camadas postas à mão, com volume
+ * 0–1 (somam ao automático: vale o maior).
+ */
+export interface ZoneSound {
+  auto?: boolean
+  layers?: Record<string, number>
+}
 
 /** Uma luz solta no mapa, em px; o brilho dos objetos vem do catálogo. */
 export interface ZoneLight {

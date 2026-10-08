@@ -660,3 +660,17 @@
 .vt-weather svg { width: 18px; height: 18px; }
 .vt-weather:hover { border-color: var(--vt-border); color: var(--vt-text); }
 .vt-weather.vt-on { border-color: var(--vt-accent); background: var(--vt-accent-glow); color: var(--vt-accent-bright); }
+
+/* ── Sons ───────────────────────────────────────── */
+.vt-soundrows { display: grid; gap: 2px; margin-top: 8px; }
+.vt-soundrow { display: grid; grid-template-columns: 64px 1fr 36px; align-items: center; gap: 6px; position: relative; padding-bottom: 4px; }
+.vt-soundrow label { font-size: 12px; color: var(--vt-text-2); }
+.vt-soundrow .vt-range { width: 100%; min-width: 0; accent-color: var(--vt-accent); }
+.vt-soundrow b { font-size: 11px; font-weight: 600; color: var(--vt-text-2); text-align: right; font-variant-numeric: tabular-nums; }
+.vt-meter { grid-column: 2 / 3; height: 2px; border-radius: 1px; background: var(--vt-border-dim); overflow: hidden; }
+.vt-meter-fill { display: block; height: 100%; width: 0; background: var(--vt-accent); transition: width 0.2s; }
+.vt-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.vt-chipbtn { padding: 4px 8px; border-radius: 999px; border: 1px solid var(--vt-border-dim); background: var(--vt-bg); color: var(--vt-text-2); font: inherit; font-size: 11px; cursor: pointer; }
+.vt-chipbtn:hover { border-color: var(--vt-accent); color: var(--vt-text); }
+.vt-mutebtn svg { width: 16px; height: 16px; }
+.vt-tab { min-width: 0; padding-left: 2px; padding-right: 2px; }

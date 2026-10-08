@@ -34,6 +34,8 @@ npm run dev
 | `C` | cômodo (arraste; `Ctrl` apaga) |
 | `L` | luz solta: clique põe, arraste move; cor, alcance, força e tremor no painel **Clima** |
 | `I` | ver iluminação no editor (hora, luzes, sombras) |
+| `U` | ouvir os sons da zona no editor |
+| `M` (no teste/jogo) | ligar/desligar o som |
 | `X` | saída: arraste pra desenhar a área que leva a outra zona; o destino se escolhe no painel |
 | `[` `]` ou `Alt`+roda | tamanho do pincel |
 | `Shift`+clique (pincel) | linha reta desde o último ponto |
@@ -98,6 +100,19 @@ Aba **Clima**:
 - Partículas: chamas em toda tocha, lareira e fogueira; faíscas e fumaça nas grandes; vaga-lumes à
   noite; poeira no ar dos interiores; reflexos piscando na água.
 - No editor, `I` liga/desliga a prévia (pra pintar no claro).
+
+### Sons
+
+Todos os sons são **sintetizados no navegador** (nada pra baixar, nenhuma licença). Aba **Sons**:
+- **Automático** (padrão): pássaros onde há árvores, grilos e coruja à noite, vento conforme o
+  vento, chuva e neve conforme o tempo, **um trovão a cada relâmpago**, fogo crepitando e água
+  correndo quando o jogador chega perto (do lado em que estão). Dentro de casa o que é de fora
+  soa abafado e há eco de sala; caverna tem eco longo e gotas pingando.
+- **Camadas à mão** (somam ao automático): Floresta, Vento, Chuva, Trovões (mesmo sem chuva),
+  Neve, Riacho, Mar, Caverna, Fogueira — cada uma com volume e uma barrinha do que toca agora.
+- **Passos**: o som muda com o chão (grama, terra, areia, cascalho, neve, pedra, madeira,
+  tapete, água rasa); na chuva o chão respinga; com neve, tudo vira neve. Botões pra ouvir cada um.
+- Volume, mudo e volume dos passos são de quem joga (ficam no navegador).
 
 ### Terrenos, paredes, tapetes e cercas
 

@@ -27,6 +27,8 @@ import { createObjectSprite, updateObjectSprite, type ObjectSprite } from '../wo
 import { isTyping } from '../world/Player'
 import { TILE, newId, type Portal, type ZoneLight, type ZoneObject } from '../types'
 import { Lighting } from '../world/lighting'
+import { ZoneAudio } from '../audio/ZoneAudio'
+import { readPrefs } from '../audio/engine'
 import { lightingOf } from '../world/daylight'
 import type { EditorState } from './EditorState'
 import { applyRooms, connectedRoom, decodeRoom, encodeRoom, roomRoles } from '../world/rooms'
@@ -59,6 +61,8 @@ export class EditorScene extends Phaser.Scene {
   private portalLabels: Phaser.GameObjects.Text[] = []
   private spawnMarker!: Phaser.GameObjects.Container
   private lighting!: Lighting
+  /** Som da zona (só toca com "ouvir no editor" ligado). */
+  audio: ZoneAudio | null = null
   private lightGfx!: Phaser.GameObjects.Graphics
   private lightTimer?: Phaser.Time.TimerEvent
   private movingLight: { id: string; dx: number; dy: number; moved: boolean } | null = null
@@ -120,6 +124,7 @@ export class EditorScene extends Phaser.Scene {
     this.lightGfx = this.add.graphics().setDepth(1e8 + 1)
     this.rebuildObjects()
     this.lighting = new Lighting(this, this.state.zone)
+    this.audio = ZoneAudio.create(this, this.state.zone)
     this.events.on(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
     this.refreshOverlays()
 
@@ -166,6 +171,8 @@ export class EditorScene extends Phaser.Scene {
       off()
       this.events.off(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
       this.lightTimer?.remove()
+      this.audio?.destroy()
+      this.audio = null
       this.input.setDefaultCursor('')
       this.state.view = { x: cam.midPoint.x, y: cam.midPoint.y }
     })
@@ -210,12 +217,23 @@ export class EditorScene extends Phaser.Scene {
     l.hourOverride = lightingOf(this.state.zone).hour ?? this.state.previewHour
     l.render(this.game.loop.delta)
     this.ground.tufts.update(this.cameras.main, this.game.loop.delta / 1000)
+    if (this.audio) {
+      // no editor, escuta do meio da tela
+      const cam = this.cameras.main
+      this.audio.enabled = readPrefs().editor
+      this.audio.update(this.game.loop.delta / 1000, {
+        x: cam.midPoint.x, y: cam.midPoint.y, hour: l.hour, wind: l.wind.strength, weather: l.weatherNow, strikes: l.strikes,
+      })
+    }
   }
 
   /** Luzes refeitas um pouco depois da última edição (recortar pelas paredes custa). */
   private scheduleLights() {
     this.lightTimer?.remove()
-    this.lightTimer = this.time.delayedCall(LIGHT_REBUILD_MS, () => this.lighting.rebuild())
+    this.lightTimer = this.time.delayedCall(LIGHT_REBUILD_MS, () => {
+      this.lighting.rebuild()
+      this.audio?.setZone(this.state.zone)
+    })
   }
 
   /** Teclas de câmera só valem fora de campos de texto e janelas. */
@@ -298,6 +316,7 @@ export class EditorScene extends Phaser.Scene {
     this.lastStrokeEnd = null
     this.rebuildObjects()
     this.lighting.setZone(this.state.zone)
+    this.audio?.setZone(this.state.zone)
     this.fitBounds()
     this.refreshOverlays()
   }

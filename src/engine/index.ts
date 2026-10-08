@@ -19,6 +19,7 @@ import { setObjectCatalog, type ObjectCatalog } from './assets/objects'
 import { registerObjectArt } from './world/objects'
 import { lightingOf, worldHour } from './world/daylight'
 import { DAY_MINUTES } from './types'
+import { AudioEngine } from './audio/engine'
 
 import { CreatorUI } from './character/CreatorUI'
 import { LocalCharacterStorage, type CharacterStorage } from './character/storage'
@@ -104,6 +105,10 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
         game.scene.start('editor', { state })
       },
       deleteSelected: () => editor()?.deleteSelected(),
+      applySound: () => {
+        const scene = game.scene.getScenes(true)[0]
+        if (scene) AudioEngine.of(scene)?.applyPrefs()
+      },
       centerOnZone: () => editor()?.centerOnZone(),
       scene: () => editor(),
       editCharacter: opts.onEditCharacter,

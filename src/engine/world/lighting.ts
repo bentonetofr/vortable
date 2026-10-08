@@ -106,6 +106,8 @@ export class Lighting {
   private time = 0
   readonly wind = new Wind()
   private weather: WeatherFx
+  /** O tempo usado no último quadro (o som acompanha). */
+  weatherNow = weatherOf(undefined)
   private trees: LeafSource[] = []
   private water: { x: number; y: number }[] = []
 
@@ -117,6 +119,11 @@ export class Lighting {
   timeOffset = 0
   /** Bonecos que fazem sombra. */
   extraCasters: () => ExtraCaster[] = () => []
+  /** Relâmpagos que já caíram. */
+  get strikes() {
+    return this.weather.strikes
+  }
+
   /** Hora usada no último quadro. */
   hour = 12
 
@@ -326,7 +333,7 @@ export class Lighting {
     const v = this.view()
     const t = this.time
     const outdoor = l.place === 'outdoor'
-    const wth = weatherOf(l.weather)
+    const wth = (this.weatherNow = weatherOf(l.weather))
     const sun = sunAt(hour)
     // dentro de casa não venta (mas o que é pendurado ainda balança de leve)
     this.wind.update(dt, outdoor ? Math.max(l.wind ?? DEFAULT_WIND, wth.minWind) : 0)

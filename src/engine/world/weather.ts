@@ -227,6 +227,8 @@ export class WeatherFx {
   private nextStrike = 4
   /** Relâmpago agora (0–1): a luz clareia por um instante. */
   flash = 0
+  /** Quantos relâmpagos já caíram (o som do trovão acompanha). */
+  strikes = 0
   private strike = -1
 
   constructor(private scene: Phaser.Scene) {
@@ -275,6 +277,7 @@ export class WeatherFx {
       this.nextStrike -= dt
       if (this.nextStrike <= 0) {
         this.strike = 0
+        this.strikes++
         this.nextStrike = 5 + Math.random() * 10
       }
       if (this.strike >= 0) {

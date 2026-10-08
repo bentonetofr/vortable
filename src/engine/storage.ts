@@ -7,7 +7,7 @@
 // ────────────────────────────────────────────────────────
 
 import { WEATHERS } from './world/weather'
-import { LIGHT_RADIUS_MAX, LIGHT_RADIUS_MIN, TILE, ZONE_MAX, ZONE_MIN, Z_MAX, newId, type Portal, type WorldData, type ZoneData, type ZoneLight, type ZoneLighting } from './types'
+import { LIGHT_RADIUS_MAX, LIGHT_RADIUS_MIN, TILE, ZONE_MAX, ZONE_MIN, Z_MAX, newId, type Portal, type WorldData, type ZoneData, type ZoneLight, type ZoneLighting, type ZoneSound } from './types'
 
 export interface ZoneSummary {
   id: string
@@ -179,6 +179,7 @@ export function parseZone(json: unknown): ZoneData {
       ...(num(o.z) && o.z > 0 ? { z: Math.min(Z_MAX, Math.round(o.z)) } : {}),
     })),
     ...parseLighting(z.lighting),
+    ...parseSound(z.sound),
     ...(Array.isArray(z.lights) && z.lights.length ? { lights: parseLights(z.lights, W, H) } : {}),
     portals: portals.map((p) => ({
       id: p.id,
@@ -210,6 +211,18 @@ function parseLighting(l: unknown): { lighting?: ZoneLighting } {
       ...(typeof v.weather === 'string' && v.weather in WEATHERS && v.weather !== 'clear' ? { weather: v.weather } : {}),
     },
   }
+}
+
+function parseSound(v: unknown): { sound?: ZoneSound } {
+  const s = v as ZoneSound | null
+  if (!s || typeof s !== 'object') return {}
+  const layers: Record<string, number> = {}
+  for (const [k, n] of Object.entries(s.layers ?? {})) if (/^[a-z]+$/.test(k) && num(n) && n > 0) layers[k] = clamp(n, 0, 1)
+  const out: ZoneSound = {
+    ...(s.auto === false ? { auto: false } : {}),
+    ...(Object.keys(layers).length ? { layers } : {}),
+  }
+  return Object.keys(out).length ? { sound: out } : {}
 }
 
 function parseLights(list: unknown[], W: number, H: number): ZoneLight[] {

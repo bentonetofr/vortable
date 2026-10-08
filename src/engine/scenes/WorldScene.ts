@@ -13,6 +13,8 @@ import { Occluders, addObjectSolids, createObjectSprite } from '../world/objects
 import { FenceLayer, fenceSolids } from '../world/fences'
 import { Player, isTyping } from '../world/Player'
 import { BLOB, Lighting } from '../world/lighting'
+import { ZoneAudio } from '../audio/ZoneAudio'
+import { AudioEngine, readPrefs, writePrefs } from '../audio/engine'
 import { TILE, type Appearance, type Dir, type Portal, type ZoneData } from '../types'
 
 export interface WorldSceneData {
@@ -36,6 +38,9 @@ const FADE_MS = 220
 /** Quanto a câmera anda até o jogador por quadro (0–1). */
 const FOLLOW_LERP = 0.15
 const CLOCK_MS = 500
+/** Um passo a cada tantos px andados (correndo, passada mais longa). */
+const STEP_WALK = 22
+const STEP_RUN = 34
 
 export class WorldScene extends Phaser.Scene {
   private player?: Player
@@ -51,6 +56,10 @@ export class WorldScene extends Phaser.Scene {
   private blob?: Phaser.GameObjects.Image
   private ground?: Ground
   private clockAt = 0
+  private audio: ZoneAudio | null = null
+  /** Quanto andou desde o último passo, e onde estava no quadro anterior. */
+  private stride = 0
+  private lastFoot: { x: number; y: number } | null = null
 
   constructor() {
     super('world')
@@ -66,6 +75,9 @@ export class WorldScene extends Phaser.Scene {
     this.blob = undefined
     this.ground = undefined
     this.clockAt = 0
+    this.audio = null
+    this.stride = 0
+    this.lastFoot = null
   }
 
   async create() {
@@ -78,7 +90,12 @@ export class WorldScene extends Phaser.Scene {
     const lighting = (this.lighting = new Lighting(this, zone))
     lighting.timeOffset = this.cfg.timeOffset ?? 0
     this.events.on(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.events.off(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this))
+    this.audio = ZoneAudio.create(this, zone)
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
+      this.audio?.destroy()
+      this.audio = null
+    })
 
     const solids = this.physics.add.staticGroup()
     for (const r of [...solidTerrainRects(zone), ...fenceSolids(zone)]) solids.add(this.add.zone(r.x + r.w / 2, r.y + r.h / 2, r.w, r.h))
@@ -120,6 +137,15 @@ export class WorldScene extends Phaser.Scene {
     }
     window.addEventListener('keydown', noScroll)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => window.removeEventListener('keydown', noScroll))
+
+    // M: liga/desliga o som
+    this.input.keyboard!.on('keydown-M', () => {
+      if (isTyping()) return
+      const muted = !readPrefs().muted
+      writePrefs({ muted })
+      AudioEngine.of(this)?.applyPrefs()
+      this.toast(muted ? 'Som desligado (M liga de novo)' : 'Som ligado')
+    })
 
     this.input.keyboard!.on('keydown-C', () => {
       if (isTyping()) return
@@ -163,6 +189,25 @@ export class WorldScene extends Phaser.Scene {
     const lighting = this.lighting
     if (!lighting) return
     lighting.render(this.game.loop.delta)
+    if (this.audio) {
+      const listener = player?.sprite ?? cam.midPoint
+      this.audio.update(this.game.loop.delta / 1000, {
+        x: listener.x, y: listener.y, hour: lighting.hour, wind: lighting.wind.strength, weather: lighting.weatherNow, strikes: lighting.strikes,
+      })
+      // passos: pela distância andada, com o chão de baixo dos pés
+      if (s && moving) {
+        if (this.lastFoot) this.stride += Math.hypot(s.x - this.lastFoot.x, s.y - this.lastFoot.y)
+        const running = (s.body as Phaser.Physics.Arcade.Body).velocity.length() > 120
+        if (this.stride >= (running ? STEP_RUN : STEP_WALK)) {
+          this.stride = 0
+          this.audio.step(s.x, s.y - 2, running, lighting.weatherNow)
+        }
+      } else {
+        // parou: o próximo passo sai logo no começo da andada
+        this.stride = STEP_WALK * 0.7
+      }
+      this.lastFoot = s ? { x: s.x, y: s.y } : null
+    }
     const now = this.time.now
     if (this.cfg.onClock && now - this.clockAt > CLOCK_MS) {
       this.clockAt = now
