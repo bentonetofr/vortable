@@ -63,6 +63,8 @@ const CURATE_URL = '/__vortable/curate'
 export interface VortableHandle {
   /** Entrega uma mensagem que chegou da rede (ver NetMsg). */
   receive(msg: unknown): void
+  /** A rede abriu depois do jogo: reanuncia o boneco e pergunta quem está na sala. */
+  resync(): void
   setAppearance(appearance: Appearance): Promise<void>
   /** Trava o teclado do boneco (o mestre cobriu a tela com uma cena). */
   setInputLocked(locked: boolean): void
@@ -198,6 +200,9 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
     },
     receive(msg) {
       hub?.receive(msg)
+    },
+    resync() {
+      hub?.resync()
     },
     setInputLocked(locked) {
       inputLocked = locked

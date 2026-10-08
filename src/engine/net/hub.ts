@@ -88,6 +88,13 @@ export class NetHub {
     }
   }
 
+  /** A rede acabou de abrir (ou reabriu): conta quem sou e pergunta quem está aí. */
+  resync() {
+    if (!this.hello) return
+    this.link.send(this.hello)
+    this.link.send({ t: 'who' })
+  }
+
   /** Saindo: avisa e esquece todo mundo. */
   leave() {
     this.link.send({ t: 'bye', id: this.link.selfId })
