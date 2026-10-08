@@ -6,16 +6,22 @@
       "name": "Capa azul",
       "appearance": {
         "version": 2,
-        "body": "male",
+        "body": "female",
         "skin": "light",
         "slots": {
           "body": {
             "id": "body/body"
           },
           "head": {
-            "id": "head/heads/human/heads_human_male",
+            "id": "head/heads/human/heads_human_female",
             "colors": {
               "color_2": "brown"
+            }
+          },
+          "eyebrows": {
+            "id": "head/eyebrows/eyebrows_thick",
+            "colors": {
+              "color": "black"
             }
           },
           "hair": {
@@ -25,10 +31,8 @@
             }
           },
           "clothes": {
-            "id": "torso/shirts/longsleeve/torso_clothes_longsleeve_formal",
-            "colors": {
-              "color": "pale_gray"
-            }
+            "id": "torso/shirts/torso_clothes_blouse_longsleeve",
+            "variant": "gray"
           },
           "neck": {
             "id": "headwear/neck/neck_jabot",
@@ -37,7 +41,7 @@
             }
           },
           "vest": {
-            "id": "torso/vest/torso_clothes_vest_open",
+            "id": "torso/shirts/torso_clothes_corset",
             "variant": "black"
           },
           "cape": {
