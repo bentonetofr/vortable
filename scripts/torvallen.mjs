@@ -14,8 +14,7 @@ import fs from 'node:fs'
 import { applyRooms, encodeRoom } from '../src/engine/world/rooms.ts'
 
 const TILE = 32
-const W = 64, H = 56
-const VW = W + 1
+const W = 65, H = 56   // largura ímpar: o eixo é o tile 32 e as margens ficam iguais dos dois lados
 
 const cat = JSON.parse(fs.readFileSync('public/assets/catalog/objects.json', 'utf8'))
 const catalog = new Map((Array.isArray(cat.objects) ? cat.objects : Object.values(cat.objects)).map((o) => [o.id, o]))
@@ -78,20 +77,21 @@ const CORNER_SKIP = [[3, 5], [59, 61]]
 // ── um andar ──
 function makeFloor({ n, id, name, floor, wall, trim, hour, w = W, h = H }) {
   const vw = w + 1
+  const A = Math.floor(w / 2)                  // tile do eixo de simetria (leste-oeste)
   const zone = {
     version: 1, id, name, width: w, height: h, base: floor,
     corners: new Array(vw * (h + 1)).fill(''), objects: [], portals: [],
-    spawn: { x: (w / 2) * TILE + 16, y: (h - 4) * TILE + 20 },
+    spawn: { x: A * TILE + 16, y: (h - 4) * TILE + 20 },
   }
   const room = encodeRoom({ floor, wall, trim, height: 4 })
   zone.rooms = new Array(vw * (h + 1)).fill('')
-  for (let y = 2; y <= h - 2; y++) for (let x = 2; x <= w - 3; x++) zone.rooms[y * vw + x] = room
+  for (let y = 2; y <= h - 2; y++) for (let x = 3; x <= 2 * A - 2; x++) zone.rooms[y * vw + x] = room   // piso nos tiles 3..2A-3: simétrico no eixo A
   applyRooms(zone, new Array(vw * (h + 1)).fill(''))
   zone.overlay = zone.overlay ?? new Array(vw * (h + 1)).fill('')
   const lights = []
   const api = {
     zone, lights, n,
-    isFloor: (x, y) => y >= 7 && y <= h - 2 && x >= 2 && x <= w - 3,
+    isFloor: (x, y) => y >= 7 && y <= h - 2 && x >= 3 && x <= 2 * A - 2,
     paint(x0, y0, x1, y1, tid) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (api.isFloor(x, y)) zone.corners[y * vw + x] = tid },
     rug(x0, y0, x1, y1, tid) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (api.isFloor(x, y)) zone.overlay[y * vw + x] = tid },
     put(kind, tx, ty, e = {}) {
@@ -105,11 +105,12 @@ function makeFloor({ n, id, name, floor, wall, trim, hour, w = W, h = H }) {
   return api
 }
 
-// parede norte: janelas, cortinas, lampiões e a fileira de estantes encostada nela
+// parede norte, simétrica no eixo (tile 32): `windows` descreve só o lado esquerdo e o direito é o espelho
 function northWall(f, { windows, big = true, skipShelves = null, centerDoor = false }) {
   const WALL_BASE = 184
-  for (const [tx, id] of windows) {
-    f.putPx(id, tx * TILE + 16, WALL_BASE)
+  const all = windows.flatMap(([tx, id]) => [[tx, id, false], [2 * 32 - tx, id, true]])
+  for (const [tx, id, flip] of all) {
+    f.putPx(id, tx * TILE + 16, WALL_BASE, { flip })
     f.light(`jan-${tx}`, tx * TILE + 16, 292, 130, '#9cc4ff', 0.42, 0)
   }
   if (big) {
@@ -121,12 +122,12 @@ function northWall(f, { windows, big = true, skipShelves = null, centerDoor = fa
     f.putPx(O.valance, cx, 124)
     f.light('vitral', cx, 310, 260, '#a9c9ff', 0.6, 0)
   }
-  for (const tx of [11, 19, 44, 52]) if (windows.some(([w]) => w === tx)) {
-    f.putPx(O.curtainsOpen, tx * TILE + 16 - 40, 190)
-    f.putPx(O.curtainsOpen, tx * TILE + 16 + 40, 190, { flip: true })
+  for (const [tx, , flip] of all) if ([12, 20, 44, 52].includes(tx)) {
+    f.putPx(O.curtainsOpen, tx * TILE + 16 + (flip ? 40 : -40), 190, { flip })
+    f.putPx(O.curtainsOpen, tx * TILE + 16 + (flip ? -40 : 40), 190, { flip: !flip })
   }
-  for (const tx of [4, 24, 40, 59]) f.putPx(O.lampWall, tx * TILE + 16, 186)
-  for (let tx = 3; tx <= 60; tx++) {
+  for (const tx of [4, 24, 40, 60]) f.putPx(O.lampWall, tx * TILE + 16, 186)
+  for (let tx = 3; tx <= 61; tx++) {
     if (skipShelves && skipShelves.some(([a, b]) => tx >= a && tx <= b)) continue
     f.put(shelfAt(tx), tx, 7)
   }
@@ -146,9 +147,9 @@ function readingTable(f, cx, base) {
     f.putPx(O.chairLow, cx + dx, base + 24)
   }
   f.putPx(bookProp(), cx - 28, base - 14, { z: 12 })
-  f.putPx(O.lampTable, cx + 4, base - 12, { z: 12 })
-  f.putPx(bookProp(), cx + 30, base - 10, { z: 12 })
-  f.light(`mesa-${Math.round(cx)}-${Math.round(base)}`, cx + 4, base - 34, 100, '#ffc980', 0.75, 0.2)
+  f.putPx(O.lampTable, cx, base - 12, { z: 12 })
+  f.putPx(bookProp(), cx + 28, base - 10, { z: 12 })
+  f.light(`mesa-${Math.round(cx)}-${Math.round(base)}`, cx, base - 34, 100, '#ffc980', 0.75, 0.2)
 }
 
 // praça de leitura no lugar de um bloco: duas mesas de leitura
@@ -160,12 +161,12 @@ function tablesPlaza(f, ci, ri) {
 }
 
 // canto de leitura: lareira, sofá, poltronas e mesa de centro (ocupa o bloco e o beco de baixo)
-function loungePlaza(f, ci, ri, brick) {
+function loungePlaza(f, ci, ri, mirror) {
   const cx = COL0[ci] + 4, r0 = ROW0[ri]
   f.rug(cx - 3, r0 + 1, cx + 4, r0 + 5, T.rugLounge)
-  f.put(brick ? O.fireplaceBrick : O.fireplace, cx, r0)
+  f.put(O.fireplace, cx, r0, { flip: mirror })
   f.light(`lareira-${cx}-${r0}`, cx * TILE + 16, r0 * TILE + 8, 170, '#ff9a4a', 0.95, 0.9)
-  f.put(O.sofa3, cx, r0 + 4)
+  f.put(O.sofa3, cx, r0 + 4, { flip: mirror })
   f.put(O.armchair, cx - 3, r0 + 2)
   f.put(O.armchair, cx + 3, r0 + 2, { flip: true })
   f.putPx(O.coffee, cx * TILE + 16, (r0 + 3) * TILE)
@@ -190,18 +191,20 @@ function giantDesk(f, cx, base) {
   }
   f.putPx(O.chalice, cx - 118, base - 34 - 4, { z: 14 })
   f.putPx(O.chalice, cx + 118, base - 34 - 4, { z: 14 })
-  f.putPx(O.skull, cx - 40, base - 40, { z: 16 })
-  f.putPx(O.flasks, cx + 50, base - 8, { z: 14 })
-  f.putPx(O.flasks, cx - 108, base - 6, { z: 14, flip: true })
-  f.putPx(O.goblet, cx + 12, base - 4, { z: 14 })
-  f.putPx(O.bottle, cx - 70, base - 2, { z: 14 })
-  f.putPx(O.tray, cx + 88, base - 40, { z: 15 })
-  for (const dx of [-140, -12, 134]) {
+  f.putPx(O.skull, cx, base - 40, { z: 16 })
+  for (const sgn of [-1, 1]) {                   // objetos sempre em par, um de cada lado do eixo
+    const flip = sgn > 0
+    f.putPx(O.flasks, cx + sgn * 50, base - 8, { z: 14, flip })
+    f.putPx(O.flasks, cx + sgn * 108, base - 6, { z: 14, flip })
+    f.putPx(O.goblet, cx + sgn * 14, base - 4, { z: 14, flip })
+    f.putPx(O.bottle, cx + sgn * 70, base - 2, { z: 14, flip })
+    f.putPx(O.tray, cx + sgn * 88, base - 40, { z: 15, flip })
+  }
+  for (const dx of [-132, 0, 132]) {
     f.putPx(O.lampTable, cx + dx, base - 36, { z: 14 })
     f.light(`mesa-gigante-${dx}`, cx + dx, base - 68, 115, '#ffc980', 0.75, 0.25)
   }
-  f.putPx(O.chairHigh, cx + 6, base + 22)
-  f.putPx(O.chairBack2, cx - 74, base + 36, { flip: true })
+  f.putPx(O.chairHigh, cx, base + 22)
 }
 
 // escada de degraus (3 tiles de largura × 2 de altura) cruzando o beco; a saída é a faixa de baixo
@@ -214,14 +217,13 @@ function stairVisual(f, c, r, up) {
 
 // postes de tocha e luz nos cruzamentos dos becos
 function alleyLights(f, { every = 2, color = '#ffcf8a', intensity = 0.75, radius = 150 }) {
-  let i = 0
-  for (const c of ALLEY_C) for (const r of ALLEY_R) {
-    if ((i++) % every !== 0) continue
-    const nearStair = f.zone.portals.some((p) => Math.abs(p.x / TILE + 1 - c) < 4 && Math.abs(p.y / TILE - r) < 4)
-    if (nearStair) continue
-    f.light(`beco-${c}-${r}`, c * TILE + 16, r * TILE + 8, radius, color, intensity, 0.18)
-    f.put(O.torchPost, c, r)
-  }
+  ALLEY_R.forEach((r, ri) => {
+    if (ri % every !== 0) return               // fileiras inteiras, nos 4 becos: fica simétrico
+    for (const c of ALLEY_C) {
+      f.light(`beco-${c}-${r}`, c * TILE + 16, r * TILE + 8, radius, color, intensity, 0.18)
+      f.put(O.torchPost, c, r)
+    }
+  })
 }
 
 // algumas folhas caídas nos becos (poucas, perto das mesas)
@@ -245,22 +247,23 @@ function buildBlocks(f, matrix) {
 const F1 = makeFloor({ n: 1, id: 'torvallen-biblioteca-1', name: 'Biblioteca de Torvallen — Térreo (Grande Salão)', floor: T.stone, wall: 'wall-49', trim: 'ceil-25', hour: 17.4 })
 {
   const f = F1
-  f.paint(3, 8, 24, 53, T.wood); f.paint(40, 8, 60, 53, T.wood)
-  f.paint(27, 7, 37, 12, T.warm)
+  f.paint(3, 8, 24, 53, T.wood); f.paint(41, 8, 62, 53, T.wood)
+  f.paint(27, 7, 38, 12, T.warm)
   f.rug(29, 8, 36, 53, T.rug)           // tapete da nave, da entrada ao altar
   f.rug(30, 9, 35, 11, T.rugAltar)
-  northWall(f, { windows: [[11, O.windowWide], [19, O.windowWide], [44, O.windowWide], [52, O.windowWide], [7, O.windowSmall1], [56, O.windowSmall2], [15, O.windowSmall2], [48, O.windowSmall1]], skipShelves: [[26, 37]], centerDoor: true })
-  f.put(O.clock, 26, 7); f.put(O.clock, 37, 7)
-  f.put(O.organ, 21, 7, { dx: 24 })
+  northWall(f, { windows: [[12, O.windowWide], [20, O.windowWide], [8, O.windowSmall1], [16, O.windowSmall1]], skipShelves: [[26, 38]], centerDoor: true })
+  f.put(O.clock, 26, 7); f.put(O.clock, 38, 7)
+  f.put(O.organ, 21, 7, { dx: 24 }); f.put(O.organ, 43, 7, { dx: -24, flip: true })
   buildBlocks(f, matrixOf([
     'S S . S S', 'S S . S S', 'S S . S S', 'S T . T S', 'S S . S S', 'S S . S S', 'S S . S S', 'S L . L S',
   ]))
   // nave: estátuas dos dois lados do tapete e mesas de leitura nos becos centrais
+  // ritmo único: estátuas nas fileiras 13,21,…,45; mesas e lustres no meio de cada par
   ;[13, 21, 29, 37, 45].forEach((ty, i) => {
     f.put(i % 2 ? O.statueHood : O.statueMaiden, 28, ty)
     f.put(i % 2 ? O.statueHood : O.statueMaiden, 36, ty, { flip: true })
   })
-  for (const cx of [26.5 * TILE, 38.5 * TILE]) for (const ty of [15, 21, 27, 33, 39]) readingTable(f, cx, (ty + 1) * TILE)
+  for (const cx of [26.5 * TILE, 38.5 * TILE]) for (const ty of [16, 24, 32, 40]) readingTable(f, cx, (ty + 1) * TILE)
   // altar: a mesa gigante, cheia de livros, entre estátuas
   const altar = 9
   f.put(O.statueAngel, 25, altar - 1); f.put(O.statueAngel, 39, altar - 1, { flip: true })
@@ -273,12 +276,13 @@ const F1 = makeFloor({ n: 1, id: 'torvallen-biblioteca-1', name: 'Biblioteca de 
   f.light('porta-proibida', 32 * TILE + 16, 7 * TILE - 8, 130, '#ffc060', 0.7, 0.3)
   f.zone.portals.push({ id: 'secao-proibida', name: 'Seção Proibida (somente o imperador e os superiores)', x: 31 * TILE, y: 7 * TILE, w: 3 * TILE, h: TILE, to: { zone: 'torvallen-secao-proibida', portal: 'saida-secao' } })
   f.light('altar', 32 * TILE + 16, 9 * TILE, 200, '#ffd9a0', 0.7, 0.1)
-  for (const ty of [11, 20, 29, 38, 46]) f.light(`lustre-${ty}`, 32 * TILE + 16, ty * TILE, 270, '#ffd49a', 0.85, 0.14)
+  for (const ty of [17, 25, 33, 41]) f.light(`lustre-${ty}`, 32 * TILE + 16, ty * TILE, 270, '#ffd49a', 0.85, 0.14)
   // entrada ao sul: mesa da bibliotecária e postes de luz
   f.putPx(O.table, 32 * TILE + 16, 50 * TILE)
   f.putPx(O.chairBack, 32 * TILE + 16, 50 * TILE - 22)
   f.putPx(bookProp(), 32 * TILE + 16 - 26, 50 * TILE - 12, { z: 12 })
-  f.putPx(O.lampTable, 32 * TILE + 16 + 8, 50 * TILE - 10, { z: 12 })
+  f.putPx(O.lampTable, 32 * TILE + 16, 50 * TILE - 10, { z: 12 })
+  f.putPx(bookProp(), 32 * TILE + 16 + 26, 50 * TILE - 12, { z: 12 })
   f.put(O.torchPost, 28, 52); f.put(O.torchPost, 36, 52)
   f.light('entrada-e', 28 * TILE + 16, 52 * TILE - 20, 150, '#ffb25e', 0.8, 0.6)
   f.light('entrada-d', 36 * TILE + 16, 52 * TILE - 20, 150, '#ffb25e', 0.8, 0.6)
@@ -290,8 +294,8 @@ const F1 = makeFloor({ n: 1, id: 'torvallen-biblioteca-1', name: 'Biblioteca de 
 const F2 = makeFloor({ n: 2, id: 'torvallen-biblioteca-2', name: 'Biblioteca de Torvallen — 2º andar (Galeria dos Corredores)', floor: T.wood, wall: 'wall-49', trim: 'ceil-25', hour: 16.8 })
 {
   const f = F2
-  f.rug(25, 8, 27, 53, T.rug); f.rug(37, 8, 39, 53, T.rug)   // tapetes nos becos longos
-  northWall(f, { windows: [[11, O.windowWide], [19, O.windowWide], [44, O.windowWide], [52, O.windowWide], [7, O.windowSmall1], [56, O.windowSmall2]], skipShelves: CORNER_SKIP })
+  f.rug(25, 8, 28, 53, T.rug); f.rug(37, 8, 40, 53, T.rug)   // tapetes nos becos longos
+  northWall(f, { windows: [[12, O.windowWide], [20, O.windowWide], [8, O.windowSmall1]], skipShelves: CORNER_SKIP })
   buildBlocks(f, matrixOf([
     'S S S S S', 'S S S S S', 'S S T S S', 'S S S S S', 'S T S T S', 'S S S S S', 'S S T S S', 'S S S S S',
   ]))
@@ -301,7 +305,7 @@ const F2 = makeFloor({ n: 2, id: 'torvallen-biblioteca-2', name: 'Biblioteca de 
 const F3 = makeFloor({ n: 3, id: 'torvallen-biblioteca-3', name: 'Biblioteca de Torvallen — 3º andar (Arquivos Antigos)', floor: T.darkWood, wall: 'wall-209', trim: 'ceil-3', hour: 18.6 })
 {
   const f = F3
-  northWall(f, { windows: [[11, O.windowSmall1], [19, O.windowSmall2], [44, O.windowSmall2], [52, O.windowSmall1]], big: false, skipShelves: CORNER_SKIP })
+  northWall(f, { windows: [[12, O.windowSmall1], [20, O.windowSmall2]], big: false, skipShelves: CORNER_SKIP })
   buildBlocks(f, matrixOf([
     'S S S S S', 'S S S S S', 'S S S S S', 'S S T S S', 'S S S S S', 'S S S S S', 'S T S T S', 'S S S S S',
   ]))
@@ -311,29 +315,29 @@ const F3 = makeFloor({ n: 3, id: 'torvallen-biblioteca-3', name: 'Biblioteca de 
 const F4 = makeFloor({ n: 4, id: 'torvallen-biblioteca-4', name: 'Biblioteca de Torvallen — 4º andar (Torre dos Pergaminhos)', floor: T.wood, wall: 'wall-33', trim: 'ceil-26', hour: 14.5 })
 {
   const f = F4
-  f.paint(17, 21, 47, 38, T.warm)
-  f.rug(26, 24, 38, 35, T.rugAltar)
-  northWall(f, { windows: [[11, O.windowWide], [19, O.windowWide], [44, O.windowWide], [52, O.windowWide], [7, O.windowSmall1], [56, O.windowSmall2]] })
+  f.paint(17, 21, 48, 37, T.warm)
+  f.rug(27, 24, 38, 35, T.rugAltar)
+  northWall(f, { windows: [[12, O.windowWide], [20, O.windowWide], [8, O.windowSmall1]] })
   buildBlocks(f, matrixOf([
     'S S S S S', 'S S S S S', 'S . . . S', 'S . . . S', 'S . . . S', 'S . . . S', 'S S S S S', 'S S S S S',
   ]))
   // átrio: a mesa gigante no meio, mesas de leitura dos lados e estátuas nos cantos
   const cx = 32 * TILE + 16
   giantDesk(f, cx, 30 * TILE)
-  for (const sx of [21.5 * TILE, 42.5 * TILE]) for (const ty of [24, 34]) readingTable(f, sx, (ty + 1) * TILE)
+  for (const sx of [21.5 * TILE, 43.5 * TILE]) for (const ty of [24, 34]) readingTable(f, sx, (ty + 1) * TILE)
   for (const [tx, ty, kind, flip] of [[19, 22, O.statueAngel, false], [45, 22, O.statueAngel, true], [19, 37, O.statueMaiden, false], [45, 37, O.statueMaiden, true]]) f.put(kind, tx, ty, { flip })
   f.light('atrio', cx, 28 * TILE, 330, '#fff0c8', 0.95, 0.06)
 }
 
 // ═══ SEÇÃO PROIBIDA: o arquivo do imperador, atrás do altar do térreo ═══
-const SECAO = makeFloor({ n: 6, id: 'torvallen-secao-proibida', name: 'Seção Proibida — Arquivo Imperial', floor: T.darkWood, wall: 'wall-209', trim: 'ceil-3', hour: 19, w: 44, h: 44 })
+const SECAO = makeFloor({ n: 6, id: 'torvallen-secao-proibida', name: 'Seção Proibida — Arquivo Imperial', floor: T.darkWood, wall: 'wall-209', trim: 'ceil-3', hour: 19, w: 45, h: 44 })
 {
   const f = SECAO
   const cx = 22 * TILE + 16
   const COLS = [4, 14, 24, 34], ROWS = [16, 21, 26, 31, 36]
-  f.rug(21, 15, 23, 42, T.rug)                 // tapete do corredor central
-  f.rug(14, 8, 30, 13, T.rugAltar)             // o estrado do imperador
-  for (let tx = 3; tx <= 40; tx++) f.put(shelfAt(tx), tx, 7)
+  f.rug(21, 15, 24, 42, T.rug)                 // tapete do corredor central
+  f.rug(14, 8, 31, 13, T.rugAltar)             // o estrado do imperador
+  for (let tx = 3; tx <= 41; tx++) f.put(shelfAt(tx), tx, 7)
   for (const tx of [7, 13, 31, 37]) f.putPx(O.lampWall, tx * TILE + 16, 186)
   for (const c0 of COLS) for (const r0 of ROWS) for (let r = 0; r < 2; r++) for (let c = 0; c < 7; c++) f.put(shelfAt(c0 + c), c0 + c, r0 + r)
   // estrado: mesa do imperador com a cadeira alta, estátuas e lareiras de vela
@@ -362,13 +366,13 @@ const SECAO = makeFloor({ n: 6, id: 'torvallen-secao-proibida', name: 'Seção P
 }
 
 // ═══ SAGUÃO DO PALÁCIO: pra onde a porta da biblioteca leva ═══
-const SAGUAO = makeFloor({ n: 5, id: 'torvallen-saguao-palacio', name: 'Saguão do Palácio', floor: T.stone, wall: 'wall-49', trim: 'ceil-25', hour: 15.2, w: 40, h: 32 })
+const SAGUAO = makeFloor({ n: 5, id: 'torvallen-saguao-palacio', name: 'Saguão do Palácio', floor: T.stone, wall: 'wall-49', trim: 'ceil-25', hour: 15.2, w: 41, h: 32 })
 {
   const f = SAGUAO
   const cx = 20 * TILE + 16
-  f.paint(14, 7, 25, 30, T.warm)
-  f.rug(18, 8, 22, 30, T.rug)
-  f.rug(18, 8, 22, 12, T.rugAltar)
+  f.paint(14, 7, 27, 30, T.warm)
+  f.rug(18, 8, 23, 30, T.rug)
+  f.rug(18, 8, 23, 12, T.rugAltar)
   for (const tx of [6, 12, 28, 34]) {
     f.putPx(O.windowWide, tx * TILE + 16, 184)
     f.putPx(O.curtainsOpen, tx * TILE + 16 - 40, 190)
@@ -384,10 +388,10 @@ const SAGUAO = makeFloor({ n: 5, id: 'torvallen-saguao-palacio', name: 'Saguão 
     f.put(i % 2 ? O.statueHood : O.statueMaiden, 24, ty, { flip: true })
   })
   for (const ty of [12, 21, 29]) f.light(`lustre-${ty}`, cx, ty * TILE, 260, '#ffd49a', 0.8, 0.14)
-  for (const [tx, flip] of [[6, false], [33, true]]) {
-    f.put(O.sofa3, tx, 20)
-    f.put(O.candleTable, tx + (flip ? -2 : 4), 19)
-    f.light(`sofa-${tx}`, (tx + 1) * TILE, 19 * TILE, 120, '#ffc980', 0.6, 0.2)
+  for (const [tx, flip] of [[6, false], [34, true]]) {
+    f.put(O.sofa3, tx, 20, { flip })
+    f.put(O.candleTable, tx + (flip ? -4 : 4), 19)
+    f.light(`sofa-${tx}`, flip ? 2 * (20 * TILE + 16) - 7 * TILE : (tx + 1) * TILE, 19 * TILE, 120, '#ffc980', 0.6, 0.2)
   }
   f.zone.spawn = { x: cx, y: 10 * TILE }
   f.zone.portals.push({ id: 'porta-biblioteca', name: 'Entrar na Biblioteca de Torvallen', x: 19 * TILE, y: 7 * TILE, w: 3 * TILE, h: TILE, to: { zone: 'torvallen-biblioteca-1', portal: 'saida-palacio' } })
