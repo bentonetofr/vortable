@@ -357,6 +357,10 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
   *Mandar assistir* / *Colocar em jogo*. Jogador: *Assistir* (jogando), *Só assistir* (sem boneco), *Entrar em jogo*.
   Rede: `{sys:'role'}` (jogador→mestre) e `{sys:'cmd'}` (mestre→jogador) no DataChannel; `react` é mensagem do jogo.
 
+- **Telinha (PiP)**: ao sair do Vortable pelo botão, o jogador (com a sessão no ar e espectadores permitidos) ganha uma janelinha no
+  canto inferior esquerdo que segue mostrando a sessão enquanto ele anda pelo site (espectador sem som, foco do mestre ou 1º jogador;
+  recolher, voltar ao Vortable, fechar). Fecha sozinha quando a sessão acaba. Código: `vortable/pip/pipStore.ts`, `VortablePip.tsx`.
+
 #### M4.3 — Ficha, chat e dados (⏳)
 - Boneco ligado à ficha (nome, vida, retrato); chat com balão sobre a cabeça; dados no histórico
 - ✅ *Sessão real com amigos*

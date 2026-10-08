@@ -47,6 +47,8 @@ export interface WorldSceneData {
   watch?: boolean
   /** Câmera de observador: quem ela está acompanhando (guardado nas trocas de zona). */
   follow?: string
+  /** Zoom da câmera enquanto acompanha alguém (padrão 2, o do jogo). */
+  followZoom?: number
   /** Observador que também ouve os sons da zona (espectador; o mestre não precisa). */
   listen?: boolean
 }
@@ -236,6 +238,7 @@ export class WorldScene extends Phaser.Scene {
 
   private following: string | null = null
   private switching = false
+  private followZoom = 2
   private reactions = 0
 
   private startWatch(zone: ZoneData, W: number, H: number) {
@@ -243,7 +246,7 @@ export class WorldScene extends Phaser.Scene {
     cam.removeBounds()
     this.watchFit()
     // seguindo alguém antes da troca de zona: continua e volta ao zoom do jogo
-    if (this.cfg.follow) { this.following = this.cfg.follow; cam.setZoom(2) }
+    if (this.cfg.follow) { this.following = this.cfg.follow; cam.setZoom(this.cfg.followZoom ?? 2) }
     cam.setRoundPixels(false)
     // arrastar move a câmera; a roda dá zoom no ponto sob o mouse
     const input = this.input
@@ -277,7 +280,7 @@ export class WorldScene extends Phaser.Scene {
     if (!this.cfg.watch || id === this.cfg.zone.id) return
     const zone = await this.cfg.loadZone(id).catch(() => null)
     if (!zone || !this.sys.isActive()) return
-    this.scene.restart({ ...this.cfg, zone, follow: this.following ?? undefined, notice: undefined } satisfies WorldSceneData)
+    this.scene.restart({ ...this.cfg, zone, follow: this.following ?? undefined, followZoom: this.followZoom, notice: undefined } satisfies WorldSceneData)
   }
 
   /** Enquadra a zona inteira na tela. */
@@ -301,9 +304,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** A câmera acompanha um jogador (null solta). */
-  watchFollow(id: string | null) {
+  watchFollow(id: string | null, zoom = 2) {
     this.following = id
-    if (id) this.cameras.main.setZoom(2) // o enquadramento do próprio jogo
+    this.followZoom = zoom // o padrão é o enquadramento do próprio jogo
+    if (id) this.cameras.main.setZoom(zoom)
   }
 
   /** Quem a câmera acompanha agora. */

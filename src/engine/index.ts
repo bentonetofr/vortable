@@ -76,8 +76,8 @@ export interface WatchControls {
   fit(): void
   zoomBy(factor: number): void
   focus(x: number, y: number): void
-  /** A câmera acompanha um jogador (null solta). */
-  follow(id: string | null): void
+  /** A câmera acompanha um jogador (null solta); `zoom` padrão 2 (o enquadramento do jogo). */
+  follow(id: string | null, zoom?: number): void
   /** Quem a câmera acompanha agora (null = ninguém). */
   following(): string | null
   /** Espectador: manda uma reação (emoji de REACTIONS) pra todos verem no mapa. */
@@ -242,7 +242,7 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
       fit: () => world()?.watchFit(),
       zoomBy: (f) => world()?.watchZoom(f),
       focus: (x, y) => world()?.watchFocus(x, y),
-      follow: (id) => world()?.watchFollow(id),
+      follow: (id, zoom) => world()?.watchFollow(id, zoom),
       following: () => world()?.watchFollowing() ?? null,
       react: (emoji) => world()?.watchReact(emoji),
       peers: () => world()?.watchPeers() ?? [],
