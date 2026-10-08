@@ -5,15 +5,20 @@
 // aurora, dia, hora dourada, pôr do sol, crepúsculo, noite).
 // ────────────────────────────────────────────────────────
 
-import { DAY_MINUTES, type ZoneLighting } from '../types'
+import { DAY_MINUTES, type WorldSky, type ZoneLighting } from '../types'
 
 export type RGB = [number, number, number]
 
 export const UNDERGROUND_TINT = '#2a2e3c'
 
-/** Luz de uma zona que nunca foi ajustada: interior se o fundo é o vazio, senão ao ar livre; ciclo dia/noite. */
+/** Luz de uma zona que nunca foi ajustada: interior se o fundo é o vazio, senão ao ar livre. */
 export function lightingOf(zone: { lighting?: ZoneLighting; base?: string }): ZoneLighting {
-  return zone.lighting ?? { place: zone.base === 'void' ? 'indoor' : 'outdoor', hour: null }
+  return zone.lighting ?? { place: zone.base === 'void' ? 'indoor' : 'outdoor' }
+}
+
+/** Hora e tempo do mundo (iguais em todas as zonas); mundo sem ajuste = ciclo dia/noite, tempo limpo. */
+export function skyOf(world?: { sky?: WorldSky } | null): WorldSky {
+  return world?.sky ?? { hour: null }
 }
 
 export function hexToRgb(hex: string): RGB {
@@ -226,9 +231,9 @@ export function worldHour(dayMinutes = DAY_MINUTES, now = Date.now()) {
   return cycleToHour(hourToCycle(6) + (now % day) / day) % 24
 }
 
-/** Hora da zona agora: a fixa, ou a do ciclo. */
-export function zoneHour(l: ZoneLighting, now = Date.now()) {
-  return l.hour ?? worldHour(l.dayMinutes, now)
+/** Hora do mundo agora (a mesma em todas as zonas): a fixa, ou a do ciclo. */
+export function skyHour(sky: WorldSky, now = Date.now()) {
+  return sky.hour ?? worldHour(sky.dayMinutes, now)
 }
 
 export function formatHour(hour: number) {
@@ -237,15 +242,19 @@ export function formatHour(hour: number) {
   return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
 }
 
-/** Presets do painel Luz. */
+/** Presets de lugar do painel Luz (valem só pra zona aberta). */
 export const LIGHT_PRESETS: { id: string; label: string; lighting: ZoneLighting }[] = [
-  { id: 'cycle', label: 'Ciclo dia/noite', lighting: { place: 'outdoor', hour: null } },
-  { id: 'day', label: 'Dia', lighting: { place: 'outdoor', hour: 12 } },
-  { id: 'dusk', label: 'Entardecer', lighting: { place: 'outdoor', hour: 18.2 } },
-  { id: 'seminight', label: 'Semi noite', lighting: { place: 'outdoor', hour: 19.6 } },
-  { id: 'night', label: 'Noite', lighting: { place: 'outdoor', hour: 23 } },
-  { id: 'indoor', label: 'Interior', lighting: { place: 'indoor', hour: null } },
-  { id: 'tavern', label: 'Taverna à noite', lighting: { place: 'indoor', hour: 21.5 } },
-  { id: 'cave', label: 'Caverna', lighting: { place: 'underground', hour: null, tint: '#343a4e' } },
-  { id: 'dungeon', label: 'Masmorra', lighting: { place: 'underground', hour: null, tint: '#1e2420' } },
+  { id: 'outdoor', label: 'Ao ar livre', lighting: { place: 'outdoor' } },
+  { id: 'indoor', label: 'Interior', lighting: { place: 'indoor' } },
+  { id: 'cave', label: 'Caverna', lighting: { place: 'underground', tint: '#343a4e' } },
+  { id: 'dungeon', label: 'Masmorra', lighting: { place: 'underground', tint: '#1e2420' } },
+]
+
+/** Presets de hora do painel Luz (valem pro mundo todo). */
+export const SKY_PRESETS: { id: string; label: string; hour: number | null }[] = [
+  { id: 'cycle', label: 'Ciclo dia/noite', hour: null },
+  { id: 'day', label: 'Dia', hour: 12 },
+  { id: 'dusk', label: 'Entardecer', hour: 18.2 },
+  { id: 'seminight', label: 'Semi noite', hour: 19.6 },
+  { id: 'night', label: 'Noite', hour: 23 },
 ]

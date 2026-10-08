@@ -8,10 +8,12 @@ riacho, lago, cachoeira, pântano, mar, caverna, fogueira, tocha)
   https://opengameart.org/content/jc-sounds-nature-ambient-pack-vol-1
   (convertidos para MP3 112 kb/s, com emenda em laço)
 
-Passos (grama, neve, madeira, tapete, pedra)
+Passos (grama, neve, madeira, pedra)
   "Impact Sounds" — Kenney (www.kenney.nl)
   CC0 (domínio público)
   https://kenney.nl/assets/impact-sounds
+
+Passos no tapete: sintetizados pelo Vortable (src/engine/audio/rugstep.ts), sem gravação.
 
 Passos (cascalho, água rasa)
   "Footsteps on different surfaces" — congusbongus

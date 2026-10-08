@@ -6,6 +6,7 @@
 // ────────────────────────────────────────────────────────
 
 import type { AudioEngine, Clip } from './engine'
+import { brownNoise, softRugStep } from './rugstep'
 
 export type Surface = 'grass' | 'dirt' | 'sand' | 'gravel' | 'snow' | 'stone' | 'wood' | 'rug' | 'water'
 
@@ -22,7 +23,7 @@ const KIT: Record<Surface, { set: string; n: number; gain: number; rate?: number
   snow: { set: 'snow', n: 5, gain: 0.9 },
   stone: { set: 'concrete', n: 5, gain: 0.8 },
   wood: { set: 'wood', n: 5, gain: 0.85 },
-  rug: { set: 'carpet', n: 5, gain: 0.9 },
+  rug: { set: 'carpet', n: 0, gain: 1 }, // sem gravação: o tapete é sintetizado (rugstep.ts)
   water: { set: 'water', n: 5, gain: 0.8 },
 }
 
@@ -31,6 +32,7 @@ const rand = (a: number, b: number) => a + Math.random() * (b - a)
 export class Steps {
   private clips = new Map<string, Clip[]>()
   private last = new Map<string, number>()
+  private noise: AudioBuffer | null = null
 
   constructor(private e: AudioEngine) {
     // todas as gravações de passos (são pequenas): prontas antes do primeiro passo
@@ -44,6 +46,7 @@ export class Steps {
 
   /** Um passo. `wet` = chão molhado (chuva): um respingo leve junto. */
   play(surface: Surface, volume: number, pan = 0, wet = false) {
+    if (surface === 'rug') return this.playRug(volume, pan, wet)
     const k = KIT[surface]
     const list = this.clips.get(k.set)
     if (!list?.length) return
@@ -65,6 +68,23 @@ export class Steps {
     send.connect(e.reverbSend)
     e.play(list[i], dest, volume * k.gain * rand(0.8, 1), (k.rate ?? 1) * rand(0.93, 1.07))
     if (wet && surface !== 'water') {
+      const water = this.clips.get('water')
+      if (water?.length) e.play(water[Math.floor(Math.random() * water.length)], p, volume * 0.22, rand(1.1, 1.3))
+    }
+  }
+
+  /** Tapete: passo macio sintetizado (calcanhar + ponta do pé), com um fiozinho de eco. */
+  private playRug(volume: number, pan: number, wet: boolean) {
+    const e = this.e
+    this.noise ??= brownNoise(e.ctx)
+    const p = e.ctx.createStereoPanner()
+    p.pan.value = pan
+    p.connect(e.dry)
+    const send = e.gain(0.3)
+    p.connect(send)
+    send.connect(e.reverbSend)
+    softRugStep(e.ctx, p, this.noise, e.now, volume)
+    if (wet) {
       const water = this.clips.get('water')
       if (water?.length) e.play(water[Math.floor(Math.random() * water.length)], p, volume * 0.22, rand(1.1, 1.3))
     }

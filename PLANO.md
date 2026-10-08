@@ -348,6 +348,9 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
   `vortable-character`, sem id: quem importa ganha um novo); no Vorterium, aba Jogadores → *Importar boneco*, *Exportar* por boneco
   e *Exportar todos*. Exemplo pronto: `personagens/dama-da-tranca.vortable-personagem.json`.
 
+- **Passo no tapete** sintetizado (`src/engine/audio/rugstep.ts`): calcanhar + ponta do pé, subida suave (~20 ms) e agudos cortados,
+  no lugar da gravação brilhante de ataque seco.
+
 #### M4.3 — Ficha, chat e dados (⏳)
 - Boneco ligado à ficha (nome, vida, retrato); chat com balão sobre a cabeça; dados no histórico
 - ✅ *Sessão real com amigos*

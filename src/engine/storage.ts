@@ -7,7 +7,7 @@
 // ────────────────────────────────────────────────────────
 
 import { WEATHERS } from './world/weather'
-import { LIGHT_RADIUS_MAX, LIGHT_RADIUS_MIN, TILE, ZONE_MAX, ZONE_MIN, Z_MAX, newId, type Portal, type WorldData, type ZoneData, type ZoneLight, type ZoneLighting, type ZoneSound } from './types'
+import { DAY_MINUTES, LIGHT_RADIUS_MAX, LIGHT_RADIUS_MIN, TILE, ZONE_MAX, ZONE_MIN, Z_MAX, newId, type Portal, type WorldData, type WorldSky, type ZoneData, type ZoneLight, type ZoneLighting, type ZoneSound } from './types'
 
 export interface ZoneSummary {
   id: string
@@ -201,16 +201,26 @@ function parseLighting(l: unknown): { lighting?: ZoneLighting } {
   return {
     lighting: {
       place,
-      hour: num(v.hour) ? clamp(v.hour, 0, 24) % 24 : null,
-      ...(num(v.dayMinutes) && v.dayMinutes > 0 ? { dayMinutes: clamp(v.dayMinutes, 1, 24 * 60) } : {}),
       ...(typeof v.tint === 'string' && COLOR.test(v.tint) ? { tint: v.tint } : {}),
       ...(v.sunShadows === false ? { sunShadows: false } : {}),
       ...(v.particles === false ? { particles: false } : {}),
       ...(num(v.wind) ? { wind: clamp(v.wind, 0, 1) } : {}),
       ...(v.clouds === false ? { clouds: false } : {}),
-      ...(typeof v.weather === 'string' && v.weather in WEATHERS && v.weather !== 'clear' ? { weather: v.weather } : {}),
     },
   }
+}
+
+/** Hora e tempo do mundo; só guarda o que foge do padrão (ciclo de 24 min, tempo limpo). */
+function parseSky(s: unknown): { sky?: WorldSky } {
+  const v = s as Partial<WorldSky> | null
+  if (!v || typeof v !== 'object') return {}
+  const hour = num(v.hour) ? clamp(v.hour, 0, 24) % 24 : null
+  const sky: WorldSky = {
+    hour,
+    ...(num(v.dayMinutes) && v.dayMinutes > 0 && v.dayMinutes !== DAY_MINUTES ? { dayMinutes: clamp(v.dayMinutes, 1, 24 * 60) } : {}),
+    ...(typeof v.weather === 'string' && v.weather in WEATHERS && v.weather !== 'clear' ? { weather: v.weather } : {}),
+  }
+  return sky.hour === null && sky.dayMinutes === undefined && sky.weather === undefined ? {} : { sky }
 }
 
 function parseSound(v: unknown): { sound?: ZoneSound } {
@@ -255,5 +265,6 @@ export function parseWorld(json: unknown): WorldData {
     name: typeof w.name === 'string' ? w.name : 'Meu mundo',
     start: typeof w.start === 'string' ? w.start : null,
     layout,
+    ...parseSky(w.sky),
   }
 }

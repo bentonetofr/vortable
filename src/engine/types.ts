@@ -36,7 +36,7 @@ export interface ZoneData {
    */
   rooms?: string[]
   objects: ZoneObject[]
-  /** Luz e hora da zona. Ausente = ao ar livre, seguindo o ciclo dia/noite. */
+  /** Onde a zona fica (ar livre, interior...). A hora e o tempo vêm do mundo (WorldData.sky). */
   lighting?: ZoneLighting
   /** Som ambiente (painel Sons). Ausente = automático. */
   sound?: ZoneSound
@@ -71,10 +71,6 @@ export interface Portal {
  */
 export interface ZoneLighting {
   place: 'outdoor' | 'indoor' | 'underground'
-  /** null = ciclo dia/noite (segue o relógio do mundo); número = hora fixa (0–24). */
-  hour: number | null
-  /** Ciclo: quantos minutos reais dura um dia. */
-  dayMinutes?: number
   /** Subterrâneo: a cor da escuridão (quanto mais escura, mais breu). */
   tint?: string
   /** Sombras do sol (ao ar livre). Padrão: ligadas. */
@@ -85,6 +81,18 @@ export interface ZoneLighting {
   wind?: number
   /** Sombra de nuvens passando (ao ar livre, de dia). Padrão: ligada. */
   clouds?: boolean
+}
+
+/**
+ * Hora e tempo do MUNDO: valem em todas as zonas ao mesmo tempo (a zona só
+ * decide onde fica: ar livre, interior ou subterrâneo). Ausente = ciclo
+ * dia/noite de DAY_MINUTES minutos, tempo limpo.
+ */
+export interface WorldSky {
+  /** null = ciclo dia/noite automático (o relógio do mundo); número = hora fixa (0–24). */
+  hour: number | null
+  /** Ciclo: quantos minutos reais dura um dia. */
+  dayMinutes?: number
   /** Tempo: chuva, neve, neblina... (weather.ts). Ausente = limpo. */
   weather?: string
 }
@@ -126,6 +134,8 @@ export interface WorldData {
   start: string | null
   /** Posição de cada zona no mapa do mundo (só visual). */
   layout: Record<string, { x: number; y: number }>
+  /** Hora e tempo, iguais em todas as zonas. Ausente = ciclo dia/noite, tempo limpo. */
+  sky?: WorldSky
 }
 
 export function newId(prefix: string) {
