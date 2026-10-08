@@ -99,6 +99,9 @@ export class Lighting {
   private dark!: Phaser.GameObjects.RenderTexture
   private glow!: Phaser.GameObjects.RenderTexture
   private shade!: Phaser.GameObjects.RenderTexture
+  /** Sombra de nuvens e cantos do pôr do sol: multiplicam a cena, por baixo da escuridão. */
+  private cloudShade!: Phaser.GameObjects.TileSprite
+  private vignette!: Phaser.GameObjects.Image
   private particles: Particles
   private live: Live[] = []
   private windows: Win[] = []
@@ -136,6 +139,10 @@ export class Lighting {
     ensureTextures(scene)
     this.particles = new Particles(scene)
     this.weather = new WeatherFx(scene)
+    this.cloudShade = scene.add.tileSprite(0, 0, 4, 4, SOFT).setOrigin(0, 0).setDepth(DEPTH_DARK - 2)
+      .setBlendMode(Phaser.BlendModes.MULTIPLY).setVisible(false)
+    this.vignette = scene.add.image(0, 0, VIGNETTE).setOrigin(0, 0).setDepth(DEPTH_DARK - 1)
+      .setBlendMode(Phaser.BlendModes.MULTIPLY).setVisible(false)
     this.resize()
     scene.scale.on(Phaser.Scale.Events.RESIZE, this.resize, this)
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy())
@@ -328,6 +335,8 @@ export class Lighting {
     this.glow.setVisible(false)
     this.shade.setVisible(false)
     if (!on) {
+      this.cloudShade.setVisible(false)
+      this.vignette.setVisible(false)
       this.particles.clear()
       this.weather.clear()
       setActiveWind(null)
@@ -378,19 +387,18 @@ export class Lighting {
     paint(rt, rgbToInt(ambient))
     // sombra de nuvens passando com o vento (de dia, ao ar livre)
     // (na hora dourada a sombra das nuvens é mais leve: não apaga o pôr do sol)
+    // (camada própria: multiplicar DENTRO da escuridão a apaga inteira no Phaser 3.90)
     const clouds = cover ? day * (1 - 0.55 * warm) : 0
     if (clouds > 0.02) {
-      const shadowKey = cloudTextures(this.scene, cover).shadow
-      const ox = ((cloudX % CLOUD_TILE) + CLOUD_TILE) % CLOUD_TILE
-      const oy = ((cloudY % CLOUD_TILE) + CLOUD_TILE) % CLOUD_TILE
-      const scale = (CLOUD_TILE / CLOUD_SIZE) * s
-      for (let wy = Math.floor((v.y - oy) / CLOUD_TILE) * CLOUD_TILE + oy; wy < v.y + v.h; wy += CLOUD_TILE) {
-        for (let wx = Math.floor((v.x - ox) / CLOUD_TILE) * CLOUD_TILE + ox; wx < v.x + v.w; wx += CLOUD_TILE) {
-          rt.stamp(shadowKey, undefined, px(wx), py(wy), {
-            originX: 0, originY: 0, scale, alpha: clouds * 0.9, blendMode: Phaser.BlendModes.MULTIPLY, skipBatch: true,
-          })
-        }
-      }
+      const key = cloudTextures(this.scene, cover).shadow
+      const scale = CLOUD_TILE / CLOUD_SIZE
+      const cs = this.cloudShade
+      if (cs.texture.key !== key) cs.setTexture(key)
+      cs.setVisible(true).setPosition(v.x, v.y).setSize(v.w, v.h).setTileScale(scale).setAlpha(clouds * 0.9)
+      cs.tilePositionX = (v.x - cloudX) / scale
+      cs.tilePositionY = (v.y - cloudY) / scale
+    } else {
+      this.cloudShade.setVisible(false)
     }
     // semi noite: gradiente pelo mapa, do lado do sol ainda rosado ao lado
     // oposto já noite (a luz que sobra no horizonte)
@@ -409,10 +417,9 @@ export class Lighting {
     }
     // hora dourada: cantos arroxeados e mais escuros (moldura de luz do pôr do sol)
     if (warm > 0.02) {
-      rt.stamp(VIGNETTE, undefined, 0, 0, {
-        originX: 0, originY: 0, scaleX: rt.width / VIG, scaleY: rt.height / VIG, alpha: Math.min(1, warm * 1.1),
-        blendMode: Phaser.BlendModes.MULTIPLY, skipBatch: true,
-      })
+      this.vignette.setVisible(true).setPosition(v.x, v.y).setDisplaySize(v.w, v.h).setAlpha(Math.min(1, warm * 1.1))
+    } else {
+      this.vignette.setVisible(false)
     }
     if (this.emission) {
       const pulse = 0.85 + 0.15 * Math.sin(t * 1.3)
@@ -696,10 +703,14 @@ function ensureTextures(scene: Phaser.Scene) {
   if (!tm.exists(DOT)) add(DOT, radial(16, 16, (d) => [255, 255, 255, Math.pow(Math.max(0, 1 - d), 1.6)]))
   if (!tm.exists(PUFF)) add(PUFF, radial(32, 32, (d) => [255, 255, 255, Math.pow(Math.max(0, 1 - d), 1.3) * 0.9]))
   if (!tm.exists(VIGNETTE)) {
-    // cantos arroxeados: transparente no centro, roxo escuro nas bordas
+    // cantos arroxeados: OPACO, branco no centro (multiplicar por branco não
+    // muda nada) e roxo escuro nas bordas. Com transparência, multiplicar
+    // dentro da camada apagava a escuridão inteira.
     const c = document.createElement('canvas')
     c.width = c.height = VIG
     const ctx = c.getContext('2d', CPU)!
+    ctx.fillStyle = '#fff'
+    ctx.fillRect(0, 0, VIG, VIG)
     const grad = ctx.createRadialGradient(VIG / 2, VIG / 2, VIG * 0.28, VIG / 2, VIG / 2, VIG * 0.72)
     grad.addColorStop(0, 'rgba(90,40,110,0)')
     grad.addColorStop(1, 'rgba(90,40,110,0.62)')
