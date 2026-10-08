@@ -95,8 +95,14 @@ Aba **Clima**:
   neve flutua e pousa; nevasca e neblina passam como névoa.
 - **Vento** (ao ar livre: parado, brisa ou ventania): árvores, arbustos, flores e plantações
   balançam (placas e lamparinas penduradas balançam presas no topo); os tufinhos da grama do
-  chão balançam com as rajadas e chacoalham quando alguém passa por cima; folhas caem das copas — com a cor da própria árvore — e o
-  vento as leva rolando pelo chão; sombra de nuvens passa pelo mapa.
+  chão balançam com as rajadas e chacoalham quando alguém passa por cima; folhas caem das copas
+  (com a cor da própria árvore) e o vento as leva rolando pelo chão; sombra de nuvens passa pelo
+  mapa.
+- **Horas do dia**: o ciclo percorre amanhecer (rosa e ouro, névoa e orvalho), manhã, meio-dia
+  (manchas de sol entre as folhas), tarde, pôr do sol (raios de luz fixos no cenário, sombras
+  roxas, pássaros), semi noite (gradiente do pôr do sol para a noite) e noite de luar (sombras
+  azuis da lua, névoa fria). A noite começa às 19h e fecha às 20h; o crepúsculo corre a 1/3 da
+  velocidade no relógio real pra a luz mudar devagar.
 - Partículas: chamas em toda tocha, lareira e fogueira; faíscas e fumaça nas grandes; vaga-lumes à
   noite; poeira no ar dos interiores; reflexos piscando na água.
 - No editor, `I` liga/desliga a prévia (pra pintar no claro).
