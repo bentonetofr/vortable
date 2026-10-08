@@ -328,6 +328,9 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
   livre sem boneco (`mode: 'watch'`), troca de zona, mapa inteiro, seguir um jogador e **hora / tempo /
   vento ao vivo** pra todos (mensagem `env`, por zona ou todas; quem entra depois recebe); o botão
   *Testar* do editor leva o mestre ao mundo junto com os jogadores
+- **Mundos** (botão na barra de cima do Vortable, só o mestre): vários mundos por campanha (cada um é
+  um conjunto de zonas; migration `20240194_vortable_mundos`); *Abrir pros jogadores* coloca todos no
+  mundo escolhido na hora (tempo real), *Editar* leva o editor pra ele, *+* cria, renomear e apagar
 - Testado: loopback de WebRTC (mestre + 2 jogadores: relay, teleporte, expulsão) e duas abas do motor
 - ⏳ Falta: hora/clima do mestre pra todos, zonas em tempo real (mestre editando), chat no balão
 
