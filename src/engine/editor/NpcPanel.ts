@@ -199,10 +199,23 @@ export class NpcPanel {
       canvas,
       h('div', { class: 'vt-npc-info' }, h('b', { title: n.name }, n.name), h('small', {}, n.role)),
       h('button', { class: 'vt-btn vt-icononly', title: 'Ver no mapa', html: ICONS.center, onclick: () => this.hooks.focus(n.x, n.y - 20) }),
+      h('button', {
+        class: `vt-btn vt-icononly${n.showName ? ' vt-on' : ''}`,
+        title: n.showName ? 'Nome em cima da cabeça: ligado' : 'Nome em cima da cabeça: desligado',
+        html: ICONS.nametag, onclick: () => this.toggleName(n),
+      }),
       h('button', { class: 'vt-btn vt-icononly', title: 'Virar (muda pra onde ele olha)', html: ICONS.flip, onclick: () => this.turn(n) }),
       h('button', { class: 'vt-btn vt-icononly', title: 'Mover: clique no novo lugar', html: ICONS.select, onclick: () => this.move(n) }),
       h('button', { class: 'vt-btn vt-icononly vt-danger', title: 'Remover da zona', html: ICONS.trash, onclick: () => this.remove(n) }),
     )
+  }
+
+  private toggleName(n: ZoneNpc) {
+    this.state.checkpoint()
+    if (n.showName) delete n.showName
+    else n.showName = true
+    this.state.emit('npcs')
+    this.state.edited()
   }
 
   private turn(n: ZoneNpc) {
@@ -213,7 +226,7 @@ export class NpcPanel {
   }
 
   private move(n: ZoneNpc) {
-    this.state.set({ tool: 'npc', npcDraft: { id: n.id, name: n.name, role: n.role, appearance: n.appearance, dir: n.dir } })
+    this.state.set({ tool: 'npc', npcDraft: { id: n.id, name: n.name, role: n.role, appearance: n.appearance, dir: n.dir, showName: n.showName } })
     this.hooks.toast('Clique no novo lugar (Esc cancela).')
     this.renderList()
   }

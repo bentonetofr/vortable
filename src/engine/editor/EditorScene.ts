@@ -1482,7 +1482,7 @@ ${cardinal} ${Math.round(deg)}°`, (r.x0 + r.x1) / 2 + nx * off, (r.y0 + r.y1) /
     const z = this.state.zone
     // movendo um que já existe: troca a posição dele (mesmo id); senão, NPC novo
     if (d.id) z.npcs = (z.npcs ?? []).filter((n) => n.id !== d.id)
-    ;(z.npcs ??= []).push({ id: d.id ?? newId('npc'), name: d.name, role: d.role, appearance: d.appearance, x, y, dir: d.dir ?? 'down' })
+    ;(z.npcs ??= []).push({ id: d.id ?? newId('npc'), name: d.name, role: d.role, appearance: d.appearance, x, y, dir: d.dir ?? 'down', ...(d.showName ? { showName: true } : {}) })
     this.npcGhost?.setVisible(false)
     this.state.set({ tool: 'select', npcDraft: null })
     this.state.emit('npcs')

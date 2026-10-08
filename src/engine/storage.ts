@@ -208,6 +208,7 @@ function parseNpcs(list: unknown[], W: number, H: number): ZoneNpc[] {
       appearance: parsed.appearance,
       x: clamp(Math.round(n.x), 0, W), y: clamp(Math.round(n.y), 0, H),
       dir: n.dir === 'up' || n.dir === 'left' || n.dir === 'right' ? n.dir : 'down',
+      ...(n.showName === true ? { showName: true } : {}),
     })
   }
   return out

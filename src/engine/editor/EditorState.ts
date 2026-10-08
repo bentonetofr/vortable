@@ -18,6 +18,8 @@ export interface NpcDraft {
   role: string
   appearance: Appearance
   dir?: Dir
+  /** Só quando está sendo movido: mantém o nome em cima da cabeça como estava. */
+  showName?: boolean
 }
 
 /** Jeito de uma luz solta (o que a ferramenta Luz põe; a selecionada é editada no lugar). */

@@ -72,7 +72,7 @@ export class NpcLayer {
       it.shadow = this.scene.add.image(0, 0, BLOB).setScale(0.75, 0.6).setAlpha(0.32)
       it.label = this.scene.add.text(0, 0, it.npc.name, {
         fontFamily: 'system-ui', fontSize: '9px', color: '#ffe9c2', stroke: '#000', strokeThickness: 3,
-      }).setOrigin(0.5, 1).setResolution(4).setVisible(this.names === 'always')
+      }).setOrigin(0.5, 1).setResolution(4).setVisible(false)
     }
     it.sprite.anims.play(`${it.texKey}:idle:${it.npc.dir}`, true)
     this.place(it)
@@ -85,6 +85,9 @@ export class NpcLayer {
     shadow.setPosition(npc.x, npc.y - 1).setDepth(npc.y - 0.5)
     label.setPosition(npc.x, npc.y - 66).setDepth(1e8)
     if (label.text !== npc.name) label.setText(npc.name)
+    // sem nome em cima da cabeça, a não ser que o mestre ligue (ZoneNpc.showName)
+    if (!npc.showName) label.setVisible(false)
+    else if (this.names === 'always') label.setVisible(true)
     const key = `${it.texKey}:idle:${npc.dir}`
     if (sprite.anims.currentAnim?.key !== key && this.scene.anims.exists(key)) sprite.anims.play(key, true)
   }
@@ -94,6 +97,7 @@ export class NpcLayer {
     if (this.names === 'always') return
     for (const it of this.items.values()) {
       if (!it.label) continue
+      if (!it.npc.showName) { it.label.setVisible(false); continue }
       const near = !!focus && Phaser.Math.Distance.Between(focus.x, focus.y, it.npc.x, it.npc.y) < NAME_RANGE
       it.label.setVisible(near)
     }
