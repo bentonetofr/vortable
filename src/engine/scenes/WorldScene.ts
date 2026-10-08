@@ -17,7 +17,7 @@ import type { NetHub } from '../net/hub'
 import { BLOB, Lighting } from '../world/lighting'
 import { ZoneAudio } from '../audio/ZoneAudio'
 import { AudioEngine, readPrefs, writePrefs } from '../audio/engine'
-import { TILE, type Appearance, type Dir, type Portal, type ZoneData } from '../types'
+import { TILE, type Appearance, type Dir, type Portal, type WorldSky, type ZoneData } from '../types'
 
 export interface WorldSceneData {
   zone: ZoneData
@@ -33,6 +33,8 @@ export interface WorldSceneData {
   onClock?: (hour: number) => void
   /** Deslocamento do relógio do mundo em ms (o teste do editor começa na hora da prévia). */
   timeOffset?: number
+  /** Hora e tempo do mundo, iguais em todas as zonas (acompanha a cena nas trocas de zona). */
+  sky?: WorldSky
   /** O teclado do boneco está travado agora? (lido ao abrir a cena e a cada zona nova) */
   inputLocked?: () => boolean
   /** Rede: os outros jogadores (sem isto, o jogo é solo). */
@@ -106,6 +108,7 @@ export class WorldScene extends Phaser.Scene {
     new FenceLayer(this, zone)
     const lighting = (this.lighting = new Lighting(this, zone))
     lighting.timeOffset = this.cfg.timeOffset ?? 0
+    lighting.sky = this.cfg.sky ?? { hour: null }
     this.events.on(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
     // o observador (mestre) não ouve os sons da zona
     this.audio = this.cfg.watch ? null : ZoneAudio.create(this, zone)

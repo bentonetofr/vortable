@@ -24,10 +24,10 @@
 
 import Phaser from 'phaser'
 import { objectDef, sheetTexture, type ObjectDef } from '../assets/objects'
-import { TILE, type ZoneData, type ZoneObject } from '../types'
+import { TILE, type WorldSky, type ZoneData, type ZoneObject } from '../types'
 import { hash2 } from '../rng'
 import { cornerTerrain } from './ground'
-import { ambientAt, darkness, daylight, golden, hexToRgb, moonAt, nightAmount, sunny, twilight, lightingOf, rgbToInt, sunAt, zoneHour, type RGB } from './daylight'
+import { ambientAt, darkness, daylight, golden, hexToRgb, moonAt, nightAmount, sunny, twilight, lightingOf, rgbToInt, sunAt, skyHour, type RGB } from './daylight'
 import { buildOcclusion, maskedLight, type Occlusion } from './shadowcast'
 import { DOT, PUFF, Particles, type FireSource, type LeafSource } from './particles'
 import { DEFAULT_WIND, Wind, setActiveWind, swayOf, swaySpec, type SwaySpec } from './wind'
@@ -134,6 +134,8 @@ export class Lighting {
   liveEnv: { hour: number | null; weather: string | null; wind: number | null } | null = null
   /** Deslocamento do relógio do mundo, em ms (o teste do editor começa na hora da prévia). */
   timeOffset = 0
+  /** Hora e tempo do mundo: os mesmos em todas as zonas. */
+  sky: WorldSky = { hour: null }
   /** Bonecos que fazem sombra. */
   extraCasters: () => ExtraCaster[] = () => []
   /** Relâmpagos que já caíram. */
@@ -384,19 +386,15 @@ export class Lighting {
     }
     const base = lightingOf(this.zone)
     const live = this.liveEnv
-    const l = live
-      ? {
-        ...base,
-        ...(live.weather != null ? { weather: live.weather === 'clear' ? undefined : live.weather } : {}),
-        ...(live.wind != null ? { wind: live.wind } : {}),
-      }
-      : base
-    const hour = (this.hour = this.hourOverride ?? live?.hour ?? zoneHour(l, Date.now() + this.timeOffset))
+    const l = live?.wind != null ? { ...base, wind: live.wind } : base
+    // o ajuste do mestre ao vivo vence o do mundo
+    const weather = live?.weather != null ? (live.weather === 'clear' ? undefined : live.weather) : this.sky.weather
+    const hour = (this.hour = this.hourOverride ?? live?.hour ?? skyHour(this.sky, Date.now() + this.timeOffset))
     const v = this.view()
     const t = this.time
     const outdoor = l.place === 'outdoor'
     // subterrâneo não tem céu: sem tempo
-    const wth = (this.weatherNow = weatherOf(l.place === 'underground' ? undefined : l.weather))
+    const wth = (this.weatherNow = weatherOf(l.place === 'underground' ? undefined : weather))
     const sun = sunAt(hour)
     // hora dourada: o céu aberto deixa a luz esquentar; chuva e neve apagam
     const gold = golden(hour)
@@ -511,7 +509,7 @@ export class Lighting {
     // janelas: de dia, facho de sol no chão (interior); de noite, acesas (ao ar livre)
     const beams: { x: number; y: number; sx: number; sy: number; tint: number }[] = []
     if (l.place === 'indoor' && day > 0.02) {
-      const sky = ambientAt({ place: 'outdoor', hour: null }, hour)
+      const sky = ambientAt({ place: 'outdoor' }, hour)
       const tint = rgbToInt(sky)
       for (const w of this.windows) {
         const len = Math.max(96, w.h * 2.6)

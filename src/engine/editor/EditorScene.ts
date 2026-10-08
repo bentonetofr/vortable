@@ -29,7 +29,7 @@ import { TILE, newId, type Portal, type ZoneLight, type ZoneObject } from '../ty
 import { Lighting } from '../world/lighting'
 import { ZoneAudio } from '../audio/ZoneAudio'
 import { readPrefs } from '../audio/engine'
-import { lightingOf } from '../world/daylight'
+import { skyOf } from '../world/daylight'
 import type { EditorState } from './EditorState'
 import { applyRooms, connectedRoom, decodeRoom, encodeRoom, roomRoles } from '../world/rooms'
 
@@ -213,8 +213,9 @@ export class EditorScene extends Phaser.Scene {
   private preRender() {
     const l = this.lighting
     l.enabled = this.state.lightPreview
-    // hora fixa da zona, ou a hora escolhida pra prévia (zona em ciclo)
-    l.hourOverride = lightingOf(this.state.zone).hour ?? this.state.previewHour
+    // hora e tempo são do mundo: hora fixa dele, ou a hora escolhida pra prévia (mundo em ciclo)
+    l.sky = skyOf(this.state.world)
+    l.hourOverride = l.sky.hour ?? this.state.previewHour
     l.render(this.game.loop.delta)
     this.ground.tufts.update(this.cameras.main, this.game.loop.delta / 1000)
     if (this.audio) {

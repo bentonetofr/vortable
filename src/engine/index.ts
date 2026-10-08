@@ -14,10 +14,10 @@ import { EditorScene } from './editor/EditorScene'
 import { EditorState } from './editor/EditorState'
 import { EditorUI } from './editor/EditorUI'
 import { LocalWorldStorage, type WorldStorage } from './storage'
-import { newZone, type Appearance, type CharacterSave, type ZoneData } from './types'
+import { newZone, type Appearance, type CharacterSave, type WorldSky, type ZoneData } from './types'
 import { setObjectCatalog, type ObjectCatalog } from './assets/objects'
 import { registerObjectArt } from './world/objects'
-import { formatHour, hourToCycle, lightingOf, worldHour } from './world/daylight'
+import { formatHour, hourToCycle, skyOf, worldHour } from './world/daylight'
 import { DAY_MINUTES } from './types'
 import { AudioEngine, setAudioBase } from './audio/engine'
 import { NetHub, type NetLink } from './net/hub'
@@ -112,11 +112,12 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
   let state: EditorState | null = null
   let host = parent
 
-  const worldData = (zone: ZoneData, loadZone: WorldSceneData['loadZone'], timeOffset = 0): WorldSceneData => ({
+  const worldData = (zone: ZoneData, loadZone: WorldSceneData['loadZone'], sky: WorldSky, timeOffset = 0): WorldSceneData => ({
     zone,
     appearance,
     assetBase,
     loadZone,
+    sky,
     timeOffset,
     onZone: (z) => { ui?.showTestZone(z.name); opts.onZone?.(z) },
     onClock: (hour) => ui?.showTestClock(hour),
@@ -129,10 +130,10 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
    * Teste do editor numa zona em ciclo: o relógio começa na hora da prévia
    * (quem estava vendo a noite no editor testa à noite) e corre dali.
    */
-  const previewOffset = (zone: ZoneData, hour: number) => {
-    const day = (lightingOf(zone).dayMinutes ?? DAY_MINUTES) * 60_000
+  const previewOffset = (sky: WorldSky, hour: number) => {
+    const day = (sky.dayMinutes ?? DAY_MINUTES) * 60_000
     const now = Date.now()
-    const diff = (((hourToCycle(hour) - hourToCycle(worldHour(lightingOf(zone).dayMinutes, now))) % 1) + 1) % 1
+    const diff = (((hourToCycle(hour) - hourToCycle(worldHour(sky.dayMinutes, now))) % 1) + 1) % 1
     return diff * day
   }
 
@@ -145,7 +146,8 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
         game.scene.stop('editor')
         // a zona aberta entra com as mudanças não salvas; as outras vêm do armazenamento
         const loadZone = async (id: string) => (id === state!.zone.id ? structuredClone(state!.zone) : storage.load(id))
-        game.scene.start('world', worldData(structuredClone(state!.zone), loadZone, previewOffset(state!.zone, state!.previewHour)))
+        const sky = skyOf(state!.world)
+        game.scene.start('world', worldData(structuredClone(state!.zone), loadZone, sky, previewOffset(sky, state!.previewHour)))
       },
       stopTest: () => {
         game.scene.stop('world')
@@ -177,21 +179,24 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
     host = ui.stage
   }
 
-  /** Jogo: a zona dada, senão a inicial do mundo, senão a mais recente. */
-  async function playStartZone(): Promise<ZoneData> {
-    if (opts.zone) return opts.zone
+  /** Jogo: a zona dada, senão a inicial do mundo, senão a mais recente; e a hora/tempo do mundo. */
+  async function playStart(): Promise<{ zone: ZoneData; sky: WorldSky }> {
+    let sky = skyOf(null)
     try {
       const world = await storage.loadWorld()
+      sky = skyOf(world)
+      if (opts.zone) return { zone: opts.zone, sky }
       const start = world.start && (await storage.load(world.start))
-      if (start) return start
+      if (start) return { zone: start, sky }
       const [recent] = await storage.list()
       const zone = recent && (await storage.load(recent.id))
-      if (zone) return zone
+      if (zone) return { zone, sky }
     } catch (err) {
       console.error('[vortable] não deu pra ler o mundo', err)
     }
+    if (opts.zone) return { zone: opts.zone, sky }
     // id fixo: sem nenhuma zona salva, todos (e a rede) caem na mesma zona vazia
-    return { ...newZone('Vazio', 20, 15), id: 'vazio' }
+    return { zone: { ...newZone('Vazio', 20, 15), id: 'vazio' }, sky }
   }
 
   const game = new Phaser.Game({
@@ -213,7 +218,8 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
       game.scene.start('editor', { state })
       ui!.assetsReady()
     } else {
-      game.scene.start('world', worldData(await playStartZone(), (id) => storage.load(id)))
+      const { zone, sky } = await playStart()
+      game.scene.start('world', worldData(zone, (id) => storage.load(id), sky))
     }
   }), true)
 

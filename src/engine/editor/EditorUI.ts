@@ -19,9 +19,9 @@ import { readList, writeList } from './prefs'
 import { parseZone, summarize, type WorldStorage, type ZoneSummary } from '../storage'
 import {
   DAY_MINUTES, LIGHT_RADIUS_MAX, LIGHT_RADIUS_MIN, TILE, ZONE_MAX, ZONE_MIN, Z_MAX, clampZoneSize, newId, newZone,
-  type Portal, type ZoneData, type ZoneLighting, type ZoneObject,
+  type Portal, type WorldSky, type ZoneData, type ZoneLighting, type ZoneObject,
 } from '../types'
-import { LIGHT_PRESETS, UNDERGROUND_TINT, ambientAt, daylight, formatHour, lightingOf, rgbToInt } from '../world/daylight'
+import { LIGHT_PRESETS, SKY_PRESETS, UNDERGROUND_TINT, ambientAt, daylight, formatHour, lightingOf, rgbToInt, skyOf } from '../world/daylight'
 import type { LightLook } from './EditorState'
 import { DEFAULT_WIND, WIND_LEVELS } from '../world/wind'
 import { WEATHERS, WEATHER_ORDER } from '../world/weather'
@@ -159,7 +159,7 @@ export class EditorUI {
       if (c === 'zone' || c === 'edit') this.renderZoneProps()
       if (c === 'zone' || c === 'world' || state.selectedPortal !== this.shownPortal) this.renderPortal()
       // painel Luz: zona nova/desfeita (outra luz) ou outra luz selecionada
-      if (this.tab === 'light' && (c === 'zone' || state.selectedLight !== this.shownLight)) this.renderPane()
+      if (this.tab === 'light' && (c === 'zone' || c === 'world' || state.selectedLight !== this.shownLight)) this.renderPane()
       // desfazer/abrir zona: o painel Sons e o de cômodos mostram a zona nova
       if (this.tab === 'sound' && c === 'zone') this.renderPane()
       if (c === 'catalog') {
@@ -618,17 +618,34 @@ export class EditorUI {
       this.renderPane()
     }
 
-    // presets: a amostra é a cor do céu (dois tons no ciclo: dia e noite)
-    const sky = (l: ZoneLighting) => {
-      const css = (hour: number) => `#${rgbToInt(ambientAt(l, hour)).toString(16).padStart(6, '0')}`
-      return l.hour === null && l.place !== 'underground' ? `linear-gradient(135deg, ${css(12)} 0 50%, ${css(23)} 50% 100%)` : css(l.hour ?? 12)
+    // hora e tempo são do MUNDO: mexer aqui muda todas as zonas ao mesmo tempo
+    const world = s.world
+    const wsky = skyOf(world)
+    const saveSky = () => {
+      if (world) this.storage.saveWorld(world).catch((e) => this.toast(`Não deu pra salvar o mundo: ${e.message}`, true))
     }
+    const setSky = (patch: Partial<WorldSky>, save = true) => {
+      if (!world) return
+      const next = { ...skyOf(world), ...patch }
+      for (const k of Object.keys(next) as (keyof WorldSky)[]) if (next[k] === undefined) delete next[k]
+      world.sky = next
+      if (save) { saveSky(); this.renderPane() }
+    }
+
+    // presets de lugar: a amostra é a cor da luz (no mundo em ciclo, dois tons: dia e noite)
+    const css = (l: ZoneLighting, hour: number) => `#${rgbToInt(ambientAt(l, hour)).toString(16).padStart(6, '0')}`
+    const swatch = (l: ZoneLighting, hour: number | null) =>
+      hour === null && l.place !== 'underground' ? `linear-gradient(135deg, ${css(l, 12)} 0 50%, ${css(l, 23)} 50% 100%)` : css(l, hour ?? 12)
     const same = (a: ZoneLighting, b: ZoneLighting) =>
-      a.place === b.place && a.hour === b.hour && (a.place !== 'underground' || (a.tint ?? UNDERGROUND_TINT) === (b.tint ?? UNDERGROUND_TINT))
+      a.place === b.place && (a.place !== 'underground' || (a.tint ?? UNDERGROUND_TINT) === (b.tint ?? UNDERGROUND_TINT))
     const presets = h('div', { class: 'vt-climates' }, ...LIGHT_PRESETS.map((p) => h('button', {
       class: `vt-climate${same(cur, p.lighting) ? ' vt-on' : ''}`,
       onclick: () => setLighting({ ...p.lighting, tint: p.lighting.tint }),
-    }, h('span', { class: 'vt-climate-sw', style: `background:${sky(p.lighting)}` }), h('span', {}, p.label))))
+    }, h('span', { class: 'vt-climate-sw', style: `background:${swatch(p.lighting, wsky.hour)}` }), h('span', {}, p.label))))
+    const skyPresets = h('div', { class: 'vt-climates' }, ...SKY_PRESETS.map((p) => h('button', {
+      class: `vt-climate${wsky.hour === p.hour ? ' vt-on' : ''}`,
+      onclick: () => wsky.hour !== p.hour && setSky({ hour: p.hour }),
+    }, h('span', { class: 'vt-climate-sw', style: `background:${swatch({ place: 'outdoor' }, p.hour)}` }), h('span', {}, p.label))))
 
     const seg = <T extends string>(items: [T, string, string][], on: T, pick: (v: T) => void) =>
       h('div', { class: 'vt-segmented' }, ...items.map(([id, label, title]) => h('button', {
@@ -651,7 +668,8 @@ export class EditorUI {
       return h('div', { class: 'vt-row vt-hourrow' }, input, out)
     }
 
-    const timeBlock: Node[] = []
+    // escuridão da zona subterrânea (só dela)
+    const darkBlock: Node[] = []
     if (cur.place === 'underground') {
       const tint = h('input', { type: 'color', value: cur.tint ?? UNDERGROUND_TINT, class: 'vt-color' }) as HTMLInputElement
       let saved = false
@@ -661,32 +679,30 @@ export class EditorUI {
         s.edited()
       })
       tint.addEventListener('change', () => { saved = false; this.renderPane() })
-      timeBlock.push(
+      darkBlock.push(
         h('div', { class: 'vt-row' }, h('label', {}, 'Cor do escuro'), tint),
         h('small', { class: 'vt-note' }, 'Sem sol: só tochas e velas clareiam.'),
       )
+    }
+
+    // hora do mundo: automática (ciclo) ou fixa; igual em todas as zonas
+    const timeBlock: Node[] = [seg([
+      ['cycle', 'Ciclo dia/noite', 'A hora corre sozinha, igual em todas as zonas'],
+      ['fixed', 'Hora fixa', 'Todas as zonas ficam sempre na mesma hora'],
+    ], wsky.hour === null ? 'cycle' : 'fixed', (v) => setSky({ hour: v === 'cycle' ? null : s.previewHour }))]
+    if (wsky.hour === null) {
+      const len = h('select', { class: 'vt-select' }, ...DAY_LENGTHS.map((m) => h('option', { value: m, selected: (wsky.dayMinutes ?? DAY_MINUTES) === m }, `${m} min`))) as HTMLSelectElement
+      len.addEventListener('change', () => setSky({ dayMinutes: Number(len.value) === DAY_MINUTES ? undefined : Number(len.value) }))
+      timeBlock.push(
+        h('div', { class: 'vt-row' }, h('label', {}, 'Um dia dura'), len),
+        h('label', { class: 'vt-sublabel' }, 'Ver no editor às'),
+        hourSlider(s.previewHour, (hr) => s.set({ previewHour: hr })),
+      )
     } else {
-      timeBlock.push(seg([
-        ['cycle', 'Ciclo dia/noite', 'A hora corre sozinha (o mesmo relógio pra todo o mundo)'],
-        ['fixed', 'Hora fixa', 'Sempre a mesma hora (a taverna é sempre noite)'],
-      ], cur.hour === null ? 'cycle' : 'fixed', (v) => setLighting({ hour: v === 'cycle' ? null : s.previewHour })))
-      if (cur.hour === null) {
-        const len = h('select', { class: 'vt-select' }, ...DAY_LENGTHS.map((m) => h('option', { value: m, selected: (cur.dayMinutes ?? DAY_MINUTES) === m }, `${m} min`))) as HTMLSelectElement
-        len.addEventListener('change', () => setLighting({ dayMinutes: Number(len.value) === DAY_MINUTES ? undefined : Number(len.value) }))
-        timeBlock.push(
-          h('div', { class: 'vt-row' }, h('label', {}, 'Um dia dura'), len),
-          h('label', { class: 'vt-sublabel' }, 'Ver no editor às'),
-          hourSlider(s.previewHour, (hr) => s.set({ previewHour: hr })),
-        )
-      } else {
-        let saved = false
-        timeBlock.push(hourSlider(cur.hour, (hr) => {
-          if (!saved) { s.checkpoint(); saved = true }
-          z.lighting = { ...lightingOf(z), hour: hr }
-          s.previewHour = hr
-          s.edited()
-        }, () => { saved = false; this.renderPane() }))
-      }
+      timeBlock.push(hourSlider(wsky.hour, (hr) => {
+        setSky({ hour: hr }, false)
+        s.previewHour = hr
+      }, () => { saveSky(); this.renderPane() }))
     }
 
     const check = (label: string, on: boolean, flip: (v: boolean) => void, title = '') => {
@@ -701,14 +717,14 @@ export class EditorUI {
     )
 
     // tempo: chuva, neve, neblina... (subterrâneo não tem céu)
-    const weatherId = cur.weather && cur.weather in WEATHERS ? cur.weather : 'clear'
+    const weatherId = wsky.weather && wsky.weather in WEATHERS ? wsky.weather : 'clear'
     const weathers = h('div', { class: 'vt-weathers' }, ...WEATHER_ORDER.map((id) => h('button', {
       class: `vt-weather${weatherId === id ? ' vt-on' : ''}`, title: WEATHERS[id].label,
-      onclick: () => weatherId !== id && setLighting({ weather: id === 'clear' ? undefined : id }),
+      onclick: () => weatherId !== id && setSky({ weather: id === 'clear' ? undefined : id }),
     }, h('span', { html: id === 'clear' ? ICONS.sun : id === 'cloudy' ? ICONS.cloud : ICONS[id] }), h('span', {}, WEATHERS[id].label))))
     const weatherNote = cur.place === 'indoor'
       ? 'Dentro, o tempo só aparece nas janelas.'
-      : ''
+      : cur.place === 'underground' ? 'Esta zona não vê o céu.' : ''
 
     // vento: o mais próximo dos três níveis fica marcado
     const wind = cur.wind ?? DEFAULT_WIND
@@ -719,15 +735,14 @@ export class EditorUI {
     }, label)))
 
     this.paneEl.append(
-      h('div', { class: 'vt-group' }, h('h4', {}, 'Ambientes prontos'), presets),
+      h('div', { class: 'vt-group' }, h('h4', {}, 'Hora (todas as zonas)'), skyPresets, ...timeBlock),
+      h('div', { class: 'vt-group' }, h('h4', {}, 'Tempo (todas as zonas)'), weathers, weatherNote ? h('small', { class: 'vt-note vt-modehelp' }, weatherNote) : null),
+      h('div', { class: 'vt-group' }, h('h4', {}, 'Ambientes prontos (esta zona)'), presets),
       h('div', { class: 'vt-group' }, h('h4', {}, 'Onde fica'), place),
-      ...(cur.place !== 'underground'
-        ? [h('div', { class: 'vt-group' }, h('h4', {}, 'Tempo'), weathers, weatherNote ? h('small', { class: 'vt-note vt-modehelp' }, weatherNote) : null)]
-        : []),
       ...(cur.place === 'outdoor'
         ? [h('div', { class: 'vt-group' }, h('h4', {}, 'Vento'), windSeg)]
         : []),
-      h('div', { class: 'vt-group' }, h('h4', {}, cur.place === 'underground' ? 'Escuridão' : 'Hora'), ...timeBlock),
+      ...(darkBlock.length ? [h('div', { class: 'vt-group' }, h('h4', {}, 'Escuridão'), ...darkBlock)] : []),
       h('div', { class: 'vt-group' }, extras),
       this.lightLookGroup(),
       ...(s.lightPreview ? [] : [h('small', { class: 'vt-note' }, 'Prévia desligada (I).')]),
