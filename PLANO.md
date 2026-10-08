@@ -368,8 +368,8 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
   remover (lista no painel: ver, virar, mover, remover; desfazer vale). Código: `src/engine/npc/`, `editor/NpcPanel.ts`, `world/npcs.ts`.
 
 - **Régua** (editor, tecla R): mede em metros com **1 tile = 1 m** (`METERS_PER_TILE` em `types.ts`; bate com a altura dos bonecos).
-  Arraste em qualquer direção; mostra distância, direção de bússola (N, NE, L...) e guias em L com as medidas horizontal e vertical;
-  marcas a cada metro (a cada 2, 5, 10... com pouco zoom). Shift trava em 45°, a grade (N) encaixa; dá pra ajustar as pontas; Esc/Del limpa.
+  Segure o botão e arraste em qualquer direção: mostra distância, direção de bússola (N, NE, L...), guias em L com as medidas horizontal e
+  vertical e marcas a cada metro (2, 5, 10... com pouco zoom). Ao soltar, a régua some. Shift trava em 45°; a grade (N) encaixa.
 
 #### M4.3 — Ficha, chat e dados (⏳)
 - Boneco ligado à ficha (nome, vida, retrato); chat com balão sobre a cabeça; dados no histórico

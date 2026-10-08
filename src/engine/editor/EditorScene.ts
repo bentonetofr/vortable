@@ -36,9 +36,6 @@ import { buildCharacter } from '../character/compose'
 import type { EditorState } from './EditorState'
 import { applyRooms, connectedRoom, decodeRoom, encodeRoom, roomRoles } from '../world/rooms'
 
-/** Quantas réguas ficam no mapa ao mesmo tempo (a mais antiga some). */
-const RULER_MAX = 30
-
 export const ZOOM_MIN = 0.1
 export const ZOOM_MAX = 8
 /** Quanto a roda mexe no zoom por pixel de rolagem (uma "trava" da roda ≈ 100px ≈ ×1,16). */
@@ -173,7 +170,6 @@ export class EditorScene extends Phaser.Scene {
       if (c === 'edit') this.drawLights()
       if (c === 'objects') this.syncObjects()
       if (c === 'npcs') this.npcs.set(this.state.zone.npcs ?? [])
-      if (c === 'rulers') this.drawRulers()
       if (c === 'edit' || c === 'objects' || c === 'catalog') this.scheduleLights()
       if (c === 'catalog') {
         this.rebuildObjects()
@@ -599,14 +595,11 @@ export class EditorScene extends Phaser.Scene {
     const { tool } = this.state
     const wx = p.worldX, wy = p.worldY
 
-    // régua: arrastar mede; arrastar uma ponta de régua já feita ajusta
+    // régua: só existe enquanto o botão do mouse está apertado
     if (tool === 'ruler') {
-      const hit = this.rulerEndAt(wx, wy)
-      if (hit) this.rulerEdit = hit
-      else {
-        const pt = this.state.snap ? this.snapped(wx, wy) : { x: wx, y: wy }
-        this.rulerLive = { x0: pt.x, y0: pt.y, x1: pt.x, y1: pt.y }
-      }
+      const pt = this.state.snap ? this.snapped(wx, wy) : { x: wx, y: wy }
+      this.rulerLive = { x0: pt.x, y0: pt.y, x1: pt.x, y1: pt.y }
+      this.drawRulers()
       return
     }
 
@@ -704,7 +697,7 @@ export class EditorScene extends Phaser.Scene {
       this.panning = { x: p.x, y: p.y }
       return
     }
-    if (this.rulerLive || this.rulerEdit) {
+    if (this.rulerLive) {
       this.rulerMove(p.worldX, p.worldY, !!(p.event as MouseEvent | undefined)?.shiftKey || !!this.keys?.shift.isDown)
       return
     }
@@ -795,20 +788,10 @@ export class EditorScene extends Phaser.Scene {
   }
 
   private onUp() {
+    // soltou o botão: a régua some (ela só serve pra medir enquanto está apertado)
     if (this.rulerLive) {
-      const r = this.rulerLive
       this.rulerLive = null
-      // um clique sem arrastar não é medida
-      if (rulerLength(r) * this.cameras.main.zoom >= 4) {
-        this.state.rulers.push(r)
-        if (this.state.rulers.length > RULER_MAX) this.state.rulers.shift()
-      }
-      this.state.emit('rulers')
-      return
-    }
-    if (this.rulerEdit) {
-      this.rulerEdit = null
-      this.state.emit('rulers')
+      this.drawRulers()
       return
     }
     if (this.painting) {
@@ -1209,10 +1192,7 @@ export class EditorScene extends Phaser.Scene {
   // ── Ações chamadas pela interface ──────────────────────
 
   deleteSelected() {
-    if (this.state.tool === 'ruler') {
-      if (this.state.rulers.length) { this.state.rulers = []; this.state.emit('rulers') }
-      return
-    }
+    if (this.state.tool === 'ruler') return
     const light = this.state.light
     if (light) {
       this.state.checkpoint()
@@ -1373,31 +1353,13 @@ export class EditorScene extends Phaser.Scene {
 
   private rulerGfx!: Phaser.GameObjects.Graphics
   private rulerTexts: Phaser.GameObjects.Text[] = []
-  /** Régua sendo riscada agora. */
+  /** A régua do clique que está apertado (some ao soltar). */
   private rulerLive: Ruler | null = null
-  /** Ponta de régua já feita sendo arrastada (end 0 = início, 1 = fim). */
-  private rulerEdit: { index: number; end: 0 | 1 } | null = null
-
-  /** A ponta de régua sob o mouse (até 10 px de tela), pra ajustar. */
-  private rulerEndAt(wx: number, wy: number) {
-    const reach = 10 / this.cameras.main.zoom
-    let best: { index: number; end: 0 | 1; d: number } | null = null
-    for (let index = 0; index < this.state.rulers.length; index++) {
-      const r = this.state.rulers[index]
-      for (const end of [0, 1] as const) {
-        const d = Math.hypot(wx - (end ? r.x1 : r.x0), wy - (end ? r.y1 : r.y0))
-        if (d <= reach && (!best || d < best.d)) best = { index, end, d }
-      }
-    }
-    return best ? { index: (best as { index: number }).index, end: (best as { end: 0 | 1 }).end } : null
-  }
-
-  /** Move a ponta que está sendo arrastada; Shift trava o ângulo em múltiplos de 45°. */
+  /** Move a ponta solta da régua; Shift trava o ângulo em múltiplos de 45°. */
   private rulerMove(wx: number, wy: number, shift: boolean) {
-    const r = this.rulerLive ?? (this.rulerEdit ? this.state.rulers[this.rulerEdit.index] : null)
+    const r = this.rulerLive
     if (!r) return
-    const movingEnd = this.rulerLive ? 1 : this.rulerEdit!.end
-    const ax = movingEnd ? r.x0 : r.x1, ay = movingEnd ? r.y0 : r.y1
+    const ax = r.x0, ay = r.y0
     let x = wx, y = wy
     if (shift) {
       const len = Math.hypot(wx - ax, wy - ay)
@@ -1411,7 +1373,8 @@ export class EditorScene extends Phaser.Scene {
       x = s.x
       y = s.y
     }
-    if (movingEnd) { r.x1 = x; r.y1 = y } else { r.x0 = x; r.y0 = y }
+    r.x1 = x
+    r.y1 = y
     this.drawRulers()
   }
 
@@ -1433,7 +1396,7 @@ export class EditorScene extends Phaser.Scene {
     g.clear()
     const zoom = this.cameras.main.zoom
     const px = 1 / zoom
-    const list = [...this.state.rulers, ...(this.rulerLive ? [this.rulerLive] : [])]
+    const list = this.rulerLive ? [this.rulerLive] : []
     let ti = 0
     const label = (text: string, x: number, y: number, size = 1, alpha = 1) => {
       const t = this.rulerText(ti++)

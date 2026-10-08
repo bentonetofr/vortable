@@ -62,7 +62,7 @@ const TOOLS: { id: Tool; label: string; key: string }[] = [
   { id: 'light', label: 'Luz solta: clique pra pôr, arraste pra mover', key: 'L' },
   { id: 'portal', label: 'Saída para outra zona (porta, borda, escada)', key: 'X' },
   { id: 'spawn', label: 'Ponto de início do jogador', key: 'P' },
-  { id: 'ruler', label: 'Régua: arraste pra medir em metros (1 tile = 1 m)', key: 'R' },
+  { id: 'ruler', label: 'Régua: segure e arraste pra medir em metros (1 tile = 1 m)', key: 'R' },
 ]
 
 const BRUSH_MAX = 8
@@ -1323,7 +1323,7 @@ export class EditorUI {
       select: s.selected.length ? 'Arraste pra mover · setas empurram · F espelha · Ctrl D duplica · Del apaga' : 'Clique num objeto (Shift soma) ou arraste um retângulo pra selecionar',
       portal: s.selectedPortal ? 'Escolha o destino no painel · arraste pra mover · Del apaga' : 'Arraste pra desenhar uma saída · clique numa saída pra editar',
       spawn: 'Clique onde o jogador deve aparecer',
-      ruler: s.rulers.length ? 'Régua (1 tile = 1 m): arraste pra medir · Shift: ângulos de 45° · arraste uma ponta pra ajustar · Esc ou Del limpa' : 'Régua (1 tile = 1 m): arraste pra medir em qualquer direção · Shift: ângulos de 45°',
+      ruler: 'Régua (1 tile = 1 m): segure o botão e arraste pra medir em qualquer direção · Shift: ângulos de 45° · ao soltar, a régua some',
       npc: s.npcDraft?.id ? 'Clique no novo lugar do NPC · Esc cancela' : 'Clique no mapa pra pôr o NPC · Esc cancela',
       light: s.selectedLight ? 'Arraste a luz pra mover · ajuste no painel · Del apaga' : 'Clique pra pôr uma luz · clique numa luz pra editar · I liga/desliga a prévia',
       room: { room: 'Cômodo: arraste pra criar · clique aplica o estilo · Alt + clique copia · Ctrl + arrastar apaga', wall: 'Parede interna: risque uma linha dentro do cômodo', door: 'Porta: arraste sobre uma parede pra abrir um vão' }[s.roomMode],
@@ -1498,7 +1498,7 @@ export class EditorUI {
         ['C', 'Cômodo (arraste; Ctrl apaga)'],
         ['L', 'Luz solta (clique põe; arraste move)'],
         ['X · P', 'Saída · ponto de início'],
-        ['R', 'Régua (1 tile = 1 m): arraste pra medir; Shift trava em 45°; Esc limpa'],
+        ['R', 'Régua (1 tile = 1 m): segure e arraste pra medir; some ao soltar; Shift trava em 45°'],
         ['[ · ] ou Alt + roda', 'Tamanho do pincel'],
         ['Shift + clique', 'Pincel: linha reta desde o último ponto'],
         ['Alt + clique', 'Conta-gotas (copia terreno ou objeto)'],
@@ -1904,7 +1904,6 @@ export class EditorUI {
     else if (e.key === 'Escape') {
       // primeiro solta a seleção; de novo, volta pra ferramenta de seleção
       if (this.state.selected.length) this.state.set({ selected: [] })
-      else if (this.state.tool === 'ruler' && this.state.rulers.length) { this.state.rulers = []; this.state.emit('rulers') }
       else this.state.set({ tool: 'select', npcDraft: null })
     }
     else if (e.key === ' ') e.preventDefault()
