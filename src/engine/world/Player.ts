@@ -85,7 +85,15 @@ export class Player {
     this.sprite.setDepth(this.sprite.y)
   }
 
+  /** Animação em curso (a rede conta isso pros outros). */
+  get animName() {
+    return this.current
+  }
+
+  private current: 'walk' | 'run' | 'idle' = 'idle'
+
   private play(anim: 'walk' | 'run' | 'idle') {
+    this.current = anim
     this.sprite.anims.play(`${this.charKey}:${anim}:${this.dir}`, true)
   }
 }

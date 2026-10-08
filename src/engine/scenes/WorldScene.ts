@@ -12,6 +12,8 @@ import { Ground, solidTerrainRects } from '../world/ground'
 import { Occluders, addObjectSolids, createObjectSprite } from '../world/objects'
 import { FenceLayer, fenceSolids } from '../world/fences'
 import { Player, isTyping } from '../world/Player'
+import { Remotes } from '../net/remotes'
+import type { NetHub } from '../net/hub'
 import { BLOB, Lighting } from '../world/lighting'
 import { ZoneAudio } from '../audio/ZoneAudio'
 import { AudioEngine, readPrefs, writePrefs } from '../audio/engine'
@@ -33,6 +35,10 @@ export interface WorldSceneData {
   timeOffset?: number
   /** O teclado do boneco está travado agora? (lido ao abrir a cena e a cada zona nova) */
   inputLocked?: () => boolean
+  /** Rede: os outros jogadores (sem isto, o jogo é solo). */
+  hub?: NetHub
+  /** Aparece neste ponto (teletransporte do mestre), no lugar da saída ou do início. */
+  at?: { x: number; y: number }
 }
 
 const PLAYER_KEY = 'char:me'
@@ -61,6 +67,9 @@ export class WorldScene extends Phaser.Scene {
   private ground?: Ground
   private clockAt = 0
   private audio: ZoneAudio | null = null
+  private remotes?: Remotes
+  private netAt = 0
+  private netSent = ''
   /** Quanto andou desde o último passo, e onde estava no quadro anterior. */
 
   constructor() {
@@ -78,6 +87,9 @@ export class WorldScene extends Phaser.Scene {
     this.ground = undefined
     this.clockAt = 0
     this.audio = null
+    this.remotes = undefined
+    this.netAt = 0
+    this.netSent = ''
   }
 
   async create() {
@@ -122,7 +134,7 @@ export class WorldScene extends Phaser.Scene {
 
     const door = arrival && zone.portals.find((p) => p.id === arrival.portal)
     // chega no meio da saída de destino; sem ela, no início da zona
-    const at = door ? { x: door.x + door.w / 2, y: door.y + door.h / 2 + 5 } : zone.spawn
+    const at = this.cfg.at ?? (door ? { x: door.x + door.w / 2, y: door.y + door.h / 2 + 5 } : zone.spawn)
     this.player = new Player(this, PLAYER_KEY, at.x, at.y, arrival?.dir ?? 'down')
     this.inputLocked = this.cfg.inputLocked?.() ?? this.inputLocked
     this.player.locked = this.inputLocked
@@ -132,7 +144,19 @@ export class WorldScene extends Phaser.Scene {
     // sombra macia sob os pés (o boneco LPC não tem) + a sombra comprida do sol
     this.blob = this.add.image(at.x, at.y, BLOB).setScale(0.75, 0.6).setAlpha(0.32)
     const sprite = this.player.sprite
-    lighting.extraCasters = () => [{ key: sprite.texture.key, frame: sprite.frame.name, x: sprite.x, y: sprite.y, originY: sprite.originY }]
+    lighting.extraCasters = () => [
+      { key: sprite.texture.key, frame: sprite.frame.name, x: sprite.x, y: sprite.y, originY: sprite.originY },
+      ...(this.remotes?.sprites ?? []).map((s) => ({ key: s.texture.key, frame: s.frame.name, x: s.x, y: s.y, originY: s.originY })),
+    ]
+
+    // rede: os outros jogadores aparecem, e o mestre pode me levar pra outro lugar
+    const hub = this.cfg.hub
+    if (hub) {
+      this.remotes = new Remotes(this, hub, assetBase, zone.id)
+      hub.announce(this.cfg.appearance)
+      const off = hub.onTeleport((m) => void this.teleportTo(m.zone, m.x, m.y))
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, off)
+    }
 
     // setas e espaço não rolam a página enquanto se joga (sem prender WASD dos campos de texto)
     const noScroll = (e: KeyboardEvent) => {
@@ -181,11 +205,34 @@ export class WorldScene extends Phaser.Scene {
     if (this.player) this.player.locked = locked
   }
 
+  /** O mestre levou este jogador pra (x, y) de uma zona. */
+  private async teleportTo(zoneId: string, x: number, y: number) {
+    const player = this.player
+    if (!player || this.travelling) return
+    if (zoneId === this.cfg.zone.id) {
+      player.sprite.setPosition(x, y)
+      this.cameras.main.centerOn(x, y)
+      return
+    }
+    this.travelling = true
+    player.frozen = true
+    const zone = await this.cfg.loadZone(zoneId).catch(() => null)
+    if (!this.sys.isActive()) return
+    if (!zone) {
+      player.frozen = false
+      this.travelling = false
+      this.toast('O mestre tentou te levar a uma zona que não existe.')
+      return
+    }
+    this.scene.restart({ ...this.cfg, zone, arrival: undefined, at: { x, y } } satisfies WorldSceneData)
+  }
+
   /** Troca a aparência do jogador sem recarregar a cena. */
   async setAppearance(appearance: Appearance) {
     this.cfg.appearance = appearance
     try {
       await buildCharacter(this, PLAYER_KEY, this.cfg.assetBase, appearance)
+      this.cfg.hub?.announce(appearance)
       this.player?.refresh()
     } catch (err) {
       console.error('[vortable] aparência não carregou', err)
@@ -210,6 +257,7 @@ export class WorldScene extends Phaser.Scene {
     // a grama chacoalha embaixo de quem está andando
     const s = player?.sprite
     const moving = !!s && (s.body as Phaser.Physics.Arcade.Body).velocity.lengthSq() > 1
+    this.remotes?.update(this.game.loop.delta / 1000)
     this.ground?.tufts.update(cam, this.game.loop.delta / 1000, moving ? [{ x: s!.x, y: s!.y - 2 }] : [])
     const lighting = this.lighting
     if (!lighting) return
@@ -231,12 +279,30 @@ export class WorldScene extends Phaser.Scene {
     const player = this.player
     if (!player) return
     player.update()
+    this.publish(player)
     this.occluders.update(player.sprite.x, player.sprite.y)
     if (this.travelling) return
 
     const portal = this.portalUnder(player.foot)
     if (!portal) this.armed = true
     else if (this.armed && portal.to) this.travel(portal)
+  }
+
+  /** Conta pra sala onde estou: ~10×/s, e só quando mudou (com um sinal de vida por segundo). */
+  private publish(player: Player) {
+    const hub = this.cfg.hub
+    if (!hub) return
+    const now = this.time.now
+    if (now - this.netAt < 100) return
+    const s = player.sprite
+    const sig = `${Math.round(s.x)},${Math.round(s.y)},${player.facing},${player.animName}`
+    if (sig === this.netSent && now - this.netAt < 1000) return
+    this.netAt = now
+    this.netSent = sig
+    hub.link.send({
+      t: 'state', id: hub.link.selfId, zone: this.cfg.zone.id,
+      x: Math.round(s.x * 10) / 10, y: Math.round(s.y * 10) / 10, dir: player.facing, anim: player.animName,
+    })
   }
 
   private portalUnder(foot: { x: number; y: number; w: number; h: number }): Portal | null {

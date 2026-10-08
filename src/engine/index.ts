@@ -20,6 +20,7 @@ import { registerObjectArt } from './world/objects'
 import { hourToCycle, lightingOf, worldHour } from './world/daylight'
 import { DAY_MINUTES } from './types'
 import { AudioEngine, setAudioBase } from './audio/engine'
+import { NetHub, type NetLink } from './net/hub'
 
 import { CreatorUI } from './character/CreatorUI'
 import { LocalCharacterStorage, type CharacterStorage } from './character/storage'
@@ -30,6 +31,9 @@ export * from './character/storage'
 export { TERRAINS } from './assets/terrains'
 export { composeFrame as characterFrame } from './character/compose'
 export { defaultAppearance, randomAppearance, loadCharacterData, normalizeAppearance } from './character/catalog'
+
+export { parseNet } from './net/hub'
+export type { NetLink, NetMsg, NetHello, NetState, NetAnim } from './net/hub'
 
 export interface VortableOptions {
   mode?: 'play' | 'edit'
@@ -45,6 +49,8 @@ export interface VortableOptions {
   storage?: WorldStorage
   /** Editor: mostra o botão "Personagem" e chama isto ao clicar. */
   onEditCharacter?: () => void
+  /** Rede: com isto, os outros jogadores aparecem no mundo (sem, o jogo é solo). */
+  net?: NetLink
   /**
    * Editor: liga a curadoria de peças (gravar ajustes nos pack.json). Só
    * funciona com o servidor de desenvolvimento do Vortable (npm run dev).
@@ -55,6 +61,8 @@ export interface VortableOptions {
 const CURATE_URL = '/__vortable/curate'
 
 export interface VortableHandle {
+  /** Entrega uma mensagem que chegou da rede (ver NetMsg). */
+  receive(msg: unknown): void
   setAppearance(appearance: Appearance): Promise<void>
   /** Trava o teclado do boneco (o mestre cobriu a tela com uma cena). */
   setInputLocked(locked: boolean): void
@@ -69,6 +77,7 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
   let appearance = opts.appearance
 
   let inputLocked = false
+  const hub = opts.net ? new NetHub(opts.net) : undefined
   let ui: EditorUI | null = null
   let state: EditorState | null = null
   let host = parent
@@ -82,6 +91,7 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
     onZone: (z) => ui?.showTestZone(z.name),
     onClock: (hour) => ui?.showTestClock(hour),
     inputLocked: () => inputLocked,
+    hub,
   })
 
   /**
@@ -149,7 +159,8 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
     } catch (err) {
       console.error('[vortable] não deu pra ler o mundo', err)
     }
-    return newZone('Vazio', 20, 15)
+    // id fixo: sem nenhuma zona salva, todos (e a rede) caem na mesma zona vazia
+    return { ...newZone('Vazio', 20, 15), id: 'vazio' }
   }
 
   const game = new Phaser.Game({
@@ -185,11 +196,15 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
       appearance = a
       if (game.scene.isActive('world')) await (game.scene.getScene('world') as WorldScene).setAppearance(a)
     },
+    receive(msg) {
+      hub?.receive(msg)
+    },
     setInputLocked(locked) {
       inputLocked = locked
       if (game.scene.isActive('world')) (game.scene.getScene('world') as WorldScene).setInputLocked(locked)
     },
     destroy() {
+      hub?.leave()
       ui?.destroy()
       game.destroy(true)
     },
