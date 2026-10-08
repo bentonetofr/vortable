@@ -16,6 +16,7 @@ import {
 } from './catalog'
 import { ANIMS, FRAME, composeAll, composeFrame, type AnimName } from './compose'
 import { newCharacter, type CharacterStorage } from './storage'
+import { characterFileName, downloadText, exportCharacters, parseCharacterFile, pickTextFile } from './transfer'
 import type { Appearance, AppearanceItem, BodyType, CharacterSave } from '../types'
 
 export interface CreatorOptions {
@@ -102,6 +103,8 @@ export class CreatorUI {
         opts.single ? null : this.iconBtn(ICONS.plus, 'Novo', () => this.newCharacter()),
         opts.single ? null : this.iconBtn(ICONS.open, 'Personagens', () => this.openList()),
         this.iconBtn(ICONS.save, opts.saveLabel ?? 'Salvar', () => this.save(), opts.single ? 'vt-primary' : ''),
+        this.iconBtn(ICONS.download, 'Exportar', () => this.exportFile()),
+        this.iconBtn(ICONS.upload, 'Importar', () => void this.importFile()),
         h('span', { class: 'vt-spacer' }),
         opts.back ? this.iconBtn(ICONS.world, opts.back.label, () => this.goBack(), 'vt-primary') : null,
       ),
@@ -439,6 +442,31 @@ export class CreatorUI {
     } catch (err) {
       this.toast(`Não deu pra salvar: ${(err as Error).message}`, true)
       return false
+    }
+  }
+
+  /** Baixa o personagem aberto como arquivo (vale em qualquer campanha). */
+  private exportFile() {
+    const name = this.nameInput.value.trim() || 'Sem nome'
+    downloadText(characterFileName(name), exportCharacters([{ name, appearance: this.appearance }]))
+    this.toast(`"${name}" exportado.`)
+  }
+
+  /** Abre um arquivo de personagem na tela (sem salvar). No modo jogador, troca o boneco que já existe. */
+  private async importFile() {
+    const text = await pickTextFile()
+    if (text === null) return
+    try {
+      const [imported] = parseCharacterFile(text, this.data)
+      if (this.dirty && !confirm('O personagem atual tem mudanças não salvas. Descartar?')) return
+      this.character = this.opts.single ? { ...imported, id: this.character.id } : imported
+      this.nameInput.value = this.character.name
+      this.dirty = true
+      this.afterLoad()
+      this.refreshStatus()
+      this.toast(`"${this.character.name}" importado. Salve pra guardar.`)
+    } catch (err) {
+      this.toast((err as Error).message, true)
     }
   }
 

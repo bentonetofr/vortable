@@ -28,6 +28,7 @@ import { LocalCharacterStorage, type CharacterStorage } from './character/storag
 export * from './types'
 export * from './storage'
 export * from './character/storage'
+export * from './character/transfer'
 export { TERRAINS } from './assets/terrains'
 export { composeFrame as characterFrame } from './character/compose'
 export { defaultAppearance, randomAppearance, loadCharacterData, normalizeAppearance } from './character/catalog'

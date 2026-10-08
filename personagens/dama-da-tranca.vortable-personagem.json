@@ -1,0 +1,57 @@
+{
+  "format": "vortable-character",
+  "version": 1,
+  "characters": [
+    {
+      "name": "Dama da trança",
+      "appearance": {
+        "version": 2,
+        "body": "female",
+        "skin": "amber",
+        "slots": {
+          "body": {
+            "id": "body/body"
+          },
+          "head": {
+            "id": "head/heads/human/heads_human_female",
+            "colors": {
+              "color_2": "brown"
+            }
+          },
+          "hair": {
+            "id": "hair/braids/hair_shoulderr",
+            "colors": {
+              "color": "black"
+            }
+          },
+          "eyebrows": {
+            "id": "head/eyebrows/eyebrows_thin",
+            "colors": {
+              "color": "black"
+            }
+          },
+          "clothes": {
+            "id": "torso/shirts/torso_clothes_blouse_longsleeve",
+            "variant": "blue"
+          },
+          "vest": {
+            "id": "torso/shirts/torso_clothes_corset",
+            "variant": "navy"
+          },
+          "legs": {
+            "id": "legs/leggings/legs_leggings",
+            "colors": {
+              "color": "white"
+            }
+          },
+          "shoes": {
+            "id": "feet/boots/feet_boots_revised",
+            "colors": {
+              "color": "black"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -344,6 +344,10 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
 - Testado: loopback de WebRTC (mestre + 2 jogadores: relay, teleporte, expulsão) e duas abas do motor
 - ⏳ Falta: hora/clima do mestre pra todos, zonas em tempo real (mestre editando), chat no balão
 
+- **Exportar/importar personagens**: botões *Exportar*/*Importar* no criador (arquivo `.vortable-personagem.json`, formato
+  `vortable-character`, sem id: quem importa ganha um novo); no Vorterium, aba Jogadores → *Importar boneco*, *Exportar* por boneco
+  e *Exportar todos*. Exemplo pronto: `personagens/dama-da-tranca.vortable-personagem.json`.
+
 #### M4.3 — Ficha, chat e dados (⏳)
 - Boneco ligado à ficha (nome, vida, retrato); chat com balão sobre a cabeça; dados no histórico
 - ✅ *Sessão real com amigos*
