@@ -17,7 +17,7 @@ import { LocalWorldStorage, type WorldStorage } from './storage'
 import { newZone, type Appearance, type CharacterSave, type ZoneData } from './types'
 import { setObjectCatalog, type ObjectCatalog } from './assets/objects'
 import { registerObjectArt } from './world/objects'
-import { hourToCycle, lightingOf, worldHour } from './world/daylight'
+import { formatHour, hourToCycle, lightingOf, worldHour } from './world/daylight'
 import { DAY_MINUTES } from './types'
 import { AudioEngine, setAudioBase } from './audio/engine'
 import { NetHub, type NetLink } from './net/hub'
@@ -33,10 +33,14 @@ export { composeFrame as characterFrame } from './character/compose'
 export { defaultAppearance, randomAppearance, loadCharacterData, normalizeAppearance } from './character/catalog'
 
 export { parseNet } from './net/hub'
-export type { NetLink, NetMsg, NetHello, NetState, NetAnim } from './net/hub'
+export type { NetLink, NetMsg, NetHello, NetState, NetAnim, NetEnv } from './net/hub'
+export { formatHour }
+export { WEATHERS, WEATHER_ORDER } from './world/weather'
+export { WIND_LEVELS, DEFAULT_WIND } from './world/wind'
 
 export interface VortableOptions {
-  mode?: 'play' | 'edit'
+  /** play: jogar · edit: editor · watch: câmera livre do mestre (sem boneco; precisa de `net`). */
+  mode?: 'play' | 'edit' | 'watch'
   /**
    * Zona inicial. No editor: a zona aberta (sem zona = uma nova vazia).
    * No jogo: onde começar (sem zona = a zona inicial do mundo).
@@ -47,6 +51,8 @@ export interface VortableOptions {
   assetBase?: string
   /** Onde ficam o mundo e as zonas. Padrão: localStorage do navegador. */
   storage?: WorldStorage
+  /** Avisado a cada zona que a cena abre (o mestre acompanha em que zona a câmera está). */
+  onZone?: (zone: ZoneData) => void
   /** Editor: mostra o botão "Personagem" e chama isto ao clicar. */
   onEditCharacter?: () => void
   /** Rede: com isto, os outros jogadores aparecem no mundo (sem, o jogo é solo). */
@@ -60,7 +66,26 @@ export interface VortableOptions {
 
 const CURATE_URL = '/__vortable/curate'
 
+/** Controles da câmera do mestre (mode 'watch'). */
+export interface WatchControls {
+  setZone(id: string): Promise<void>
+  /** Enquadra a zona inteira. */
+  fit(): void
+  zoomBy(factor: number): void
+  focus(x: number, y: number): void
+  /** A câmera acompanha um jogador (null solta). */
+  follow(id: string | null): void
+  /** Quem está na sala e onde. */
+  peers(): { id: string; name: string; zone: string | null; x: number; y: number }[]
+  /** Muda hora/tempo/vento ao vivo pra todos (zone '*' = todas as zonas; null = padrão da zona). */
+  setEnv(env: { zone: string; hour: number | null; weather: string | null; wind: number | null }): void
+  /** Ajuste que está valendo agora (pra a interface mostrar). */
+  envs(): { zone: string; hour: number | null; weather: string | null; wind: number | null }[]
+}
+
 export interface VortableHandle {
+  /** Só no mode 'watch'. */
+  watch?: WatchControls
   /** Entrega uma mensagem que chegou da rede (ver NetMsg). */
   receive(msg: unknown): void
   /** A rede abriu depois do jogo: reanuncia o boneco e pergunta quem está na sala. */
@@ -92,10 +117,11 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
     assetBase,
     loadZone,
     timeOffset,
-    onZone: (z) => ui?.showTestZone(z.name),
+    onZone: (z) => { ui?.showTestZone(z.name); opts.onZone?.(z) },
     onClock: (hour) => ui?.showTestClock(hour),
     inputLocked: () => inputLocked,
     hub,
+    watch: mode === 'watch',
   })
 
   /**
@@ -193,9 +219,24 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
   // inspeção pelo console no desenvolvimento
   if (import.meta.env.DEV) (window as unknown as { __vortable: Phaser.Game }).__vortable = game
 
+  const world = () => (game.scene.isActive('world') ? (game.scene.getScene('world') as WorldScene) : null)
   const editor = () => (game.scene.isActive('editor') ? (game.scene.getScene('editor') as EditorScene) : null)
 
+  const watch: WatchControls | undefined = mode === 'watch'
+    ? {
+      setZone: async (id) => { await world()?.watchZone(id) },
+      fit: () => world()?.watchFit(),
+      zoomBy: (f) => world()?.watchZoom(f),
+      focus: (x, y) => world()?.watchFocus(x, y),
+      follow: (id) => world()?.watchFollow(id),
+      peers: () => world()?.watchPeers() ?? [],
+      setEnv: (env) => hub?.setEnv(env),
+      envs: () => [...(hub?.envs.values() ?? [])].map(({ zone, hour, weather, wind }) => ({ zone, hour, weather, wind })),
+    }
+    : undefined
+
   return {
+    watch,
     async setAppearance(a) {
       appearance = a
       if (game.scene.isActive('world')) await (game.scene.getScene('world') as WorldScene).setAppearance(a)

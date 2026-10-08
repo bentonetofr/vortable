@@ -39,6 +39,8 @@ export interface WorldSceneData {
   hub?: NetHub
   /** Aparece neste ponto (teletransporte do mestre), no lugar da saída ou do início. */
   at?: { x: number; y: number }
+  /** Câmera do mestre: sem boneco, câmera livre, só observa os jogadores. */
+  watch?: boolean
 }
 
 const PLAYER_KEY = 'char:me'
@@ -102,7 +104,8 @@ export class WorldScene extends Phaser.Scene {
     const lighting = (this.lighting = new Lighting(this, zone))
     lighting.timeOffset = this.cfg.timeOffset ?? 0
     this.events.on(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
-    this.audio = ZoneAudio.create(this, zone)
+    // o observador (mestre) não ouve os sons da zona
+    this.audio = this.cfg.watch ? null : ZoneAudio.create(this, zone)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.events.off(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
       this.audio?.destroy()
@@ -120,6 +123,7 @@ export class WorldScene extends Phaser.Scene {
     if (W * 2 < cam.width || H * 2 < cam.height) cam.removeBounds()
     if (arrival) cam.fadeIn(FADE_MS)
     this.cfg.onZone?.(zone)
+    if (this.cfg.watch) return this.startWatch(zone, W, H)
 
     try {
       await buildCharacter(this, PLAYER_KEY, assetBase, appearance)
@@ -205,6 +209,84 @@ export class WorldScene extends Phaser.Scene {
     if (this.player) this.player.locked = locked
   }
 
+  // ── Câmera do mestre (observador) ──────────────────────
+
+  private following: string | null = null
+
+  private startWatch(zone: ZoneData, W: number, H: number) {
+    const cam = this.cameras.main
+    cam.removeBounds()
+    this.watchFit()
+    cam.setRoundPixels(false)
+    // arrastar move a câmera; a roda dá zoom no ponto sob o mouse
+    const input = this.input
+    input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (!p.isDown) return
+      this.following = null
+      cam.scrollX -= (p.x - p.prevPosition.x) / cam.zoom
+      cam.scrollY -= (p.y - p.prevPosition.y) / cam.zoom
+    })
+    input.on('wheel', (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
+      const before = cam.getWorldPoint(p.x, p.y)
+      cam.setZoom(Phaser.Math.Clamp(cam.zoom * (dy < 0 ? 1.15 : 1 / 1.15), 0.2, 6))
+      const after = cam.getWorldPoint(p.x, p.y)
+      cam.scrollX += before.x - after.x
+      cam.scrollY += before.y - after.y
+    })
+    const hub = this.cfg.hub
+    if (hub) {
+      this.remotes = new Remotes(this, hub, this.cfg.assetBase, zone.id)
+      hub.observe()
+    }
+    const lighting = this.lighting
+    if (lighting) {
+      lighting.extraCasters = () => (this.remotes?.sprites ?? []).map((s) => ({ key: s.texture.key, frame: s.frame.name, x: s.x, y: s.y, originY: s.originY }))
+    }
+    void W; void H
+  }
+
+  /** Troca a zona que o observador está vendo. */
+  async watchZone(id: string) {
+    if (!this.cfg.watch || id === this.cfg.zone.id) return
+    const zone = await this.cfg.loadZone(id).catch(() => null)
+    if (!zone || !this.sys.isActive()) return
+    this.scene.restart({ ...this.cfg, zone } satisfies WorldSceneData)
+  }
+
+  /** Enquadra a zona inteira na tela. */
+  watchFit() {
+    const { zone } = this.cfg
+    const cam = this.cameras.main
+    const W = zone.width * TILE, H = zone.height * TILE
+    cam.setZoom(Phaser.Math.Clamp(Math.min(cam.width / (W + 48), cam.height / (H + 48)), 0.2, 6))
+    cam.centerOn(W / 2, H / 2)
+    this.following = null
+  }
+
+  watchZoom(factor: number) {
+    const cam = this.cameras.main
+    cam.setZoom(Phaser.Math.Clamp(cam.zoom * factor, 0.2, 6))
+  }
+
+  watchFocus(x: number, y: number) {
+    this.following = null
+    this.cameras.main.centerOn(x, y)
+  }
+
+  /** A câmera acompanha um jogador (null solta). */
+  watchFollow(id: string | null) {
+    this.following = id
+  }
+
+  /** Quem está na sala e onde (pra lista do mestre). */
+  watchPeers() {
+    const hub = this.cfg.hub
+    if (!hub) return []
+    return [...hub.peers.values()].map((p) => ({
+      id: p.hello.id, name: p.hello.name, zone: p.state?.zone ?? null, x: p.state?.x ?? 0, y: p.state?.y ?? 0,
+    }))
+  }
+
   /** O mestre levou este jogador pra (x, y) de uma zona. */
   private async teleportTo(zoneId: string, x: number, y: number) {
     const player = this.player
@@ -258,6 +340,15 @@ export class WorldScene extends Phaser.Scene {
     const s = player?.sprite
     const moving = !!s && (s.body as Phaser.Physics.Arcade.Body).velocity.lengthSq() > 1
     this.remotes?.update(this.game.loop.delta / 1000)
+    if (this.following) {
+      const p = this.cfg.hub?.peers.get(this.following)
+      if (p?.state && p.state.zone === this.cfg.zone.id) {
+        cam.scrollX += (p.state.x - cam.width / 2 - cam.scrollX) * FOLLOW_LERP
+        cam.scrollY += (p.state.y - cam.height / 2 - cam.scrollY) * FOLLOW_LERP
+      }
+    }
+    // hora, tempo e vento do mestre (ao vivo)
+    if (this.lighting) this.lighting.liveEnv = this.cfg.hub?.envFor(this.cfg.zone.id) ?? null
     this.ground?.tufts.update(cam, this.game.loop.delta / 1000, moving ? [{ x: s!.x, y: s!.y - 2 }] : [])
     const lighting = this.lighting
     if (!lighting) return

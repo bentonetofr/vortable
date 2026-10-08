@@ -130,6 +130,8 @@ export class Lighting {
   enabled = true
   /** Hora forçada (prévia do editor); null = a da zona. */
   hourOverride: number | null = null
+  /** Ajuste ao vivo do mestre (hora, tempo, vento); cada campo null = o padrão da zona. */
+  liveEnv: { hour: number | null; weather: string | null; wind: number | null } | null = null
   /** Deslocamento do relógio do mundo, em ms (o teste do editor começa na hora da prévia). */
   timeOffset = 0
   /** Bonecos que fazem sombra. */
@@ -380,8 +382,16 @@ export class Lighting {
       setActiveWind(null)
       return
     }
-    const l = lightingOf(this.zone)
-    const hour = (this.hour = this.hourOverride ?? zoneHour(l, Date.now() + this.timeOffset))
+    const base = lightingOf(this.zone)
+    const live = this.liveEnv
+    const l = live
+      ? {
+        ...base,
+        ...(live.weather != null ? { weather: live.weather === 'clear' ? undefined : live.weather } : {}),
+        ...(live.wind != null ? { wind: live.wind } : {}),
+      }
+      : base
+    const hour = (this.hour = this.hourOverride ?? live?.hour ?? zoneHour(l, Date.now() + this.timeOffset))
     const v = this.view()
     const t = this.time
     const outdoor = l.place === 'outdoor'

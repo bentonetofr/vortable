@@ -2,6 +2,7 @@
 //   /              → editor de zonas
 //   /?personagem   → criador de personagem
 //   /?jogar        → só o jogo, começando na zona inicial do mundo
+//   /?assistir&rede → câmera do mestre (sem boneco) vendo quem está na rede
 //   /?jogar&rede   → o jogo com rede de teste: abra em duas abas e elas se veem
 
 import {
@@ -60,10 +61,11 @@ if (params.has('personagem')) {
   hud.hidden = true
   mountCharacterCreator(app, { assetBase, storage: characters, back: { label: 'Voltar ao editor', onClick: () => go('') } })
 } else {
-  const play = params.has('jogar')
+  const watching = params.has('assistir')
+  const play = params.has('jogar') || watching
   hud.hidden = !play
   vortable = mountVortable(app, {
-    mode: play ? 'play' : 'edit',
+    mode: watching ? 'watch' : play ? 'play' : 'edit',
     zone: play ? undefined : await editorZone(),
     appearance: await activeAppearance(),
     assetBase,
@@ -72,6 +74,8 @@ if (params.has('personagem')) {
     curate: import.meta.env.DEV,
     net: play ? devNet() : undefined,
   })
+
+  if (import.meta.env.DEV) (window as unknown as { __handle?: unknown }).__handle = vortable
 
   // R sorteia uma aparência pra testar (não salva)
   window.addEventListener('keydown', async (e) => {
