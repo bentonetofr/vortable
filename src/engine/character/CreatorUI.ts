@@ -29,6 +29,8 @@ export interface CreatorOptions {
    * e chama `onSaved` (é como o jogador entra no jogo pela primeira vez).
    */
   single?: boolean
+  /** Título da barra de cima (padrão: "Crie seu boneco" no modo jogador). */
+  title?: string
   saveLabel?: string
   /** Salvar também põe o boneco em uso (padrão: sim). O mestre cria NPCs sem tomar o lugar do dele. */
   activateOnSave?: boolean
@@ -97,7 +99,7 @@ export class CreatorUI {
     this.root = h('div', { class: 'vt-root vt-creator' },
       h('header', { class: 'vt-top' },
         h('span', { class: 'vt-brand' }, 'Vortable'),
-        h('span', { class: 'vt-top-title' }, opts.single ? 'Crie seu boneco' : 'Personagem'),
+        h('span', { class: 'vt-top-title' }, opts.title ?? (opts.single ? 'Crie seu boneco' : 'Personagem')),
         this.nameInput,
         h('span', { class: 'vt-sep' }),
         opts.single ? null : this.iconBtn(ICONS.plus, 'Novo', () => this.newCharacter()),

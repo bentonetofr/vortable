@@ -1,0 +1,81 @@
+{
+  "format": "vortable-character",
+  "version": 1,
+  "characters": [
+    {
+      "name": "Bibliotecário",
+      "appearance": {
+        "version": 2,
+        "body": "male",
+        "skin": "olive",
+        "slots": {
+          "body": {
+            "id": "body/body"
+          },
+          "head": {
+            "id": "head/heads/human/heads_human_male",
+            "colors": {
+              "color_2": "gray"
+            }
+          },
+          "wrinkles": {
+            "id": "head/head_wrinkles",
+            "colors": {
+              "color": "olive"
+            }
+          },
+          "eyebrows": {
+            "id": "head/eyebrows/eyebrows_thick",
+            "colors": {
+              "color": "white"
+            }
+          },
+          "hair": {
+            "id": "hair/bald/hair_balding",
+            "colors": {
+              "color": "white"
+            }
+          },
+          "beard": {
+            "id": "hair/beards/beards_winter",
+            "colors": {
+              "color": "white"
+            }
+          },
+          "facial": {
+            "id": "headwear/accessories/glasses/facial_glasses_round",
+            "variant": "brown"
+          },
+          "clothes": {
+            "id": "torso/shirts/longsleeve/torso_clothes_longsleeve2",
+            "colors": {
+              "color": "charcoal"
+            }
+          },
+          "jacket": {
+            "id": "torso/jacket/torso_jacket_frock",
+            "variant": "bluegray"
+          },
+          "cape": {
+            "id": "torso/cape/cape_solid",
+            "colors": {
+              "color": "steel_blue"
+            }
+          },
+          "legs": {
+            "id": "legs/pants/legs_pants",
+            "colors": {
+              "color": "black"
+            }
+          },
+          "shoes": {
+            "id": "feet/shoes/feet_shoes_basic",
+            "colors": {
+              "color": "black"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

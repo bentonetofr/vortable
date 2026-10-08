@@ -74,6 +74,8 @@ export class NpcLayer {
         fontFamily: 'system-ui', fontSize: '9px', color: '#ffe9c2', stroke: '#000', strokeThickness: 3,
       }).setOrigin(0.5, 1).setResolution(4).setVisible(false)
     }
+    // aparência nova: a textura de mesmo nome foi refeita, o sprite precisa apontar pra ela de novo
+    else it.sprite.setTexture(`${it.texKey}:idle`, 0)
     it.sprite.anims.play(`${it.texKey}:idle:${it.npc.dir}`, true)
     this.place(it)
   }

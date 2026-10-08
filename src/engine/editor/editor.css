@@ -799,3 +799,7 @@
 .vt-npc-info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
 .vt-npc-info b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .vt-npc-info small { color: var(--vt-muted); }
+
+/* Criador de personagem aberto por cima do editor (alterar a aparência de um NPC). */
+.vt-npc-look { position: fixed; inset: 0; z-index: 2000; }
+.vt-npc-look > .vt-root { position: absolute; inset: 0; }

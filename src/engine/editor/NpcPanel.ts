@@ -11,7 +11,9 @@ import { composeFrame } from '../character/compose'
 import { PROFILE_LABELS, analyzeZone, type ProfileId, type ZoneAnalysis } from '../npc/analyze'
 import { generateBatch, generateNpc, type NpcDraft } from '../npc/generate'
 import { parseCharacterFile, pickTextFile } from '../character/transfer'
-import type { Dir, ZoneNpc } from '../types'
+import { CreatorUI } from '../character/CreatorUI'
+import type { CharacterStorage } from '../character/storage'
+import type { CharacterSave, Dir, ZoneNpc } from '../types'
 import type { EditorState } from './EditorState'
 
 const BATCH = 6
@@ -83,6 +85,7 @@ export class NpcPanel {
   }
 
   destroy() {
+    this.look?.close()
     this.off()
     this.el.remove()
   }
@@ -219,11 +222,52 @@ export class NpcPanel {
         title: n.showName ? 'Nome em cima da cabeça: ligado' : 'Nome em cima da cabeça: desligado',
         html: ICONS.nametag, onclick: () => this.toggleName(n),
       }),
+      h('button', { class: 'vt-btn vt-icononly', title: 'Alterar a aparência (o mesmo criador do personagem)', html: ICONS.person, onclick: () => this.editLook(n) }),
       h('button', { class: 'vt-btn vt-icononly', title: 'Virar (muda pra onde ele olha)', html: ICONS.flip, onclick: () => this.turn(n) }),
       h('button', { class: 'vt-btn vt-icononly', title: 'Mover: clique no novo lugar', html: ICONS.select, onclick: () => this.move(n) }),
       h('button', { class: 'vt-btn vt-icononly vt-danger', title: 'Remover da zona', html: ICONS.trash, onclick: () => this.remove(n) }),
     )
   }
+
+  /** Abre o criador de personagem (o mesmo do jogador) com a aparência do NPC; Aplicar muda o NPC na zona. */
+  private editLook(n: ZoneNpc) {
+    if (this.look) return
+    let kept: CharacterSave[] = [{ version: 1, id: n.id, name: n.name, appearance: structuredClone(n.appearance), updatedAt: Date.now() }]
+    const storage: CharacterStorage = {
+      list: async () => structuredClone(kept),
+      save: async (c) => { kept = [structuredClone(c)] },
+      remove: async () => {},
+      getActive: async () => n.id,
+      setActive: async () => {},
+    }
+    const host = h('div', { class: 'vt-npc-look' })
+    document.body.append(host)
+    const close = () => { ui.destroy(); host.remove(); this.look = null }
+    const ui = new CreatorUI(host, {
+      assetBase: this.hooks.assetBase,
+      storage,
+      single: true,
+      title: 'Aparência do NPC',
+      saveLabel: 'Aplicar',
+      activateOnSave: false,
+      back: { label: 'Voltar ao mapa', onClick: close },
+      onSaved: (c) => {
+        const cur = (this.state.zone.npcs ?? []).find((x) => x.id === n.id)
+        if (cur) {
+          this.state.checkpoint()
+          cur.name = c.name
+          cur.appearance = c.appearance
+          this.state.emit('npcs')
+          this.state.edited()
+          this.hooks.toast(`"${cur.name}" atualizado.`)
+        }
+        close()
+      },
+    })
+    this.look = { close }
+  }
+
+  private look: { close: () => void } | null = null
 
   private toggleName(n: ZoneNpc) {
     this.state.checkpoint()
