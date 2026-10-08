@@ -149,10 +149,48 @@ export function sunAt(hour: number) {
 /**
  * Relógio do mundo (ciclo dia/noite): todo mundo vê a mesma hora, porque
  * vem do relógio de verdade. 6h da manhã no instante zero.
+ *
+ * O crepúsculo dura mais no relógio real: o amanhecer (5h12–7h) e o
+ * entardecer (18h24–20h12) correm a 1/3 da velocidade, pra a luz mudar
+ * devagar (o resto do dia corre um pouco mais rápido pra o dia somar o
+ * mesmo tempo). A hora continua sendo uma só; só o ritmo varia.
  */
+const SLOW_SPANS: [number, number][] = [[5.2, 7], [18.4, 20.2]]
+const SLOW = 3
+
+/** Custo no relógio real (em "horas normais") de ir de 0h até a hora h. */
+function cost(h: number) {
+  let c = h
+  for (const [a, b] of SLOW_SPANS) c += Math.max(0, Math.min(h, b) - a) * (SLOW - 1)
+  return c
+}
+const CYCLE = cost(24)
+
+/** Posição (0–1) da hora no ciclo do relógio real. */
+export function hourToCycle(hour: number) {
+  return cost(((hour % 24) + 24) % 24) / CYCLE
+}
+
+/** A hora em que o ciclo está, dada a posição 0–1 (inverso do anterior). */
+function cycleToHour(u: number) {
+  const target = (((u % 1) + 1) % 1) * CYCLE
+  let h = 0
+  // anda trecho por trecho: normais (custo 1) e lentos (custo SLOW)
+  const edges = [0, ...SLOW_SPANS.flat(), 24]
+  for (let i = 0; i < edges.length - 1; i++) {
+    const span = edges[i + 1] - edges[i]
+    const slow = i % 2 === 1
+    const c = span * (slow ? SLOW : 1)
+    const base = cost(edges[i])
+    if (target <= base + c || i === edges.length - 2) return edges[i] + Math.min(span, (target - base) / (slow ? SLOW : 1))
+    h = edges[i + 1]
+  }
+  return h
+}
+
 export function worldHour(dayMinutes = DAY_MINUTES, now = Date.now()) {
   const day = dayMinutes * 60_000
-  return ((now % day) / day * 24 + 6) % 24
+  return cycleToHour(hourToCycle(6) + (now % day) / day) % 24
 }
 
 /** Hora da zona agora: a fixa, ou a do ciclo. */

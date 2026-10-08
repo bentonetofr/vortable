@@ -17,7 +17,7 @@ import { LocalWorldStorage, type WorldStorage } from './storage'
 import { newZone, type Appearance, type ZoneData } from './types'
 import { setObjectCatalog, type ObjectCatalog } from './assets/objects'
 import { registerObjectArt } from './world/objects'
-import { lightingOf, worldHour } from './world/daylight'
+import { hourToCycle, lightingOf, worldHour } from './world/daylight'
 import { DAY_MINUTES } from './types'
 import { AudioEngine, setAudioBase } from './audio/engine'
 
@@ -86,8 +86,8 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
   const previewOffset = (zone: ZoneData, hour: number) => {
     const day = (lightingOf(zone).dayMinutes ?? DAY_MINUTES) * 60_000
     const now = Date.now()
-    const diff = (((hour - worldHour(lightingOf(zone).dayMinutes, now)) % 24) + 24) % 24
-    return (diff / 24) * day
+    const diff = (((hourToCycle(hour) - hourToCycle(worldHour(lightingOf(zone).dayMinutes, now))) % 1) + 1) % 1
+    return diff * day
   }
 
   if (mode === 'edit') {

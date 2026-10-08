@@ -618,7 +618,7 @@ export class EditorUI {
     const hourSlider = (value: number, onLive: (h: number) => void, onDone?: () => void) => {
       const out = h('b', { class: 'vt-hourout' })
       const show = (hr: number) => { out.innerHTML = `${daylight(hr) > 0.5 ? ICONS.sun : ICONS.moon}<span>${formatHour(hr)}</span>` }
-      const input = h('input', { type: 'range', min: 0, max: 23.75, step: 0.25, value, class: 'vt-range' }) as HTMLInputElement
+      const input = h('input', { type: 'range', min: 0, max: 23.9, step: 0.1, value, class: 'vt-range' }) as HTMLInputElement
       input.addEventListener('input', () => { show(Number(input.value)); onLive(Number(input.value)) })
       if (onDone) input.addEventListener('change', onDone)
       show(value)

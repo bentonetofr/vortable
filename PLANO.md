@@ -225,6 +225,8 @@ nova faz isso numa ação só, em qualquer forma:
 - ✅ *Uma taverna à noite, com lareira e velas, parece aconchegante; uma masmorra, ameaçadora*
 
 #### Hora dourada (amanhecer e entardecer) ✅
+Noite começa às 19h e fecha às 20h; no ciclo, o crepúsculo (5h12–7h e 18h24–20h12) corre a 1/3 da
+velocidade no relógio real, então a luz muda devagar (com dia de 24 min, 19h→20h leva ~2 min).
 Paleta do céu em 22 pontos (índigo → magenta → salmão → ouro no amanhecer; creme → âmbar →
 laranja → rosa → roxo no entardecer) e, nessas horas:
 - banho de luz quente por cima do mapa, clarão grande vindo do lado do sol e **raios de luz**
