@@ -78,7 +78,7 @@ Aba **Cômodos** (ou tecla `C`) — funciona em zona de interior (fundo *Vazio*)
 ### Luz, hora, tempo, sombras e vento
 
 Aba **Clima**:
-- **Ambientes prontos**: Ciclo dia/noite, Dia, Entardecer, Noite, Interior, Taverna à noite, Caverna, Masmorra.
+- **Ambientes prontos**: Ciclo dia/noite, Dia, Entardecer, Semi noite, Noite, Interior, Taverna à noite, Caverna, Masmorra.
 - **Onde fica**: *ar livre* (o céu muda de cor com a hora e o sol faz sombra), *interior* (mais
   escuro; de dia entra um facho de sol pelas janelas) ou *subterrâneo* (nunca vê o sol; escolha a
   cor do escuro).

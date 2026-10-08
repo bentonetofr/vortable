@@ -122,6 +122,18 @@ export function darkness(ambient: RGB) {
  * (~16h30–20h, pico 18h20). É quando a luz esquenta, as sombras esticam
  * e o céu ganha cor.
  */
+/**
+ * Semi noite (0–1): a "hora azul" entre o pôr do sol e a noite (pico 19h35)
+ * e entre a noite e a aurora (pico 5h20). O mapa fica num gradiente: o lado
+ * do sol ainda rosado e claro, o lado oposto já azul-noite.
+ */
+export function twilight(hour: number) {
+  const h = ((hour % 24) + 24) % 24
+  const dusk = smooth(18.6, 19.35, h) * (1 - smooth(19.85, 20.5, h))
+  const dawn = smooth(4.5, 5.05, h) * (1 - smooth(5.55, 6.2, h))
+  return Math.max(dusk, dawn)
+}
+
 export function golden(hour: number) {
   const h = ((hour % 24) + 24) % 24
   const dawn = smooth(5, 6.1, h) * (1 - smooth(7.1, 8.5, h))
@@ -209,6 +221,7 @@ export const LIGHT_PRESETS: { id: string; label: string; lighting: ZoneLighting 
   { id: 'cycle', label: 'Ciclo dia/noite', lighting: { place: 'outdoor', hour: null } },
   { id: 'day', label: 'Dia', lighting: { place: 'outdoor', hour: 12 } },
   { id: 'dusk', label: 'Entardecer', lighting: { place: 'outdoor', hour: 18.2 } },
+  { id: 'seminight', label: 'Semi noite', lighting: { place: 'outdoor', hour: 19.6 } },
   { id: 'night', label: 'Noite', lighting: { place: 'outdoor', hour: 23 } },
   { id: 'indoor', label: 'Interior', lighting: { place: 'indoor', hour: null } },
   { id: 'tavern', label: 'Taverna à noite', lighting: { place: 'indoor', hour: 21.5 } },

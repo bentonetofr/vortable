@@ -26,7 +26,7 @@ import Phaser from 'phaser'
 import { objectDef, sheetTexture, type ObjectDef } from '../assets/objects'
 import { TILE, type ZoneData, type ZoneObject } from '../types'
 import { cornerTerrain } from './ground'
-import { ambientAt, darkness, daylight, golden, hexToRgb, lightingOf, rgbToInt, sunAt, zoneHour, type RGB } from './daylight'
+import { ambientAt, darkness, daylight, golden, hexToRgb, twilight, lightingOf, rgbToInt, sunAt, zoneHour, type RGB } from './daylight'
 import { buildOcclusion, maskedLight, type Occlusion } from './shadowcast'
 import { DOT, PUFF, Particles, type FireSource, type LeafSource } from './particles'
 import { DEFAULT_WIND, Wind, setActiveWind, swayOf, swaySpec, type SwaySpec } from './wind'
@@ -391,6 +391,21 @@ export class Lighting {
           })
         }
       }
+    }
+    // semi noite: gradiente pelo mapa, do lado do sol ainda rosado ao lado
+    // oposto já noite (a luz que sobra no horizonte)
+    const semi = outdoor ? twilight(hour) * Math.max(0, 1 - wth.rain * 0.8 - wth.snow * 0.5 - wth.cover * 0.3) : 0
+    if (semi > 0.02) {
+      const reach = Math.max(v.w, v.h)
+      // centro na beirada da tela do lado do sol: metade do mapa visível fica no gradiente
+      const sx = v.x + v.w / 2 + Math.sin(sun.angle) * v.w * 0.55, sy = v.y + v.h / 2 - Math.cos(sun.angle) * v.h * 0.4
+      const glowTint = dawn ? 0xff9fb4 : 0xff8f70
+      rt.stamp(SOFT, undefined, px(sx), py(sy), {
+        scale: (reach * 2.2 * s) / SOFT_SIZE, tint: glowTint, alpha: 0.85 * semi, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
+      })
+      rt.stamp(SOFT, undefined, px(sx), py(sy), {
+        scale: (reach * 1.1 * s) / SOFT_SIZE, tint: 0xffc49a, alpha: 0.5 * semi, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
+      })
     }
     // hora dourada: cantos arroxeados e mais escuros (moldura de luz do pôr do sol)
     if (warm > 0.02) {
