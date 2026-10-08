@@ -213,6 +213,8 @@ export interface WeatherFrame {
   day: number
   /** Névoa baixa do amanhecer (0–1), rosada, mesmo com o céu limpo. */
   mist: number
+  /** Cor da névoa baixa (rosa no amanhecer, azul de noite). */
+  mistTint?: number
   /** Onde está o desenho das nuvens agora (o mesmo da sombra delas). */
   cloudX: number
   cloudY: number
@@ -365,7 +367,7 @@ export class WeatherFx {
     if (fogAmount > 0.01 && outdoor) {
       if (!this.fog) this.fog = this.scene.add.tileSprite(0, 0, 4, 4, mist).setOrigin(0, 0).setDepth(DEPTH_FOG).setTileScale(2)
       // neblina anda devagar, mesmo sem vento; a do amanhecer é rosada
-      this.tile(this.fog, mist, v, this.time * (6 + 30 * S), this.time * 3, 512).setAlpha(fogAmount * 0.55).setTint(f.mist > w.fog ? 0xffcfc0 : w.fogColor)
+      this.tile(this.fog, mist, v, this.time * (6 + 30 * S), this.time * 3, 512).setAlpha(fogAmount * 0.55).setTint(f.mist > w.fog ? f.mistTint ?? 0xffcfc0 : w.fogColor)
     } else {
       this.fog?.setVisible(false)
     }

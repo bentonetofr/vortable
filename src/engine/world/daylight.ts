@@ -134,6 +134,27 @@ export function twilight(hour: number) {
   return Math.max(dusk, dawn)
 }
 
+/** Noite de verdade (0–1): do fim do crepúsculo (20h30) até a aurora (~5h). */
+export function nightAmount(hour: number) {
+  const h = ((hour % 24) + 24) % 24
+  return h >= 12 ? smooth(19.4, 20.4, h) : 1 - smooth(4.6, 5.8, h)
+}
+
+/** Dia aberto, sem hora dourada (0–1): manhã, meio-dia e tarde. */
+export function sunny(hour: number) {
+  return daylight(hour) * (1 - golden(hour))
+}
+
+/**
+ * Lua: ângulo da sombra e comprimento. Nasce no leste às 18h, passa em cima
+ * à meia-noite (sombra curta, pra baixo) e se põe no oeste às 6h.
+ */
+export function moonAt(hour: number) {
+  const h = ((hour % 24) + 24) % 24
+  const t = Math.max(0, Math.min(1, (((h - 18) % 24 + 24) % 24) / 12))
+  return { angle: (0.5 - t) * 2 * 0.85, length: 0.55 + Math.pow(Math.abs(t - 0.5) * 2, 2) * 0.8 }
+}
+
 export function golden(hour: number) {
   const h = ((hour % 24) + 24) % 24
   const dawn = smooth(5, 6.1, h) * (1 - smooth(7.1, 8.5, h))

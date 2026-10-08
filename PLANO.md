@@ -237,6 +237,13 @@ laranja → rosa → roxo no entardecer) e, nessas horas:
 - **grãos de luz dourados** flutuando, **bandos de pássaros** cruzando o céu, água cintilando em
   dourado; no amanhecer, **névoa baixa rosada** e **orvalho** brilhando na grama
 
+#### Noite e dia aberto ✅
+- **Noite de luar**: fio de azul na escuridão (não é preto), clarão frio do lado da lua, raios de
+  luar sutis no cenário, **sombras da lua** longas e azuis (a lua cruza o céu das 18h às 6h),
+  névoa baixa azulada
+- **Manhã, meio-dia e tarde**: manchas de sol entre as folhas andando devagar, raios leves de sol
+  fixos no cenário e um clarão suave do lado do sol
+
 ### M3.6 — Vento e vida (animações do mundo) ✅ (concluído)
 O mundo parado parece foto: tudo que é leve mexe com o vento, e o fogo vive.
 - **Vento por zona** (Parado / Brisa / Ventania) com **rajadas** que atravessam o mapa como

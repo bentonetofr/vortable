@@ -27,7 +27,7 @@ import { objectDef, sheetTexture, type ObjectDef } from '../assets/objects'
 import { TILE, type ZoneData, type ZoneObject } from '../types'
 import { hash2 } from '../rng'
 import { cornerTerrain } from './ground'
-import { ambientAt, darkness, daylight, golden, hexToRgb, twilight, lightingOf, rgbToInt, sunAt, zoneHour, type RGB } from './daylight'
+import { ambientAt, darkness, daylight, golden, hexToRgb, moonAt, nightAmount, sunny, twilight, lightingOf, rgbToInt, sunAt, zoneHour, type RGB } from './daylight'
 import { buildOcclusion, maskedLight, type Occlusion } from './shadowcast'
 import { DOT, PUFF, Particles, type FireSource, type LeafSource } from './particles'
 import { DEFAULT_WIND, Wind, setActiveWind, swayOf, swaySpec, type SwaySpec } from './wind'
@@ -54,6 +54,7 @@ const LIGHT_RES = 0.5
 const SUN_SHADOW_ALPHA = 0.3
 const VIGNETTE = 'light:vignette'
 const RAY = 'light:ray'
+const DAPPLE = 'light:dapple'
 /** Distância entre os raios de sol (px do mundo). */
 const RAY_GAP = 120
 const VIG = 128
@@ -106,6 +107,8 @@ export class Lighting {
   /** Sombra de nuvens e cantos do pôr do sol: multiplicam a cena, por baixo da escuridão. */
   private cloudShade!: Phaser.GameObjects.TileSprite
   private vignette!: Phaser.GameObjects.Image
+  /** Manchas de sol entre as folhas, passando devagar (dia aberto). */
+  private dapple!: Phaser.GameObjects.TileSprite
   private particles: Particles
   private live: Live[] = []
   private windows: Win[] = []
@@ -144,6 +147,8 @@ export class Lighting {
     this.particles = new Particles(scene)
     this.weather = new WeatherFx(scene)
     this.cloudShade = scene.add.tileSprite(0, 0, 4, 4, SOFT).setOrigin(0, 0).setDepth(DEPTH_DARK - 2)
+      .setBlendMode(Phaser.BlendModes.MULTIPLY).setVisible(false)
+    this.dapple = scene.add.tileSprite(0, 0, 4, 4, DAPPLE).setOrigin(0, 0).setDepth(DEPTH_DARK - 3)
       .setBlendMode(Phaser.BlendModes.MULTIPLY).setVisible(false)
     this.vignette = scene.add.image(0, 0, VIGNETTE).setOrigin(0, 0).setDepth(DEPTH_DARK - 1)
       .setBlendMode(Phaser.BlendModes.MULTIPLY).setVisible(false)
@@ -264,6 +269,34 @@ export class Lighting {
     this.findWater()
   }
 
+  /**
+   * Raios de luz atravessando o mapa. São do CENÁRIO: ficam em linhas fixas do
+   * mundo (só a luz oscila), e a câmera passa por eles — não andam colados no
+   * boneco. `skip` = fração de faixas sem raio; `seed` muda o sorteio.
+   */
+  private rays(g: Phaser.GameObjects.RenderTexture, v: LightingView, s: number, t: number, angle: number, gap: number, tint: number, alpha: number, skip: number, seed: number) {
+    const reach = Math.max(v.w, v.h), len = reach * 2.4
+    const nx = Math.cos(angle), ny = Math.sin(angle) // perpendicular aos raios
+    const cs = [v.x * nx + v.y * ny, (v.x + v.w) * nx + v.y * ny, v.x * nx + (v.y + v.h) * ny, (v.x + v.w) * nx + (v.y + v.h) * ny]
+    const i0 = Math.floor(Math.min(...cs) / gap) - 1, i1 = Math.ceil(Math.max(...cs) / gap) + 1
+    const px = (x: number) => (x - v.x) * s, py = (y: number) => (y - v.y) * s
+    for (let i = i0; i <= i1; i++) {
+      const h1 = (hash2(i, 11 + seed) % 1000) / 1000, h2 = (hash2(i, 29 + seed) % 1000) / 1000, h3 = (hash2(i, 47 + seed) % 1000) / 1000
+      if (h3 < skip) continue // nem toda faixa tem raio
+      const c = i * gap + (h1 - 0.5) * gap * 0.7 + Math.sin(t * 0.12 + i * 1.3) * 14
+      const width = 56 + 80 * h2
+      const shimmer = 0.5 + 0.5 * Math.sin(t * (0.3 + 0.25 * h1) + i * 2.3)
+      // o ponto da reta (n·p = c) na altura do meio da tela, recuado até antes da tela
+      const midY = v.y + v.h / 2
+      const mx = (c - ny * midY) / nx
+      const back = len * 0.5
+      g.stamp(RAY, undefined, px(mx + Math.sin(angle) * back), py(midY - Math.cos(angle) * back), {
+        originX: 0.5, originY: 0, scaleX: (width * s) / 32, scaleY: (len * s) / 128,
+        rotation: angle, tint, alpha: alpha * (0.45 + 0.55 * shimmer) * (0.6 + 0.4 * h2), blendMode: Phaser.BlendModes.ADD, skipBatch: true,
+      })
+    }
+  }
+
   /** Onde tem água (os reflexos piscam ali). */
   private findWater() {
     const z = this.zone
@@ -341,6 +374,7 @@ export class Lighting {
     if (!on) {
       this.cloudShade.setVisible(false)
       this.vignette.setVisible(false)
+      this.dapple.setVisible(false)
       this.particles.clear()
       this.weather.clear()
       setActiveWind(null)
@@ -359,6 +393,13 @@ export class Lighting {
     const open = Math.max(0, 1 - wth.rain * 0.9 - wth.snow * 0.6 - wth.cover * 0.3)
     const warm = outdoor ? gold * open : 0
     const dawn = hour < 12
+    const night = outdoor ? nightAmount(hour) * open : 0
+    const sunnyK = outdoor ? sunny(hour) * open : 0
+    const moon = moonAt(hour)
+    // névoa baixa: rosada no amanhecer, azulada de noite
+    const clearSky = Math.max(0, 1 - wth.rain - wth.snow)
+    const mistDawn = outdoor && dawn ? gold * 0.38 * clearSky : 0
+    const mistNight = night * 0.2 * clearSky
     // dentro de casa não venta (mas o que é pendurado ainda balança de leve)
     this.wind.update(dt, outdoor ? Math.max(l.wind ?? DEFAULT_WIND, wth.minWind) : 0)
     setActiveWind(this.wind)
@@ -369,7 +410,8 @@ export class Lighting {
     this.weather.update(dt, {
       view: { x: v.x - 32, y: v.y - 32, w: v.w + 64, h: v.h + 64 },
       def: wth, wind: this.wind, outdoor, sunAngle: sun.angle, cloudX, cloudY,
-      mist: outdoor && dawn ? gold * 0.38 * Math.max(0, 1 - wth.rain - wth.snow) : 0,
+      mist: Math.max(mistDawn, mistNight),
+      mistTint: mistNight > mistDawn ? 0x9db2ee : 0xffcfc0,
       day: l.place === 'underground' ? 0 : daylight(hour),
     })
     // o tempo escurece/acinzenta a luz do dia (dentro de casa, a parte que vem das janelas)
@@ -403,6 +445,16 @@ export class Lighting {
       cs.tilePositionY = (v.y - cloudY) / scale
     } else {
       this.cloudShade.setVisible(false)
+    }
+    // manhã/meio-dia/tarde: manchas de sol entre as folhas, andando devagar com o vento
+    if (sunnyK > 0.02) {
+      const dscale = 2.2
+      const drift = t * (3 + 10 * this.wind.strength)
+      this.dapple.setVisible(true).setPosition(v.x, v.y).setSize(v.w, v.h).setTileScale(dscale).setAlpha(Math.min(1, sunnyK * 0.75))
+      this.dapple.tilePositionX = (v.x - drift * this.wind.dx - Math.sin(t * 0.2) * 6) / dscale
+      this.dapple.tilePositionY = (v.y - drift * this.wind.dy) / dscale
+    } else {
+      this.dapple.setVisible(false)
     }
     // semi noite: gradiente pelo mapa, do lado do sol ainda rosado ao lado
     // oposto já noite (a luz que sobra no horizonte)
@@ -488,7 +540,7 @@ export class Lighting {
     rt.endDraw()
 
     // ── brilho: o fogo que acende o ar quando escurece + a luz dourada do sol ──
-    if (dark > 0.05 || warm > 0.02) {
+    if (dark > 0.05 || warm > 0.02 || night > 0.02 || sunnyK > 0.02) {
       const g = this.glow
       g.setVisible(true).setPosition(v.x, v.y).setScale(1 / s)
       // a hora dourada banha tudo de um tom quente (soma por cima do mapa)
@@ -497,7 +549,9 @@ export class Lighting {
       const tone: RGB = dawn ? DAWN_LIGHT : [
         DUSK_LIGHT[0] + (0.95 - DUSK_LIGHT[0]) * late, DUSK_LIGHT[1] + (0.3 - DUSK_LIGHT[1]) * late, DUSK_LIGHT[2] + (0.55 - DUSK_LIGHT[2]) * late,
       ]
-      paint(g, rgbToInt([tone[0] * warm * 0.17, tone[1] * warm * 0.17, tone[2] * warm * 0.17]))
+      // (e a noite ganha um fio de azul de luar, pra o escuro não ser preto)
+      const m = night * 0.06
+      paint(g, rgbToInt([tone[0] * warm * 0.17 + 0.5 * m, tone[1] * warm * 0.17 + 0.68 * m, tone[2] * warm * 0.17 + m]))
       if (dark > 0.05) {
         for (const L of this.live) {
           if (!visible(L.x, L.y, L.radius)) continue
@@ -531,57 +585,62 @@ export class Lighting {
         g.stamp(SOFT, undefined, px(cx), py(cy), {
           scale: (reach * 0.8 * s) / SOFT_SIZE, tint: 0xfff0c8, alpha: 0.4 * warm, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
         })
-        // …e raios de luz atravessando o mapa, na direção das sombras. Eles
-        // são do CENÁRIO: ficam em linhas fixas do mundo (só a luz oscila), e
-        // a câmera passa por eles — não andam colados no boneco
-        const len = reach * 2.4
-        const nx = Math.cos(sun.angle), ny = Math.sin(sun.angle) // perpendicular aos raios
-        const cs = [v.x * nx + v.y * ny, (v.x + v.w) * nx + v.y * ny, v.x * nx + (v.y + v.h) * ny, (v.x + v.w) * nx + (v.y + v.h) * ny]
-        const i0 = Math.floor(Math.min(...cs) / RAY_GAP) - 1, i1 = Math.ceil(Math.max(...cs) / RAY_GAP) + 1
-        const ray = rgbToInt([1, 0.82, 0.55])
-        for (let i = i0; i <= i1; i++) {
-          const h1 = hash2(i, 11) % 1000 / 1000, h2 = hash2(i, 29) % 1000 / 1000, h3 = hash2(i, 47) % 1000 / 1000
-          if (h3 < 0.28) continue // nem toda faixa tem raio
-          const c = i * RAY_GAP + (h1 - 0.5) * RAY_GAP * 0.7 + Math.sin(t * 0.12 + i * 1.3) * 14
-          const width = 56 + 80 * h2
-          const shimmer = 0.5 + 0.5 * Math.sin(t * (0.3 + 0.25 * h1) + i * 2.3)
-          // o ponto da reta (n·p = c) na altura do meio da tela, recuado até antes da tela
-          const midY = v.y + v.h / 2
-          const mx = (c - ny * midY) / nx
-          const back = len * 0.5
-          g.stamp(RAY, undefined, px(mx + Math.sin(sun.angle) * back), py(midY - Math.cos(sun.angle) * back), {
-            originX: 0.5, originY: 0, scaleX: (width * s) / 32, scaleY: (len * s) / 128,
-            rotation: sun.angle, tint: ray, alpha: 0.2 * warm * (0.45 + 0.55 * shimmer) * (0.6 + 0.4 * h2), blendMode: Phaser.BlendModes.ADD, skipBatch: true,
-          })
-        }
+        // …e raios de luz atravessando o mapa, na direção das sombras
+        this.rays(g, v, s, t, sun.angle, RAY_GAP, rgbToInt([1, 0.82, 0.55]), 0.2 * warm, 0.28, 0)
+      }
+      // dia aberto: raios leves entre as folhas e um clarão suave do sol
+      if (sunnyK > 0.02) {
+        const reach = Math.max(v.w, v.h), k = sunnyK * (1 - warm)
+        this.rays(g, v, s, t, sun.angle, 150, rgbToInt([1, 0.95, 0.78]), 0.15 * k, 0.4, 100)
+        g.stamp(SOFT, undefined, px(v.x + v.w / 2 + Math.sin(sun.angle) * reach * 0.7), py(v.y + v.h / 2 - Math.cos(sun.angle) * reach * 0.6), {
+          scale: (reach * 1.8 * s) / SOFT_SIZE, tint: 0xfff0c0, alpha: 0.3 * k, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
+        })
+      }
+      // noite: luar — clarão frio do lado da lua e raios azulados bem sutis
+      if (night > 0.02) {
+        const reach = Math.max(v.w, v.h)
+        g.stamp(SOFT, undefined, px(v.x + v.w / 2 + Math.sin(moon.angle) * reach * 0.7), py(v.y + v.h / 2 - Math.cos(moon.angle) * reach * 0.6), {
+          scale: (reach * 1.7 * s) / SOFT_SIZE, tint: 0x8aa8ff, alpha: 0.3 * night, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
+        })
+        g.stamp(SOFT, undefined, px(v.x + v.w / 2 + Math.sin(moon.angle) * reach * 0.7), py(v.y + v.h / 2 - Math.cos(moon.angle) * reach * 0.6), {
+          scale: (reach * 0.55 * s) / SOFT_SIZE, tint: 0xdce6ff, alpha: 0.28 * night, blendMode: Phaser.BlendModes.ADD, skipBatch: true,
+        })
+        this.rays(g, v, s, t, moon.angle, 190, rgbToInt([0.6, 0.72, 1]), 0.09 * night, 0.5, 200)
       }
       g.endDraw()
     }
 
-    // ── sombras do sol ──
+    // ── sombras: do sol de dia, da lua de noite (a mais forte vence) ──
     const sunShadow = l.place === 'outdoor' && l.sunShadows !== false ? sun.strength * wth.sun : 0
-    if (sunShadow > 0.02) {
+    const shadeTint = rgbToInt([0.2 * gold, 0.08 * gold, 0.34 * gold])
+    const sunA = SUN_SHADOW_ALPHA * (1 + 0.55 * gold) * sunShadow
+    const moonA = l.sunShadows !== false ? 0.24 * night : 0
+    const useMoon = moonA > sunA
+    const shadowA = useMoon ? moonA : sunA
+    if (shadowA > 0.02) {
       const sh = this.shade, k = v.zoom
-      // na hora dourada a sombra é mais forte e arroxeada (luz quente, sombra fria)
-      const shadeTint = rgbToInt([0.2 * gold, 0.08 * gold, 0.34 * gold])
-      sh.setVisible(true).setPosition(v.x, v.y).setScale(1 / k).setAlpha(SUN_SHADOW_ALPHA * (1 + 0.55 * gold) * sunShadow)
+      // na hora dourada a sombra é mais forte e arroxeada (luz quente, sombra fria);
+      // a da lua é longa, suave e azul-noite
+      const ang = useMoon ? moon.angle : sun.angle, slen = useMoon ? moon.length : sun.length
+      const tint = useMoon ? rgbToInt([0.02, 0.05, 0.16]) : shadeTint
+      sh.setVisible(true).setPosition(v.x, v.y).setScale(1 / k).setAlpha(shadowA)
       sh.clear()
       sh.beginDraw()
       for (const c of this.casters) {
         const { o, def } = c
         if (!visible(o.x, o.y, c.reach)) continue
         // a sombra balança junto com a árvore
-        const bend = c.sway ? swayOf(c.sway) / Math.max(8, (def.h - def.sort) * sun.length) : 0
+        const bend = c.sway ? swayOf(c.sway) / Math.max(8, (def.h - def.sort) * slen) : 0
         sh.stamp(sheetTexture(def.sheet), c.frame, (o.x - v.x) * k, (o.y - def.sort - v.y) * k, {
-          originX: 0.5, originY: 1, scaleX: (o.flip ? -1 : 1) * k, scaleY: -sun.length * k, rotation: sun.angle - bend,
-          tint: shadeTint, skipBatch: true,
+          originX: 0.5, originY: 1, scaleX: (o.flip ? -1 : 1) * k, scaleY: -slen * k, rotation: ang - bend,
+          tint, skipBatch: true,
         })
       }
       for (const c of this.extraCasters()) {
         if (!visible(c.x, c.y, 64)) continue
         sh.stamp(c.key, c.frame, (c.x - v.x) * k, (c.y - v.y) * k, {
-          originX: 0.5, originY: c.originY, scaleX: (c.flipX ? -1 : 1) * k, scaleY: -sun.length * k, rotation: sun.angle,
-          tint: shadeTint, skipBatch: true,
+          originX: 0.5, originY: c.originY, scaleX: (c.flipX ? -1 : 1) * k, scaleY: -slen * k, rotation: ang,
+          tint, skipBatch: true,
         })
       }
       sh.endDraw()
@@ -691,6 +750,40 @@ function ensureTextures(scene: Phaser.Scene) {
     })
   }
   add(SOFT, softCanvas)
+  if (!tm.exists(DAPPLE)) {
+    // manchas de sol entre as folhas: branco com buracos suaves mais escuros
+    // (opaco, emenda nas bordas; multiplica a cena)
+    const N = 128
+    const rnd = (cells: number, seed: number) => {
+      const g = new Float32Array(cells * cells)
+      let a = seed
+      for (let i = 0; i < g.length; i++) { a = (a * 1103515245 + 12345) >>> 0; g[i] = (a >>> 8) / 16777216 }
+      return (x: number, y: number) => {
+        const fx = (x / N) * cells, fy = (y / N) * cells, x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0
+        const sx = tx * tx * (3 - 2 * tx), sy = ty * ty * (3 - 2 * ty)
+        const at = (cx: number, cy: number) => g[(((cy % cells) + cells) % cells) * cells + (((cx % cells) + cells) % cells)]
+        const top = at(x0, y0) + (at(x0 + 1, y0) - at(x0, y0)) * sx, bot = at(x0, y0 + 1) + (at(x0 + 1, y0 + 1) - at(x0, y0 + 1)) * sx
+        return top + (bot - top) * sy
+      }
+    }
+    const a1 = rnd(6, 5), a2 = rnd(12, 17)
+    const c = document.createElement('canvas')
+    c.width = c.height = N
+    const ctx = c.getContext('2d', CPU)!
+    const img = ctx.createImageData(N, N)
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        const n = a1(x, y) * 0.65 + a2(x, y) * 0.35
+        const t = Math.max(0, Math.min(1, (n - 0.48) / 0.4))
+        const v = Math.round(255 * (1 - 0.2 * t * t * (3 - 2 * t)))
+        const i = (y * N + x) * 4
+        img.data[i] = img.data[i + 1] = img.data[i + 2] = v
+        img.data[i + 3] = 255
+      }
+    }
+    ctx.putImageData(img, 0, 0)
+    add(DAPPLE, c)
+  }
   if (!tm.exists(RAY)) {
     // raio de sol: macio nas laterais e nas pontas, parelho no meio (não some
     // com a distância: tem que ficar parado no mapa, não na tela)
