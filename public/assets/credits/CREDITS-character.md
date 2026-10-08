@@ -3187,3 +3187,8 @@ LPC Sara by Redshrike, contributed by William Thompsonj, Waistband Separated by 
 - http://opengameart.org/content/sara-wizard
 - https://opengameart.org/content/lpc-sara
 
+
+## Cabelos montados pelo Vortable
+
+Os cabelos "vt_*" (ex.: Desgrenhado) são combinações dos cabelos pixie, messy1 e unkempt do LPC,
+feitas por scripts/make-hair.mjs. Obra derivada: mantém os autores e as licenças desses cabelos (CC-BY-SA 3.0 / GPL 3.0 / OGA-BY 3.0).
