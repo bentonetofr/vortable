@@ -14,7 +14,7 @@ import { EditorScene } from './editor/EditorScene'
 import { EditorState } from './editor/EditorState'
 import { EditorUI } from './editor/EditorUI'
 import { LocalWorldStorage, type WorldStorage } from './storage'
-import { newZone, type Appearance, type CharacterSave, type WorldSky, type ZoneData } from './types'
+import { newZone, type Appearance, type CharacterSave, type Dir, type WorldSky, type ZoneData } from './types'
 import { setObjectCatalog, type ObjectCatalog } from './assets/objects'
 import { registerObjectArt } from './world/objects'
 import { formatHour, hourToCycle, skyOf, worldHour } from './world/daylight'
@@ -58,6 +58,8 @@ export interface VortableOptions {
   onEditCharacter?: () => void
   /** Rede: com isto, os outros jogadores aparecem no mundo (sem, o jogo é solo). */
   net?: NetLink
+  /** Volta de onde a pessoa parou (ver `VortableHandle.snapshot`). Vale pro mesmo `mode` em que foi tirado. */
+  resume?: VortableSnapshot
   /** Câmera de observador: também ouve os sons da zona (espectador). */
   listen?: boolean
   /**
@@ -68,6 +70,14 @@ export interface VortableOptions {
 }
 
 const CURATE_URL = '/__vortable/curate'
+
+/**
+ * Onde a pessoa estava quando saiu (pra voltar exatamente aí): no jogo, a zona e o ponto
+ * em que o boneco parou; no editor, a zona aberta (com o que ainda não foi salvo) e a câmera.
+ */
+export type VortableSnapshot =
+  | { kind: 'play'; zoneId: string; x: number; y: number; dir: Dir }
+  | { kind: 'edit'; zone: ZoneData; dirty: boolean; view: { x: number; y: number } | null; zoom: number }
 
 /** Controles da câmera do mestre (mode 'watch'). */
 export interface WatchControls {
@@ -93,6 +103,8 @@ export interface WatchControls {
 export interface VortableHandle {
   /** Só no mode 'watch'. */
   watch?: WatchControls
+  /** Onde a pessoa está agora, pra `resume` na próxima vez (null = sem o que guardar). */
+  snapshot(): VortableSnapshot | null
   /** Entrega uma mensagem que chegou da rede (ver NetMsg). */
   receive(msg: unknown): void
   /** A rede abriu depois do jogo: reanuncia o boneco e pergunta quem está na sala. */
@@ -118,8 +130,9 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
   let state: EditorState | null = null
   let host = parent
 
-  const worldData = (zone: ZoneData, loadZone: WorldSceneData['loadZone'], sky: WorldSky, timeOffset = 0): WorldSceneData => ({
+  const worldData = (zone: ZoneData, loadZone: WorldSceneData['loadZone'], sky: WorldSky, timeOffset = 0, start?: { x: number; y: number; dir: Dir }): WorldSceneData => ({
     zone,
+    ...(start ? { at: { x: start.x, y: start.y }, facing: start.dir } : {}),
     appearance,
     assetBase,
     loadZone,
@@ -145,8 +158,11 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
   }
 
   if (mode === 'edit') {
-    state = new EditorState(opts.zone ?? newZone('Nova zona', 40, 30))
+    const back = opts.resume?.kind === 'edit' ? opts.resume : null
+    state = new EditorState(back ? back.zone : opts.zone ?? newZone('Nova zona', 40, 30))
     state.assetBase = assetBase
+    // voltando: a zona vem como estava (inclusive o que não foi salvo) e a câmera no mesmo lugar
+    if (back) { state.dirty = back.dirty; state.view = back.view; state.zoom = back.zoom }
     ui = new EditorUI(parent, state, storage, {
       assetBase,
       textureImage: (key) => game.textures.get(key).getSourceImage() as CanvasImageSource,
@@ -188,11 +204,17 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
   }
 
   /** Jogo: a zona dada, senão a inicial do mundo, senão a mais recente; e a hora/tempo do mundo. */
-  async function playStart(): Promise<{ zone: ZoneData; sky: WorldSky }> {
+  async function playStart(): Promise<{ zone: ZoneData; sky: WorldSky; start?: { x: number; y: number; dir: Dir } }> {
     let sky = skyOf(null)
     try {
       const world = await storage.loadWorld()
       sky = skyOf(world)
+      // voltando de onde parou: a mesma zona, no mesmo ponto (se a zona ainda existe)
+      if (opts.resume?.kind === 'play') {
+        const back = opts.resume
+        const zone = await storage.load(back.zoneId)
+        if (zone && back.x >= 0 && back.y >= 0 && back.x <= zone.width * 32 && back.y <= zone.height * 32) return { zone, sky, start: { x: back.x, y: back.y, dir: back.dir } }
+      }
       if (opts.zone) return { zone: opts.zone, sky }
       const start = world.start && (await storage.load(world.start))
       if (start) return { zone: start, sky }
@@ -226,8 +248,8 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
       game.scene.start('editor', { state })
       ui!.assetsReady()
     } else {
-      const { zone, sky } = await playStart()
-      game.scene.start('world', worldData(zone, (id) => storage.load(id), sky))
+      const { zone, sky, start } = await playStart()
+      game.scene.start('world', worldData(zone, (id) => storage.load(id), sky, 0, start))
     }
   }), true)
 
@@ -254,6 +276,24 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
 
   return {
     watch,
+    snapshot() {
+      if (mode === 'edit') {
+        if (!state) return null
+        const cam = editor()?.cameras.main
+        return {
+          kind: 'edit',
+          zone: structuredClone(state.zone),
+          dirty: state.dirty,
+          view: cam ? { x: Math.round(cam.midPoint.x), y: Math.round(cam.midPoint.y) } : state.view,
+          zoom: cam?.zoom ?? state.zoom,
+        }
+      }
+      if (mode === 'play') {
+        const at = world()?.snapshotPlay()
+        return at ? { kind: 'play', ...at } : null
+      }
+      return null
+    },
     async setAppearance(a) {
       appearance = a
       if (game.scene.isActive('world')) await (game.scene.getScene('world') as WorldScene).setAppearance(a)

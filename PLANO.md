@@ -371,6 +371,11 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
   Segure o botão e arraste em qualquer direção: mostra distância, direção de bússola (N, NE, L...), guias em L com as medidas horizontal e
   vertical e marcas a cada metro (2, 5, 10... com pouco zoom). Ao soltar, a régua some. Shift trava em 45°; a grade (N) encaixa.
 
+- **Telinha e retorno exato**: a telinha vale também pro mestre (a sessão ao vivo passa da página do Vortable pra telinha sem cair; fechar a
+  telinha encerra a sessão). Ao voltar, tudo continua de onde parou: o jogador reaparece na mesma zona e ponto (ou ainda assistindo), o mestre
+  na mesma aba, com o editor na mesma zona (inclusive o que não foi salvo) e câmera. Motor: `VortableHandle.snapshot()` + `resume`;
+  Vorterium: `vortable/resume/resumeStore.ts`, `pip/pipStore.ts` (passagem da sessão).
+
 #### M4.3 — Ficha, chat e dados (⏳)
 - Boneco ligado à ficha (nome, vida, retrato); chat com balão sobre a cabeça; dados no histórico
 - ✅ *Sessão real com amigos*

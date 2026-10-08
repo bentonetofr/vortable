@@ -42,6 +42,8 @@ export interface WorldSceneData {
   hub?: NetHub
   /** Aparece neste ponto (teletransporte do mestre), no lugar da saída ou do início. */
   at?: { x: number; y: number }
+  /** Pra onde o boneco olha ao aparecer em `at` (voltar de onde parou). */
+  facing?: Dir
   /** Aviso mostrado quando a cena abre (ex.: "o mestre atualizou o mapa"). */
   notice?: string
   /** Câmera do mestre: sem boneco, câmera livre, só observa os jogadores. */
@@ -171,7 +173,7 @@ export class WorldScene extends Phaser.Scene {
     const door = arrival && zone.portals.find((p) => p.id === arrival.portal)
     // chega no meio da saída de destino; sem ela, no início da zona
     const at = this.cfg.at ?? (door ? { x: door.x + door.w / 2, y: door.y + door.h / 2 + 5 } : zone.spawn)
-    this.player = new Player(this, PLAYER_KEY, at.x, at.y, arrival?.dir ?? 'down')
+    this.player = new Player(this, PLAYER_KEY, at.x, at.y, arrival?.dir ?? this.cfg.facing ?? 'down')
     this.inputLocked = this.cfg.inputLocked?.() ?? this.inputLocked
     this.player.locked = this.inputLocked
     this.physics.add.collider(this.player.sprite, solids)
@@ -315,6 +317,13 @@ export class WorldScene extends Phaser.Scene {
     this.following = id
     this.followZoom = zoom // o padrão é o enquadramento do próprio jogo
     if (id) this.cameras.main.setZoom(zoom)
+  }
+
+  /** Onde o jogador está agora (pra voltar exatamente aí depois). */
+  snapshotPlay() {
+    const s = this.player?.sprite
+    if (!s || this.travelling) return null
+    return { zoneId: this.cfg.zone.id, x: Math.round(s.x), y: Math.round(s.y), dir: this.player!.facing }
   }
 
   /** Quem a câmera acompanha agora. */
