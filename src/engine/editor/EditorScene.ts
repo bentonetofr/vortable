@@ -31,9 +31,13 @@ import { ZoneAudio } from '../audio/ZoneAudio'
 import { readPrefs } from '../audio/engine'
 import { skyOf } from '../world/daylight'
 import { NpcLayer } from '../world/npcs'
+import { bearing, formatMeters, metersToPx, rulerLength, tickStepMeters, type Ruler } from '../world/measure'
 import { buildCharacter } from '../character/compose'
 import type { EditorState } from './EditorState'
 import { applyRooms, connectedRoom, decodeRoom, encodeRoom, roomRoles } from '../world/rooms'
+
+/** Quantas réguas ficam no mapa ao mesmo tempo (a mais antiga some). */
+const RULER_MAX = 30
 
 export const ZOOM_MIN = 0.1
 export const ZOOM_MAX = 8
@@ -124,12 +128,14 @@ export class EditorScene extends Phaser.Scene {
     this.ghost = this.add.image(0, 0, '__WHITE').setOrigin(0.5, 1).setAlpha(0.6).setDepth(1e8 + 3).setVisible(false)
     this.spawnMarker = this.makeSpawnMarker()
     this.lightGfx = this.add.graphics().setDepth(1e8 + 1)
+    this.rulerGfx = this.add.graphics().setDepth(1e8 + 2)
     this.rebuildObjects()
     this.lighting = new Lighting(this, this.state.zone)
     // NPCs da zona (sempre com o nome à mostra: o mestre se localiza)
     this.npcs = new NpcLayer(this, this.state.assetBase, 'always')
     this.npcs.set(this.state.zone.npcs ?? [])
     void this.refreshNpcGhost()
+    this.drawRulers()
     this.audio = ZoneAudio.create(this, this.state.zone)
     this.events.on(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
     this.refreshOverlays()
@@ -167,6 +173,7 @@ export class EditorScene extends Phaser.Scene {
       if (c === 'edit') this.drawLights()
       if (c === 'objects') this.syncObjects()
       if (c === 'npcs') this.npcs.set(this.state.zone.npcs ?? [])
+      if (c === 'rulers') this.drawRulers()
       if (c === 'edit' || c === 'objects' || c === 'catalog') this.scheduleLights()
       if (c === 'catalog') {
         this.rebuildObjects()
@@ -283,6 +290,7 @@ export class EditorScene extends Phaser.Scene {
     this.drawSelection()
     this.drawPortals()
     this.drawLights()
+    this.drawRulers()
     this.drawCursor(this.input.activePointer)
   }
 
@@ -311,7 +319,7 @@ export class EditorScene extends Phaser.Scene {
 
   private updateCursorStyle() {
     const grab = this.spaceKey.isDown && this.keyboardFree()
-    this.input.setDefaultCursor(this.panning ? 'grabbing' : grab ? 'grab' : '')
+    this.input.setDefaultCursor(this.panning ? 'grabbing' : grab ? 'grab' : this.state.tool === 'ruler' ? 'crosshair' : '')
   }
 
   // ── Construção ─────────────────────────────────────────
@@ -371,6 +379,7 @@ export class EditorScene extends Phaser.Scene {
 
   private onUiChange() {
     this.applySelection()
+    this.updateCursorStyle()
     void this.refreshNpcGhost()
     this.refreshOverlays()
     if (this.state.tool === 'object' && this.state.objectKind) {
@@ -590,6 +599,17 @@ export class EditorScene extends Phaser.Scene {
     const { tool } = this.state
     const wx = p.worldX, wy = p.worldY
 
+    // régua: arrastar mede; arrastar uma ponta de régua já feita ajusta
+    if (tool === 'ruler') {
+      const hit = this.rulerEndAt(wx, wy)
+      if (hit) this.rulerEdit = hit
+      else {
+        const pt = this.state.snap ? this.snapped(wx, wy) : { x: wx, y: wy }
+        this.rulerLive = { x0: pt.x, y0: pt.y, x1: pt.x, y1: pt.y }
+      }
+      return
+    }
+
     // NPC esperando lugar: o clique o põe na zona
     if (tool === 'npc') {
       this.placeNpc(wx, wy)
@@ -684,6 +704,10 @@ export class EditorScene extends Phaser.Scene {
       this.panning = { x: p.x, y: p.y }
       return
     }
+    if (this.rulerLive || this.rulerEdit) {
+      this.rulerMove(p.worldX, p.worldY, !!(p.event as MouseEvent | undefined)?.shiftKey || !!this.keys?.shift.isDown)
+      return
+    }
     if (this.painting) this.paintAt(p.worldX, p.worldY)
     if (this.stamping) {
       // carimbo contínuo: um objeto novo a cada "largura" de distância
@@ -771,6 +795,22 @@ export class EditorScene extends Phaser.Scene {
   }
 
   private onUp() {
+    if (this.rulerLive) {
+      const r = this.rulerLive
+      this.rulerLive = null
+      // um clique sem arrastar não é medida
+      if (rulerLength(r) * this.cameras.main.zoom >= 4) {
+        this.state.rulers.push(r)
+        if (this.state.rulers.length > RULER_MAX) this.state.rulers.shift()
+      }
+      this.state.emit('rulers')
+      return
+    }
+    if (this.rulerEdit) {
+      this.rulerEdit = null
+      this.state.emit('rulers')
+      return
+    }
     if (this.painting) {
       this.painting = false
       this.lastStrokeEnd = this.lastPaint
@@ -1169,6 +1209,10 @@ export class EditorScene extends Phaser.Scene {
   // ── Ações chamadas pela interface ──────────────────────
 
   deleteSelected() {
+    if (this.state.tool === 'ruler') {
+      if (this.state.rulers.length) { this.state.rulers = []; this.state.emit('rulers') }
+      return
+    }
     const light = this.state.light
     if (light) {
       this.state.checkpoint()
@@ -1323,6 +1367,124 @@ export class EditorScene extends Phaser.Scene {
   /** Muda o tamanho do pincel (+1/−1). */
   brushBy(d: number) {
     this.state.set({ brush: Phaser.Math.Clamp(this.state.brush + d, 1, BRUSH_MAX) })
+  }
+
+  // ── Régua ───────────────────────────────────────────────
+
+  private rulerGfx!: Phaser.GameObjects.Graphics
+  private rulerTexts: Phaser.GameObjects.Text[] = []
+  /** Régua sendo riscada agora. */
+  private rulerLive: Ruler | null = null
+  /** Ponta de régua já feita sendo arrastada (end 0 = início, 1 = fim). */
+  private rulerEdit: { index: number; end: 0 | 1 } | null = null
+
+  /** A ponta de régua sob o mouse (até 10 px de tela), pra ajustar. */
+  private rulerEndAt(wx: number, wy: number) {
+    const reach = 10 / this.cameras.main.zoom
+    let best: { index: number; end: 0 | 1; d: number } | null = null
+    for (let index = 0; index < this.state.rulers.length; index++) {
+      const r = this.state.rulers[index]
+      for (const end of [0, 1] as const) {
+        const d = Math.hypot(wx - (end ? r.x1 : r.x0), wy - (end ? r.y1 : r.y0))
+        if (d <= reach && (!best || d < best.d)) best = { index, end, d }
+      }
+    }
+    return best ? { index: (best as { index: number }).index, end: (best as { end: 0 | 1 }).end } : null
+  }
+
+  /** Move a ponta que está sendo arrastada; Shift trava o ângulo em múltiplos de 45°. */
+  private rulerMove(wx: number, wy: number, shift: boolean) {
+    const r = this.rulerLive ?? (this.rulerEdit ? this.state.rulers[this.rulerEdit.index] : null)
+    if (!r) return
+    const movingEnd = this.rulerLive ? 1 : this.rulerEdit!.end
+    const ax = movingEnd ? r.x0 : r.x1, ay = movingEnd ? r.y0 : r.y1
+    let x = wx, y = wy
+    if (shift) {
+      const len = Math.hypot(wx - ax, wy - ay)
+      const ang = Math.round(Math.atan2(wy - ay, wx - ax) / (Math.PI / 4)) * (Math.PI / 4)
+      // com a grade ligada, o comprimento também encaixa (meio tile)
+      const l = this.state.snap ? Math.round(len / (TILE / 2)) * (TILE / 2) : len
+      x = ax + Math.cos(ang) * l
+      y = ay + Math.sin(ang) * l
+    } else if (this.state.snap) {
+      const s = this.snapped(wx, wy)
+      x = s.x
+      y = s.y
+    }
+    if (movingEnd) { r.x1 = x; r.y1 = y } else { r.x0 = x; r.y0 = y }
+    this.drawRulers()
+  }
+
+  private rulerText(i: number) {
+    let t = this.rulerTexts[i]
+    if (!t) {
+      t = this.add.text(0, 0, '', {
+        fontFamily: 'system-ui', fontSize: '12px', fontStyle: 'bold', color: '#ffffff', stroke: '#000000', strokeThickness: 3, align: 'center',
+      }).setOrigin(0.5).setDepth(1e8 + 3).setResolution(4)
+      this.rulerTexts[i] = t
+    }
+    return t
+  }
+
+  /** Desenha as réguas: linha, marcas a cada metro (ou 2, 5, 10... conforme o zoom), guias em L e o rótulo com medida e direção. */
+  private drawRulers() {
+    const g = this.rulerGfx
+    if (!g) return
+    g.clear()
+    const zoom = this.cameras.main.zoom
+    const px = 1 / zoom
+    const list = [...this.state.rulers, ...(this.rulerLive ? [this.rulerLive] : [])]
+    let ti = 0
+    const label = (text: string, x: number, y: number, size = 1, alpha = 1) => {
+      const t = this.rulerText(ti++)
+      t.setText(text).setPosition(x, y).setScale(px * size).setAlpha(alpha).setVisible(true)
+    }
+    const dashed = (ax: number, ay: number, bx: number, by: number) => {
+      const len = Math.hypot(bx - ax, by - ay), dash = 6 * px, gap = 5 * px
+      const ux = (bx - ax) / len, uy = (by - ay) / len
+      for (let d = 0; d < len; d += dash + gap) {
+        const e = Math.min(len, d + dash)
+        g.lineBetween(ax + ux * d, ay + uy * d, ax + ux * e, ay + uy * e)
+      }
+    }
+    const stepPx = metersToPx(tickStepMeters(zoom))
+    for (const r of list) {
+      const len = rulerLength(r)
+      if (len < 1) continue
+      const ux = (r.x1 - r.x0) / len, uy = (r.y1 - r.y0) / len
+      const nx = -uy, ny = ux
+      // guias em L (quanto andou na horizontal e na vertical), só quando as duas pernas valem a pena
+      const dx = Math.abs(r.x1 - r.x0), dy = Math.abs(r.y1 - r.y0)
+      if (dx >= TILE / 2 && dy >= TILE / 2) {
+        g.lineStyle(px * 1.5, 0xffffff, 0.35)
+        dashed(r.x0, r.y0, r.x1, r.y0)
+        dashed(r.x1, r.y0, r.x1, r.y1)
+        label(formatMeters(dx), (r.x0 + r.x1) / 2, r.y0 + (r.y1 > r.y0 ? -12 : 12) * px, 0.8, 0.8)
+        label(formatMeters(dy), r.x1 + (r.x1 > r.x0 ? 22 : -22) * px, (r.y0 + r.y1) / 2, 0.8, 0.8)
+      }
+      // a régua (contorno escuro por baixo pra aparecer em qualquer chão)
+      g.lineStyle(px * 5, 0x000000, 0.55).lineBetween(r.x0, r.y0, r.x1, r.y1)
+      g.lineStyle(px * 2.5, 0xffc174, 1).lineBetween(r.x0, r.y0, r.x1, r.y1)
+      // marcas: a cada passo "redondo" que cabe na tela; a cada 5 passos, uma maior
+      const n = Math.floor(len / stepPx)
+      for (let k = 1; k <= n; k++) {
+        const half = (k % 5 === 0 ? 8 : 5) * px
+        const cx = r.x0 + ux * k * stepPx, cy = r.y0 + uy * k * stepPx
+        g.lineStyle(px * 2, 0xffc174, 1).lineBetween(cx - nx * half, cy - ny * half, cx + nx * half, cy + ny * half)
+      }
+      // pontas
+      for (const [x, y] of [[r.x0, r.y0], [r.x1, r.y1]] as const) {
+        g.fillStyle(0x000000, 0.7).fillCircle(x, y, px * 5.5)
+        g.fillStyle(0xffc174, 1).fillCircle(x, y, px * 3.5)
+      }
+      // rótulo no meio, do lado de cima da linha: medida e direção (bússola)
+      const { deg, cardinal } = bearing(r)
+      const side = ny < 0 || (ny === 0 && nx > 0) ? 1 : -1
+      const off = 18 * px * side
+      label(`${formatMeters(len)}
+${cardinal} ${Math.round(deg)}°`, (r.x0 + r.x1) / 2 + nx * off, (r.y0 + r.y1) / 2 + ny * off)
+    }
+    for (let i = ti; i < this.rulerTexts.length; i++) this.rulerTexts[i].setVisible(false)
   }
 
   // ── NPCs ────────────────────────────────────────────────

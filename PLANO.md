@@ -367,6 +367,10 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
   *Adicionar* → clique no mapa; o NPC fica parado na zona (`zone.npcs`, com colisão e nome quando alguém chega perto) até o mestre
   remover (lista no painel: ver, virar, mover, remover; desfazer vale). Código: `src/engine/npc/`, `editor/NpcPanel.ts`, `world/npcs.ts`.
 
+- **Régua** (editor, tecla R): mede em metros com **1 tile = 1 m** (`METERS_PER_TILE` em `types.ts`; bate com a altura dos bonecos).
+  Arraste em qualquer direção; mostra distância, direção de bússola (N, NE, L...) e guias em L com as medidas horizontal e vertical;
+  marcas a cada metro (a cada 2, 5, 10... com pouco zoom). Shift trava em 45°, a grade (N) encaixa; dá pra ajustar as pontas; Esc/Del limpa.
+
 #### M4.3 — Ficha, chat e dados (⏳)
 - Boneco ligado à ficha (nome, vida, retrato); chat com balão sobre a cabeça; dados no histórico
 - ✅ *Sessão real com amigos*

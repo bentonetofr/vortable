@@ -5,6 +5,9 @@
 
 export const TILE = 32
 
+/** Escala do mundo: quantos metros vale um tile (a régua do editor mede com isto). */
+export const METERS_PER_TILE = 1
+
 export type Dir = 'up' | 'left' | 'down' | 'right'
 
 /** Uma zona: um pedaço do mundo carregado de uma vez. */

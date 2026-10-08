@@ -4,11 +4,12 @@
 // escutam as mudanças por aqui — nenhuma fala direto com a outra.
 // ────────────────────────────────────────────────────────
 
+import type { Ruler } from '../world/measure'
 import type { Appearance, Dir, WorldData, ZoneData, ZoneLight, ZoneObject } from '../types'
 import { ROOM_PRESETS, type RoomStyle } from '../world/rooms'
 import type { ZoneSummary } from '../storage'
 
-export type Tool = 'brush' | 'fill' | 'erase' | 'object' | 'select' | 'room' | 'light' | 'portal' | 'spawn' | 'npc'
+export type Tool = 'brush' | 'fill' | 'erase' | 'object' | 'select' | 'room' | 'light' | 'portal' | 'spawn' | 'npc' | 'ruler'
 
 /** NPC esperando lugar no mapa (gerador de NPCs): o clique seguinte o põe na zona. */
 export interface NpcDraft {
@@ -33,8 +34,9 @@ export type LightLook = Pick<ZoneLight, 'radius' | 'color' | 'intensity' | 'flic
  * catalog = o catálogo de objetos mudou (curadoria) → refazer sprites e paleta
  * view   = a câmera mudou (zoom): só o indicador de zoom acompanha
  * npcs   = a lista de NPCs da zona mudou (pôs, tirou, virou)
+ * rulers = as réguas (medidas) mudaram
  */
-export type Change = 'zone' | 'edit' | 'ui' | 'cursor' | 'world' | 'objects' | 'catalog' | 'view' | 'npcs'
+export type Change = 'zone' | 'edit' | 'ui' | 'cursor' | 'world' | 'objects' | 'catalog' | 'view' | 'npcs' | 'rulers'
 
 const HISTORY_MAX = 100
 
@@ -57,6 +59,8 @@ export class EditorState {
   selected: number[] = []
   /** Objetos copiados (Ctrl C), com posição relativa ao centro do grupo. Vale entre zonas. */
   clipboard: ZoneObject[] = []
+  /** Réguas deixadas no mapa (ferramenta Régua): só do editor, não vão pra zona. */
+  rulers: Ruler[] = []
   /** NPC esperando lugar no mapa (ferramenta npc). */
   npcDraft: NpcDraft | null = null
   /** Pasta dos assets (os NPCs montam o boneco a partir dela). */
