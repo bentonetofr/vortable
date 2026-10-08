@@ -1,0 +1,67 @@
+{
+  "format": "vortable-character",
+  "version": 1,
+  "characters": [
+    {
+      "name": "Capa azul",
+      "appearance": {
+        "version": 2,
+        "body": "male",
+        "skin": "light",
+        "slots": {
+          "body": {
+            "id": "body/body"
+          },
+          "head": {
+            "id": "head/heads/human/heads_human_male",
+            "colors": {
+              "color_2": "brown"
+            }
+          },
+          "hair": {
+            "id": "hair/short/hair_messy2",
+            "colors": {
+              "color": "dark_brown"
+            }
+          },
+          "clothes": {
+            "id": "torso/shirts/longsleeve/torso_clothes_longsleeve2",
+            "colors": {
+              "color": "slate"
+            }
+          },
+          "neck": {
+            "id": "headwear/neck/neck_jabot",
+            "colors": {
+              "color": "navy"
+            }
+          },
+          "cape": {
+            "id": "torso/cape/cape_solid",
+            "colors": {
+              "color": "navy"
+            }
+          },
+          "legs": {
+            "id": "legs/pants/legs_pants",
+            "colors": {
+              "color": "navy"
+            }
+          },
+          "shoes": {
+            "id": "feet/boots/feet_boots_revised",
+            "colors": {
+              "color": "walnut"
+            }
+          },
+          "scar_eye_l": {
+            "id": "body/wounds/wound_eye_left",
+            "colors": {
+              "color": "maroon"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
