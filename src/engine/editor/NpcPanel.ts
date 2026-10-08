@@ -10,6 +10,7 @@ import { loadCharacterData, type CharacterData } from '../character/catalog'
 import { composeFrame } from '../character/compose'
 import { PROFILE_LABELS, analyzeZone, type ProfileId, type ZoneAnalysis } from '../npc/analyze'
 import { generateBatch, generateNpc, type NpcDraft } from '../npc/generate'
+import { parseCharacterFile, pickTextFile } from '../character/transfer'
 import type { Dir, ZoneNpc } from '../types'
 import type { EditorState } from './EditorState'
 
@@ -133,6 +134,7 @@ export class NpcPanel {
       ),
       h('div', { class: 'vt-npc-actions' },
         h('button', { class: 'vt-btn vt-primary', html: `${ICONS.star}<span>Gerar novos</span>`, onclick: () => this.newBatch() }),
+        h('button', { class: 'vt-btn', title: 'Usar um personagem salvo (arquivo) como NPC', html: `${ICONS.upload}<span>Importar personagem</span>`, onclick: () => void this.importCharacter() }),
       ),
       grid,
       h('h4', {}, 'NPCs desta zona'),
@@ -171,6 +173,19 @@ export class NpcPanel {
     if (!this.data) return
     this.drafts[i] = generateNpc(this.data, { profile: this.profile })
     this.render()
+  }
+
+  /** Personagem de um arquivo (o do criador de personagens) vira NPC: o clique seguinte no mapa o põe. */
+  private async importCharacter() {
+    if (!this.data) return
+    try {
+      const text = await pickTextFile()
+      if (text == null) return
+      const [first] = parseCharacterFile(text, this.data)
+      this.pick({ name: first.name, role: '', appearance: first.appearance })
+    } catch (err) {
+      this.hooks.toast((err as Error).message, true)
+    }
   }
 
   /** Escolheu: o NPC vai pro mouse e o próximo clique no mapa o põe na zona. */

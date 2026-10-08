@@ -1,0 +1,83 @@
+{
+  "format": "vortable-character",
+  "version": 1,
+  "characters": [
+    {
+      "name": "Rhavor Tharion",
+      "appearance": {
+        "version": 2,
+        "body": "male",
+        "skin": "light",
+        "slots": {
+          "body": {
+            "id": "body/body"
+          },
+          "head": {
+            "id": "head/heads/human/heads_human_male",
+            "colors": {
+              "color_2": "brown"
+            }
+          },
+          "eyebrows": {
+            "id": "head/eyebrows/eyebrows_thick",
+            "colors": {
+              "color": "chestnut"
+            }
+          },
+          "hair": {
+            "id": "hair/short/hair_swoop_side",
+            "colors": {
+              "color": "blonde"
+            }
+          },
+          "clothes": {
+            "id": "torso/shirts/longsleeve/torso_clothes_longsleeve2_buttoned",
+            "colors": {
+              "color": "sea_green"
+            }
+          },
+          "shoulders": {
+            "id": "arms/shoulders/shoulders_pauldrons",
+            "colors": {
+              "color": "slate"
+            }
+          },
+          "belt": {
+            "id": "torso/waist/belt_leather",
+            "variant": "brown"
+          },
+          "arms": {
+            "id": "arms/wrists/wrists_cuffs",
+            "colors": {
+              "color": "pale_gray"
+            }
+          },
+          "gloves": {
+            "id": "arms/arms_gloves",
+            "colors": {
+              "color": "saddle"
+            }
+          },
+          "cape": {
+            "id": "torso/cape/cape_solid",
+            "colors": {
+              "color": "sand"
+            }
+          },
+          "legs": {
+            "id": "legs/pants/legs_pants",
+            "colors": {
+              "color": "garnet"
+            }
+          },
+          "shoes": {
+            "id": "feet/boots/feet_boots_revised",
+            "colors": {
+              "color": "charcoal"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
