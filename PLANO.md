@@ -313,11 +313,19 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
   abre o Vortable
 - ⏳ Falta: aplicar a migration no Supabase, testar logado, publicar no Vercel
 
-#### M4.2 — Multiplayer ao vivo (⏳)
-- Transporte grátis: **WebRTC P2P** (host = navegador do mestre), sinalização pelo Supabase
-  Realtime e STUN público; TURN grátis só se a rede exigir
-- Mestre inicia sessão → jogadores avisados pelas notificações do site
-- Movimento com interpolação; zonas diferentes por jogador; hora/clima do mestre pra todos
+#### M4.2 — Multiplayer ao vivo ✅ (falta testar com gente de verdade)
+- **Transporte grátis**: WebRTC de navegador pra navegador; o navegador do **mestre é o centro**
+  (cada jogador abre um DataChannel com ele e ele repassa aos outros). O Supabase só leva a
+  conversa de conexão (canal `mesa:<campanha>`); movimento não passa por ele. STUN público; TURN
+  só se a rede exigir (`VITE_TURN_*`)
+- Motor (`src/engine/net`): `NetHub` (quem está na sala), mensagens `hello / who / state / bye /
+  teleport`, bonecos remotos com nome, sombra e suavização, escondidos em outra zona; `net` e
+  `receive/resync` em `mountVortable`; teste sem Vorterium em duas abas: `/?jogar&rede=Nome`
+- Vorterium (`features/vortable/net`): `VortableNet` (mestre e jogador), ligado ao jogo do
+  jogador e ao *Testar* do mestre; aviso "N online" na barra
+- Aba **Jogadores** do mestre: bolinha de online, **Levar a… (zona)** e **Expulsar**
+- Testado: loopback de WebRTC (mestre + 2 jogadores: relay, teleporte, expulsão) e duas abas do motor
+- ⏳ Falta: hora/clima do mestre pra todos, zonas em tempo real (mestre editando), chat no balão
 
 #### M4.3 — Ficha, chat e dados (⏳)
 - Boneco ligado à ficha (nome, vida, retrato); chat com balão sobre a cabeça; dados no histórico
