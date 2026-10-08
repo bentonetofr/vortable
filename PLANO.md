@@ -295,10 +295,14 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
 #### M4.1 — Integração com o Vorterium ✅ (falta aplicar a migration e testar logado)
 - `npm run vorterium` gera o motor como biblioteca (`vite.lib.config.ts`, `tsconfig.lib.json`) e
   copia pro Vorterium: código em `src/vendor/vortable`, assets em `public/vortable/assets`
-- Vorterium: seção **Vortable** na campanha (`features/vortable`), carregada só ao abrir
-  (chunk separado); mestre vê *Editar mundo | Jogar | Meu personagem*, jogador *Jogar | Meu personagem*
-- Migration `20240192000000_vortable_base.sql`: `vortable_worlds`, `vortable_zones`,
-  `vortable_characters` (RLS: membro lê; só o mestre mexe no mundo e nas zonas; cada um nos seus bonecos)
+- Vorterium: o Vortable **substitui a transmissão de tela** na sub-aba **Mesa** da Sessão
+  (a transmissão foi apagada; artes e documentos da Mesa ficam guardados no código, sem uso)
+  - **Jogador**: só a tela do jogo com o boneco dele; na primeira vez abre o criador (um boneco só)
+  - **Mestre**: *Editar mundo | Testar | Personagens | Jogadores*; em Jogadores troca o boneco
+    de cada um (até um criado por ele) ou apaga; bonecos sem jogador listados à parte
+- Migrations `20240192_vortable_base` (mundo, zonas, bonecos) e `20240193_vortable_controle`
+  (quem **cria** × quem **joga** cada boneco, tempo real); RLS: membro lê, só o mestre mexe no
+  mundo e nas zonas, mestre troca/apaga qualquer boneco
 - Pontes `WorldStorage` e `CharacterStorage` em Supabase (`vortableService.ts`)
 - ⏳ Falta: aplicar a migration no Supabase, testar logado, publicar no Vercel
 

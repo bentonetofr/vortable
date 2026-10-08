@@ -23,6 +23,15 @@ export interface CreatorOptions {
   storage: CharacterStorage
   /** Botão "voltar" (ex.: pro editor). Sem ele, o botão não aparece. */
   back?: { label: string; onClick: () => void }
+  /**
+   * Modo jogador: um boneco só, sem lista nem "Novo". Salvar guarda o boneco
+   * e chama `onSaved` (é como o jogador entra no jogo pela primeira vez).
+   */
+  single?: boolean
+  saveLabel?: string
+  /** Salvar também põe o boneco em uso (padrão: sim). O mestre cria NPCs sem tomar o lugar do dele. */
+  activateOnSave?: boolean
+  onSaved?: (c: CharacterSave) => void
 }
 
 const ANIM_LABELS: Record<AnimName, string> = { idle: 'Parado', walk: 'Andando', run: 'Correndo' }
@@ -87,12 +96,12 @@ export class CreatorUI {
     this.root = h('div', { class: 'vt-root vt-creator' },
       h('header', { class: 'vt-top' },
         h('span', { class: 'vt-brand' }, 'Vortable'),
-        h('span', { class: 'vt-top-title' }, 'Personagem'),
+        h('span', { class: 'vt-top-title' }, opts.single ? 'Crie seu boneco' : 'Personagem'),
         this.nameInput,
         h('span', { class: 'vt-sep' }),
-        this.iconBtn(ICONS.plus, 'Novo', () => this.newCharacter()),
-        this.iconBtn(ICONS.open, 'Personagens', () => this.openList()),
-        this.iconBtn(ICONS.save, 'Salvar', () => this.save()),
+        opts.single ? null : this.iconBtn(ICONS.plus, 'Novo', () => this.newCharacter()),
+        opts.single ? null : this.iconBtn(ICONS.open, 'Personagens', () => this.openList()),
+        this.iconBtn(ICONS.save, opts.saveLabel ?? 'Salvar', () => this.save(), opts.single ? 'vt-primary' : ''),
         h('span', { class: 'vt-spacer' }),
         opts.back ? this.iconBtn(ICONS.world, opts.back.label, () => this.goBack(), 'vt-primary') : null,
       ),
@@ -421,10 +430,11 @@ export class CreatorUI {
       this.character.name = this.nameInput.value.trim() || 'Sem nome'
       this.nameInput.value = this.character.name
       await this.opts.storage.save(this.character)
-      await this.opts.storage.setActive(this.character.id)
+      if (this.opts.activateOnSave !== false) await this.opts.storage.setActive(this.character.id)
       this.dirty = false
       this.refreshStatus()
-      this.toast(`"${this.character.name}" salvo. É ele que aparece quando você testar ou jogar.`)
+      this.toast(this.opts.single || this.opts.activateOnSave === false ? `"${this.character.name}" salvo.` : `"${this.character.name}" salvo. É ele que aparece quando você testar ou jogar.`)
+      this.opts.onSaved?.(structuredClone(this.character))
       return true
     } catch (err) {
       this.toast(`Não deu pra salvar: ${(err as Error).message}`, true)

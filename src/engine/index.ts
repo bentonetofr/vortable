@@ -14,7 +14,7 @@ import { EditorScene } from './editor/EditorScene'
 import { EditorState } from './editor/EditorState'
 import { EditorUI } from './editor/EditorUI'
 import { LocalWorldStorage, type WorldStorage } from './storage'
-import { newZone, type Appearance, type ZoneData } from './types'
+import { newZone, type Appearance, type CharacterSave, type ZoneData } from './types'
 import { setObjectCatalog, type ObjectCatalog } from './assets/objects'
 import { registerObjectArt } from './world/objects'
 import { hourToCycle, lightingOf, worldHour } from './world/daylight'
@@ -28,6 +28,7 @@ export * from './types'
 export * from './storage'
 export * from './character/storage'
 export { TERRAINS } from './assets/terrains'
+export { composeFrame as characterFrame } from './character/compose'
 export { defaultAppearance, randomAppearance, loadCharacterData, normalizeAppearance } from './character/catalog'
 
 export interface VortableOptions {
@@ -194,6 +195,11 @@ export interface CreatorMountOptions {
   storage?: CharacterStorage
   /** Botão de voltar (ex.: pro editor), opcional. */
   back?: { label: string; onClick: () => void }
+  /** Modo jogador (um boneco só). Ver CreatorOptions. */
+  single?: boolean
+  saveLabel?: string
+  activateOnSave?: boolean
+  onSaved?: (c: CharacterSave) => void
 }
 
 /** Criador de personagem (não usa o Phaser: só DOM e canvas). */
@@ -202,6 +208,10 @@ export function mountCharacterCreator(parent: HTMLElement, opts: CreatorMountOpt
     assetBase: opts.assetBase ?? './assets/',
     storage: opts.storage ?? new LocalCharacterStorage(),
     back: opts.back,
+    single: opts.single,
+    saveLabel: opts.saveLabel,
+    activateOnSave: opts.activateOnSave,
+    onSaved: opts.onSaved,
   })
   return { destroy: () => ui.destroy() }
 }
