@@ -138,7 +138,7 @@ export class EditorUI {
         this.testZoneEl = h('b', { class: 'vt-testzone' }),
         this.testClockEl = h('span', { class: 'vt-testclock' }),
         this.muteBtn = h('button', { class: 'vt-btn vt-mutebtn', title: 'Som (M)', onclick: () => this.toggleMute() }),
-        h('span', {}, h('kbd', {}, 'WASD'), ' anda, ', h('kbd', {}, 'Shift'), ' corre, ', h('kbd', {}, 'C'), ' colisões'),
+        h('span', {}, h('kbd', {}, 'WASD'), ' anda, ', h('kbd', {}, 'Shift'), ' corre, ', h('kbd', {}, 'C'), ' colisões, ', h('kbd', {}, 'M'), ' som'),
         h('button', { class: 'vt-btn vt-primary', html: `${ICONS.stop}<span>Voltar ao editor</span>`, onclick: () => this.stopTest() }),
       ),
     )
@@ -156,6 +156,8 @@ export class EditorUI {
       if (c === 'zone' || c === 'world' || state.selectedPortal !== this.shownPortal) this.renderPortal()
       // painel Luz: zona nova/desfeita (outra luz) ou outra luz selecionada
       if (this.tab === 'light' && (c === 'zone' || state.selectedLight !== this.shownLight)) this.renderPane()
+      // desfazer/abrir zona: o painel Sons e o de cômodos mostram a zona nova
+      if (this.tab === 'sound' && c === 'zone') this.renderPane()
       if (c === 'catalog') {
         this.catalogVersion++
         this.renderPane()
@@ -322,7 +324,11 @@ export class EditorUI {
           if (id === 'rooms') this.state.set({ tool: 'room' })
           if (id === 'light') this.state.set({ tool: 'light' })
           // abrir o painel Sons liga a prévia de som no editor
-          if (id === 'sound' && !readPrefs().editor) writePrefs({ editor: true })
+          if (id === 'sound') {
+            if (!readPrefs().editor) writePrefs({ editor: true })
+            // sem ferramenta de mapa ativa: clicar no mapa não põe luz nem cômodo sem querer
+            if (this.state.tool === 'light' || this.state.tool === 'room') this.state.set({ tool: 'select' })
+          }
           this.renderPane()
           this.refresh()
         },

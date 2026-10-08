@@ -47,6 +47,8 @@ export function swaySpec(def: ObjectDef, x: number, y: number): SwaySpec | null 
   const phase = (hash2(Math.round(x), Math.round(y)) % 1000) / 1000 * Math.PI * 2
   const c = def.category
   const spec = (amp: number, freq: number, anchor: SwaySpec['anchor'] = 'bottom'): SwaySpec => ({ amp, freq, anchor, phase, x, y })
+  // chão (folhas no chão, tapetes) não balança
+  if (def.kind === 'floor') return null
   if (HANGING.test(def.label)) return spec(Math.min(2, 0.6 + def.h * 0.03), 0.9, /varal|espantalho/i.test(def.label) ? 'bottom' : 'top')
   if (c === 'Árvores') return spec(Math.max(1.5, Math.min(4, def.h * 0.03)), 0.55)
   if (c === 'Arbustos') return spec(Math.max(1, Math.min(2.2, def.h * 0.035)), 0.8)

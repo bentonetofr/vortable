@@ -122,8 +122,8 @@ export class Layer {
       this.build()
     }
     const now = e.now
-    // trovões soltos: a camada é a vontade de trovejar, o volume é fixo
-    this.out!.gain.setTargetAtTime(this.id === 'thunder' ? (this.current > 0.001 ? 1 : 0) : this.current, now, 0.15)
+    // trovões soltos: a camada só decide quando trovejar; o volume de cada um é fixo
+    this.out!.gain.setTargetAtTime(this.id === 'thunder' ? 1 : this.current, now, 0.15)
     this.muffle!.frequency.setTargetAtTime(f.muffled ? 700 : 18000, now, 0.3)
     this.panner!.pan.setTargetAtTime(f.pan, now, 0.3)
     if (this.id === 'forest' && this.parts.length === 2) {

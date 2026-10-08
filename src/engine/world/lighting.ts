@@ -333,7 +333,8 @@ export class Lighting {
     const v = this.view()
     const t = this.time
     const outdoor = l.place === 'outdoor'
-    const wth = (this.weatherNow = weatherOf(l.weather))
+    // subterrâneo não tem céu: sem tempo
+    const wth = (this.weatherNow = weatherOf(l.place === 'underground' ? undefined : l.weather))
     const sun = sunAt(hour)
     // dentro de casa não venta (mas o que é pendurado ainda balança de leve)
     this.wind.update(dt, outdoor ? Math.max(l.wind ?? DEFAULT_WIND, wth.minWind) : 0)
@@ -536,10 +537,11 @@ function paint(rt: Phaser.GameObjects.RenderTexture, color: number) {
 /** Quadro da peça só acima da linha do pé (sem a sombra já desenhada na arte). */
 function shadowFrame(scene: Phaser.Scene, def: ObjectDef): string | null {
   const tex = scene.textures.get(sheetTexture(def.sheet))
-  const key = `${def.id}#sh`
-  if (tex.has(key)) return key
   const h = def.h - Math.max(0, def.sort)
   if (h < 4) return null
+  // a altura entra no nome: a curadoria pode mudar a linha do pé
+  const key = `${def.id}#sh${h}`
+  if (tex.has(key)) return key
   tex.add(key, 0, def.x, def.y, def.w, h)
   return key
 }

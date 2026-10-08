@@ -359,7 +359,7 @@ export class WeatherFx {
     } else {
       this.sky?.setVisible(false)
     }
-    if (w.fog > 0.01) {
+    if (w.fog > 0.01 && outdoor) {
       if (!this.fog) this.fog = this.scene.add.tileSprite(0, 0, 4, 4, mist).setOrigin(0, 0).setDepth(DEPTH_FOG).setTileScale(2)
       // neblina anda devagar, mesmo sem vento
       this.tile(this.fog, mist, v, this.time * (6 + 30 * S), this.time * 3, 512).setAlpha(w.fog * 0.55).setTint(w.fogColor)

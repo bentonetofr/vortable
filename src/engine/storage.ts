@@ -217,7 +217,12 @@ function parseSound(v: unknown): { sound?: ZoneSound } {
   const s = v as ZoneSound | null
   if (!s || typeof s !== 'object') return {}
   const layers: Record<string, number> = {}
-  for (const [k, n] of Object.entries(s.layers ?? {})) if (/^[a-z]+$/.test(k) && num(n) && n > 0) layers[k] = clamp(n, 0, 1)
+  // camadas antigas ('water') viram as novas; as desconhecidas caem
+  const ids = ['forest', 'spooky', 'wind', 'rain', 'storm', 'thunder', 'snow', 'stream', 'lake', 'waterfall', 'swamp', 'sea', 'cave', 'fire', 'torch']
+  for (const [k0, n] of Object.entries(s.layers ?? {})) {
+    const k = k0 === 'water' ? 'stream' : k0
+    if (ids.includes(k) && num(n) && n > 0) layers[k] = clamp(n, 0, 1)
+  }
   const out: ZoneSound = {
     ...(s.auto === false ? { auto: false } : {}),
     ...(Object.keys(layers).length ? { layers } : {}),
