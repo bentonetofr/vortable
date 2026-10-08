@@ -18,6 +18,8 @@ export class Player {
   private keys: Keys
   /** Parado à força (trocando de zona, cutscene): ignora o teclado. */
   frozen = false
+  /** Travado de fora (o mestre cobriu a tela do jogador): ignora o teclado, sem mexer no `frozen` das transições. */
+  locked = false
 
   constructor(scene: Phaser.Scene, private charKey: string, x: number, y: number, private dir: Dir = 'down') {
     this.sprite = scene.physics.add.sprite(x, y, `${charKey}:idle`, 0)
@@ -53,7 +55,7 @@ export class Player {
   }
 
   update() {
-    if (this.frozen) {
+    if (this.frozen || this.locked) {
       this.sprite.setVelocity(0, 0)
       this.play('idle')
       return

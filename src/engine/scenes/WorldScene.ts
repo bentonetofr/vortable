@@ -31,6 +31,8 @@ export interface WorldSceneData {
   onClock?: (hour: number) => void
   /** Deslocamento do relógio do mundo em ms (o teste do editor começa na hora da prévia). */
   timeOffset?: number
+  /** O teclado do boneco está travado agora? (lido ao abrir a cena e a cada zona nova) */
+  inputLocked?: () => boolean
 }
 
 const PLAYER_KEY = 'char:me'
@@ -122,6 +124,8 @@ export class WorldScene extends Phaser.Scene {
     // chega no meio da saída de destino; sem ela, no início da zona
     const at = door ? { x: door.x + door.w / 2, y: door.y + door.h / 2 + 5 } : zone.spawn
     this.player = new Player(this, PLAYER_KEY, at.x, at.y, arrival?.dir ?? 'down')
+    this.inputLocked = this.cfg.inputLocked?.() ?? this.inputLocked
+    this.player.locked = this.inputLocked
     this.physics.add.collider(this.player.sprite, solids)
     this.syncFootsteps(this.player.sprite)
     cam.centerOn(at.x, at.y)
@@ -167,6 +171,14 @@ export class WorldScene extends Phaser.Scene {
     }
     sprite.on(Phaser.Animations.Events.ANIMATION_START, onFrame)
     sprite.on(Phaser.Animations.Events.ANIMATION_UPDATE, onFrame)
+  }
+
+  private inputLocked = false
+
+  /** Trava/destrava o teclado do boneco (cena do mestre por cima da tela). */
+  setInputLocked(locked: boolean) {
+    this.inputLocked = locked
+    if (this.player) this.player.locked = locked
   }
 
   /** Troca a aparência do jogador sem recarregar a cena. */

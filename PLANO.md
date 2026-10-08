@@ -306,6 +306,11 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
   (quem **cria** × quem **joga** cada boneco, tempo real); RLS: membro lê, só o mestre mexe no
   mundo e nas zonas, mestre troca/apaga qualquer boneco
 - Pontes `WorldStorage` e `CharacterStorage` em Supabase (`vortableService.ts`)
+- **Cenas do mestre (estilo OBS)**: barra à direita das abas do mestre — *Ao vivo*, *Preto*,
+  *Pausa*, *Imagem* (escolhe uma arte/mapa da Mesa) e *Título* (texto grande) — vale na hora pra
+  todos os jogadores (canal Realtime `mesa:<campanha>`); a cena cobre o jogo com fade e trava o
+  teclado do boneco (`setInputLocked`); o aviso "Ao vivo" chega aos jogadores quando o mestre
+  abre o Vortable
 - ⏳ Falta: aplicar a migration no Supabase, testar logado, publicar no Vercel
 
 #### M4.2 — Multiplayer ao vivo (⏳)

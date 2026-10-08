@@ -56,6 +56,8 @@ const CURATE_URL = '/__vortable/curate'
 
 export interface VortableHandle {
   setAppearance(appearance: Appearance): Promise<void>
+  /** Trava o teclado do boneco (o mestre cobriu a tela com uma cena). */
+  setInputLocked(locked: boolean): void
   destroy(): void
 }
 
@@ -66,6 +68,7 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
   const storage = opts.storage ?? new LocalWorldStorage()
   let appearance = opts.appearance
 
+  let inputLocked = false
   let ui: EditorUI | null = null
   let state: EditorState | null = null
   let host = parent
@@ -78,6 +81,7 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
     timeOffset,
     onZone: (z) => ui?.showTestZone(z.name),
     onClock: (hour) => ui?.showTestClock(hour),
+    inputLocked: () => inputLocked,
   })
 
   /**
@@ -180,6 +184,10 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
     async setAppearance(a) {
       appearance = a
       if (game.scene.isActive('world')) await (game.scene.getScene('world') as WorldScene).setAppearance(a)
+    },
+    setInputLocked(locked) {
+      inputLocked = locked
+      if (game.scene.isActive('world')) (game.scene.getScene('world') as WorldScene).setInputLocked(locked)
     },
     destroy() {
       ui?.destroy()
