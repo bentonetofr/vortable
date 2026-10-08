@@ -159,9 +159,9 @@ function cornerMask(c: (TerrainDef | null)[], r: number) {
 }
 
 /**
- * Tiles bloqueados pelo terreno: 3+ cantos sólidos. Junta vizinhos na mesma
- * linha. Nos cômodos (zone.rooms) a estrutura manda: todo tile que toca a
- * parede é sólido, e todo tile da BORDA (cantos dentro e fora do cômodo)
+ * Bloqueios do terreno: cada canto sólido (água, buraco, abismo) bloqueia o
+ * quarto de tile em volta dele, como o desenho. Junta vizinhos. Nos cômodos
+ * (zone.rooms) a estrutura manda: todo tile que toca a parede é sólido, e todo tile da BORDA (cantos dentro e fora do cômodo)
  * também — é nele que a moldura e a faixa escura são desenhadas, a partir
  * da linha exata onde o piso acaba. Vale em qualquer fundo.
  */
@@ -177,23 +177,52 @@ export function solidTerrainRects(zone: ZoneData) {
     const n = (isIn(tx, ty) ? 1 : 0) + (isIn(tx + 1, ty) ? 1 : 0) + (isIn(tx, ty + 1) ? 1 : 0) + (isIn(tx + 1, ty + 1) ? 1 : 0)
     return n > 0 && n < 4
   }
+  // grade de quartos de tile (16 px): cada canto sólido bloqueia o quarto do
+  // tile mais perto dele — é o que o desenho cobre (água, buraco, abismo),
+  // então o boneco anda até a margem e não passa dela
+  const Q = TILE / 2, QW = zone.width * 2, QH = zone.height * 2
+  const grid = new Uint8Array(QW * QH)
+  const fill = (tx: number, ty: number, qx: number, qy: number) => (grid[(ty * 2 + qy) * QW + tx * 2 + qx] = 1)
   for (let ty = 0; ty < zone.height; ty++) {
-    let runStart = -1
-    for (let tx = 0; tx <= zone.width; tx++) {
-      let blocked = false
-      if (tx < zone.width) {
-        let n = 0
-        if (cornerTerrain(zone, tx, ty).solid) n++
-        if (cornerTerrain(zone, tx + 1, ty).solid) n++
-        if (cornerTerrain(zone, tx, ty + 1).solid) n++
-        if (cornerTerrain(zone, tx + 1, ty + 1).solid) n++
-        blocked = n >= 3 || isEdge(tx, ty) || isWall(tx, ty) || isWall(tx + 1, ty) || isWall(tx, ty + 1) || isWall(tx + 1, ty + 1)
+    for (let tx = 0; tx < zone.width; tx++) {
+      if (isEdge(tx, ty) || isWall(tx, ty) || isWall(tx + 1, ty) || isWall(tx, ty + 1) || isWall(tx + 1, ty + 1)) {
+        fill(tx, ty, 0, 0); fill(tx, ty, 1, 0); fill(tx, ty, 0, 1); fill(tx, ty, 1, 1)
+        continue
       }
-      if (blocked && runStart < 0) runStart = tx
-      if (!blocked && runStart >= 0) {
-        rects.push({ x: runStart * TILE, y: ty * TILE, w: (tx - runStart) * TILE, h: TILE })
-        runStart = -1
+      if (cornerTerrain(zone, tx, ty).solid) fill(tx, ty, 0, 0)
+      if (cornerTerrain(zone, tx + 1, ty).solid) fill(tx, ty, 1, 0)
+      if (cornerTerrain(zone, tx, ty + 1).solid) fill(tx, ty, 0, 1)
+      if (cornerTerrain(zone, tx + 1, ty + 1).solid) fill(tx, ty, 1, 1)
+    }
+  }
+  // junta quartos vizinhos na linha, depois linhas iguais empilhadas
+  const rows: { x: number; w: number }[][] = []
+  for (let qy = 0; qy < QH; qy++) {
+    const row: { x: number; w: number }[] = []
+    let start = -1
+    for (let qx = 0; qx <= QW; qx++) {
+      const on = qx < QW && grid[qy * QW + qx] === 1
+      if (on && start < 0) start = qx
+      if (!on && start >= 0) {
+        row.push({ x: start, w: qx - start })
+        start = -1
       }
+    }
+    rows.push(row)
+  }
+  const open = new Map<string, { x: number; y: number; w: number; h: number }>()
+  for (let qy = 0; qy <= QH; qy++) {
+    const now = new Set((rows[qy] ?? []).map((r) => `${r.x},${r.w}`))
+    for (const [key, r] of open) {
+      if (now.has(key)) continue
+      rects.push(r)
+      open.delete(key)
+    }
+    for (const r of rows[qy] ?? []) {
+      const key = `${r.x},${r.w}`
+      const o = open.get(key)
+      if (o) o.h += Q
+      else open.set(key, { x: r.x * Q, y: qy * Q, w: r.w * Q, h: Q })
     }
   }
   // vazio pintado à mão (fora dos cômodos) encostado em outro terreno: um
