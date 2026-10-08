@@ -46,7 +46,8 @@ const O = {
   totem: 'med-deco@65,226',
   statueAngel: 'med-deco@128,292', statueMaiden: 'med-deco@4,294', statueHood: 'med-deco@97,288',
   fountain: 'med-deco@0,576', chalice: 'base-cup@0,10', notice: 'med-deco@193,160',
-  ladder: 'plants@65,992', doormat: 'base-cabinets@162,17',
+  ladder: 'plants@65,992',
+  stairUp: 'stairs@0,0', stairDown: 'stairs@0,64',   // escadas de degraus (pacote "escadas", arte do Vortable)
   papers: 'int@289,66', rolledRed: 'med-deco@201,1216', rolledBrown: 'med-deco@201,1280',
   bush: 'plants@192,332', fern1: 'plants@1,264', fern2: 'plants@32,262', fernRed: 'plants@1,296', bamboo: 'plants@192,384',
   chest: 'base-chests@0,0', chestRound: 'base-chests@32,0',
@@ -175,15 +176,12 @@ function loungePlaza(f, ci, ri, brick) {
   f.putPx(O.candleTable, cx * TILE + 16 + 56, (r0 + 5) * TILE)
 }
 
-// escada: 3 escadas lado a lado encostadas na estante do beco + a área que leva ao outro andar
-const stairs = [] // { a: {floor, id, c, r}, b: {...} }
+// escada de degraus (3 tiles de largura × 2 de altura) cruzando o beco; a saída é a faixa de baixo
 function stairVisual(f, c, r, up) {
-  const y = r - 1
-  for (const dx of [-1, 0, 1]) f.put(O.ladder, c + dx, y, { dy: 2 })
-  f.put(O.doormat, c, r, { dy: -8 })
+  f.putPx(up ? O.stairUp : O.stairDown, c * TILE + 16, (r + 1) * TILE)
   f.light(`escada-${c}-${r}`, c * TILE + 16, (r - 0.2) * TILE, 150, up ? '#ffd9a0' : '#ffb870', 0.8, 0.2)
-  f.put(O.lampDouble, c - 1, r + 1, { dx: 0 })
-  f.put(O.notice, c + 1, r + 1, { dx: 0 })
+  f.put(O.lampDouble, c - 1, r + 1)
+  f.put(O.notice, c + 1, r + 1)
 }
 
 // luzes e lampiões nos cruzamentos dos becos

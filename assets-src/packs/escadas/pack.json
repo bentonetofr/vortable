@@ -1,0 +1,62 @@
+{
+  "name": "Escadas de degraus (arte original do Vortable)",
+  "license": "CC0 1.0 (arte própria, gerada por scripts/make-stairs.mjs)",
+  "source": "https://github.com/bentonetofr/vortable",
+  "sheets": [
+    {
+      "id": "stairs",
+      "file": "stairs.png",
+      "mode": "pieces",
+      "kind": "floor",
+      "category": "Escadas",
+      "label": "Escada",
+      "tags": [
+        "escada",
+        "degraus",
+        "andar",
+        "castelo"
+      ],
+      "collision": "none",
+      "pieces": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 96,
+          "h": 64
+        },
+        {
+          "x": 0,
+          "y": 64,
+          "w": 96,
+          "h": 64
+        },
+        {
+          "x": 0,
+          "y": 128,
+          "w": 96,
+          "h": 64
+        },
+        {
+          "x": 0,
+          "y": 192,
+          "w": 96,
+          "h": 64
+        }
+      ]
+    }
+  ],
+  "objects": {
+    "stairs@0,0": {
+      "label": "Escada de pedra (subindo)"
+    },
+    "stairs@0,64": {
+      "label": "Escada de pedra (descendo)"
+    },
+    "stairs@0,128": {
+      "label": "Escada de madeira (subindo)"
+    },
+    "stairs@0,192": {
+      "label": "Escada de madeira (descendo)"
+    }
+  }
+}

@@ -1,0 +1,2 @@
+Escadas de degraus: arte original gerada por scripts/make-stairs.mjs do Vortable.
+Licença: CC0 1.0 (domínio público).
