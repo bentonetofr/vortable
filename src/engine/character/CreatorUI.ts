@@ -44,6 +44,9 @@ export interface CreatorOptions {
 
 const ANIM_LABELS: Record<AnimName, string> = { idle: 'Parado', walk: 'Andando', run: 'Correndo' }
 
+/** Corpos da lista "Tipo de corpo" (o musculoso é um porte do masculino). */
+const BODY_CHOICES: BodyType[] = ['male', 'female', 'teen', 'child']
+
 /** Abas, na ordem. Peças que o catálogo põe em outro grupo são realocadas aqui. */
 const GROUP_ORDER = ['Corpo', 'Rosto', 'Cabelo', 'Maquiagem', 'Marcas', 'Roupa', 'Acessórios']
 const GROUP_OF: Record<string, string> = {
@@ -309,7 +312,7 @@ export class CreatorUI {
   private renderRows() {
     const keep = this.rowsEl.scrollTop
     const rows: Node[] = []
-    if (this.group === 'Corpo') rows.push(this.bodyRow(), this.heightRow(), this.skinRow())
+    if (this.group === 'Corpo') rows.push(this.bodyRow(), ...this.shapeRows(), this.heightRow(), this.skinRow())
     for (const s of this.slotsOfGroup()) rows.push(this.slotRow(s))
     this.rowsEl.replaceChildren(...rows)
     this.rowsEl.scrollTop = keep
@@ -320,19 +323,47 @@ export class CreatorUI {
     return h('button', { class: 'cp-arrow', title: dir < 0 ? 'Anterior' : 'Próximo', 'aria-label': dir < 0 ? 'Anterior' : 'Próximo', onclick }, dir < 0 ? '◀' : '▶')
   }
 
-  private bodyRow() {
-    const bodies = this.data.catalog.bodies
-    const a = this.appearance
-    const idx = bodies.indexOf(a.body)
-    const step = (d: number) => this.setBody(bodies[(idx + d + bodies.length) % bodies.length])
+  /** Uma linha de escolha com ◀ valor ▶ (sem peça do catálogo). */
+  private choiceRow(label: string, options: string[], index: number, onPick: (i: number) => void) {
+    const step = (d: number) => onPick((index + d + options.length) % options.length)
     return h('div', { class: 'cp-row cp-plain' },
-      h('div', { class: 'cp-row__head' }, h('span', { class: 'cp-row__label' }, 'Tipo de corpo'), h('span', { class: 'cp-row__count' }, `${idx + 1}/${bodies.length}`)),
+      h('div', { class: 'cp-row__head' }, h('span', { class: 'cp-row__label' }, label), h('span', { class: 'cp-row__count' }, `${index + 1}/${options.length}`)),
       h('div', { class: 'cp-row__ctl' },
         this.arrow(-1, () => step(-1)),
-        h('span', { class: 'cp-row__value' }, BODY_LABELS[a.body] ?? a.body),
+        h('span', { class: 'cp-row__value' }, options[index]),
         this.arrow(1, () => step(1)),
       ),
     )
+  }
+
+  /** Corpo: masculino, feminino, jovem esguio ou pequeno. (O musculoso é um porte do masculino.) */
+  private bodyRow() {
+    const a = this.appearance
+    const cur: BodyType = a.body === 'muscular' ? 'male' : a.body
+    return this.choiceRow('Tipo de corpo', BODY_CHOICES.map((b) => BODY_LABELS[b]), BODY_CHOICES.indexOf(cur), (i) => this.setBody(BODY_CHOICES[i]))
+  }
+
+  /** Porte do corpo: peito, bunda e peso no feminino; magro, normal, musculoso ou gordo no masculino. */
+  private shapeRows() {
+    const a = this.appearance
+    const sh = a.shape ?? {}
+    const lv = (v: number | undefined) => (v === -1 ? 0 : v === 1 ? 2 : 1)
+    const set = (key: 'bust' | 'hips' | 'weight', i: number) => this.update((x) => { x.shape = { ...x.shape, [key]: i - 1 } })
+    if (a.body === 'female') {
+      return [
+        this.choiceRow('Peito', ['Pequeno', 'Médio', 'Grande'], lv(sh.bust), (i) => set('bust', i)),
+        this.choiceRow('Bunda', ['Pequena', 'Média', 'Grande'], lv(sh.hips), (i) => set('hips', i)),
+        this.choiceRow('Porte', ['Magra', 'Normal', 'Gorda'], lv(sh.weight), (i) => set('weight', i)),
+      ]
+    }
+    if (a.body === 'male' || a.body === 'muscular') {
+      const idx = a.body === 'muscular' ? 2 : sh.weight === -1 ? 0 : sh.weight === 1 ? 3 : 1
+      return [this.choiceRow('Porte', ['Magro', 'Normal', 'Musculoso', 'Gordo'], idx, (i) => this.update((x) => {
+        this.swapBody(x, i === 2 ? 'muscular' : 'male')
+        x.shape = { ...x.shape, weight: i === 0 ? -1 : i === 3 ? 1 : 0 }
+      }))]
+    }
+    return [this.choiceRow('Porte', ['Magro', 'Normal', 'Gordo'], lv(sh.weight), (i) => set('weight', i))]
   }
 
   private heightRow() {
@@ -532,24 +563,27 @@ export class CreatorUI {
 
   private setBody(body: BodyType) {
     if (body === this.appearance.body) return
-    this.update((a) => {
-      // peças que não existem pro corpo novo: troca por uma parecida (mesmo nome) ou, em roupa de baixo, pela primeira da lista
-      for (const [slot, chosen] of Object.entries(a.slots)) {
-        const item = this.data.byId.get(chosen.id)
-        if (!item || item.bodies.includes(body)) continue
-        const options = itemsForSlot(this.data, slot, body)
-        const alt = options.find((i) => i.name === item.name) ?? (['legs', 'shoes'].includes(slot) ? options[0] : undefined)
-        if (alt) a.slots[slot] = { id: alt.id, ...(alt.variants ? { variant: alt.variants[0] } : {}), ...(chosen.colors ? { colors: chosen.colors } : {}) }
-      }
-      a.body = body
-      // cabeça humana acompanha o corpo (só o feminino usa a cabeça feminina)
-      const head = a.slots.head?.id ?? ''
-      if (head.includes('/human/')) {
-        const other = body === 'female' ? head.replace(/_male/, '_female') : head.replace('_female', '_male')
-        if (this.data.byId.has(other)) a.slots.head = { ...a.slots.head, id: other }
-      }
-    })
+    this.update((a) => this.swapBody(a, body))
     this.renderTabs()
+  }
+
+  /** Troca o corpo da aparência `a`: as peças que não existem pro corpo novo viram uma parecida (mesmo nome) ou, nas roupas de baixo, a primeira da lista. */
+  private swapBody(a: Appearance, body: BodyType) {
+    if (body === a.body) return
+    for (const [slot, chosen] of Object.entries(a.slots)) {
+      const item = this.data.byId.get(chosen.id)
+      if (!item || item.bodies.includes(body)) continue
+      const options = itemsForSlot(this.data, slot, body)
+      const alt = options.find((i) => i.name === item.name) ?? (['legs', 'shoes'].includes(slot) ? options[0] : undefined)
+      if (alt) a.slots[slot] = { id: alt.id, ...(alt.variants ? { variant: alt.variants[0] } : {}), ...(chosen.colors ? { colors: chosen.colors } : {}) }
+    }
+    a.body = body
+    // cabeça humana acompanha o corpo (só o feminino usa a cabeça feminina)
+    const head = a.slots.head?.id ?? ''
+    if (head.includes('/human/')) {
+      const other = body === 'female' ? head.replace(/_male/, '_female') : head.replace('_female', '_male')
+      if (this.data.byId.has(other)) a.slots.head = { ...a.slots.head, id: other }
+    }
   }
 
   private randomize() {
@@ -558,6 +592,8 @@ export class CreatorUI {
       a.body = r.body
       a.skin = r.skin
       a.slots = r.slots
+      a.height = r.height
+      a.shape = r.shape
     })
   }
 

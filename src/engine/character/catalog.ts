@@ -214,7 +214,13 @@ export function normalizeAppearance(data: CharacterData, a: Appearance): Appeara
   }
   const skin = data.palettes.body?.[a.skin] ? a.skin : 'light'
   const height = HEIGHTS.includes(a.height as (typeof HEIGHTS)[number]) && a.height !== 1 ? a.height : undefined
-  return { version: 2, body: a.body, skin, slots, ...(height ? { height } : {}) }
+  // porte: peito e bunda só no corpo feminino; peso em todos menos no musculoso
+  const lv = (v: number | undefined) => (v === -1 || v === 1 ? v : 0)
+  const bust = a.body === 'female' ? lv(a.shape?.bust) : 0
+  const hips = a.body === 'female' ? lv(a.shape?.hips) : 0
+  const weight = a.body === 'muscular' ? 0 : lv(a.shape?.weight)
+  const shape = bust || hips || weight ? { ...(bust ? { bust } : {}), ...(hips ? { hips } : {}), ...(weight ? { weight } : {}) } : undefined
+  return { version: 2, body: a.body, skin, slots, ...(height ? { height } : {}), ...(shape ? { shape } : {}) }
 }
 
 /** A cabeça que vale (a escolhida, já conferida) — as expressões olham pra ela. */
@@ -266,5 +272,7 @@ export function randomAppearance(data: CharacterData, rnd: () => number = Math.r
   for (const s of ['beard', 'mustache']) if (slots[s] && hairColor) slots[s].colors = { color: hairColor }
   // altura: quase sempre média
   const height = rnd() < 0.6 ? 1 : pick([...HEIGHTS])
-  return normalizeAppearance(data, { version: 2, body, skin, slots, height })
+  const lvl = () => { const r = rnd(); return r < 0.2 ? -1 : r < 0.75 ? 0 : 1 }
+  const shape = { bust: lvl(), hips: lvl(), weight: rnd() < 0.7 ? 0 : lvl() }
+  return normalizeAppearance(data, { version: 2, body, skin, slots, height, shape })
 }

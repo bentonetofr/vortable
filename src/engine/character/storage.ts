@@ -31,7 +31,7 @@ export function parseCharacter(json: unknown): CharacterSave | null {
     version: 1,
     id: c.id,
     name: typeof c.name === 'string' ? c.name : 'Sem nome',
-    appearance: { version: 2, body: a.body as BodyType, skin: typeof a.skin === 'string' ? a.skin : 'light', slots: a.slots, ...(typeof a.height === 'number' ? { height: a.height } : {}) },
+    appearance: { version: 2, body: a.body as BodyType, skin: typeof a.skin === 'string' ? a.skin : 'light', slots: a.slots, ...(typeof a.height === 'number' ? { height: a.height } : {}), ...(a.shape && typeof a.shape === 'object' ? { shape: a.shape } : {}) },
     updatedAt: typeof c.updatedAt === 'number' ? c.updatedAt : 0,
   }
 }

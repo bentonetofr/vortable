@@ -8,6 +8,7 @@
 import Phaser from 'phaser'
 import { layerDir, loadCharacterData, type CharItem, type CharacterData } from './catalog'
 import { PROC_DEFS, paintProc, type ProcDef } from './proc'
+import { reshapeSheet } from './reshape'
 import type { Appearance, AppearanceItem, Dir } from '../types'
 
 export const FRAME = 64
@@ -167,6 +168,8 @@ export async function composeAnim(assetBase: string, a: Appearance, anim: AnimNa
     octx.drawImage(sheet, 0, 0)
     if (l.slot === 'head') headData = sheet.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, sheet.width, sheet.height)
   })
+  // porte (peito, bunda, peso): ajusta o desenho pronto, roupa junto (as miniaturas de um espaço só ficam como estão)
+  if (!only) reshapeSheet(out, a, frames)
   return out
 }
 
@@ -197,6 +200,16 @@ export async function composeFrame(assetBase: string, a: Appearance, row = 2, co
     octx.drawImage(tile, 0, 0)
     if (l.slot === 'head') headTile = tctx.getImageData(0, 0, FRAME, FRAME)
   })
+  // porte: o quadro entra numa folha de 1 coluna × 4 linhas só pra reaproveitar o ajuste
+  if (a.shape && row >= 0) {
+    const sheet = document.createElement('canvas')
+    sheet.width = FRAME
+    sheet.height = 4 * FRAME
+    sheet.getContext('2d')!.drawImage(out, 0, row * FRAME)
+    reshapeSheet(sheet, a, 1)
+    octx.clearRect(0, 0, FRAME, FRAME)
+    octx.drawImage(sheet, 0, row * FRAME, FRAME, FRAME, 0, 0, FRAME, FRAME)
+  }
   return out
 }
 

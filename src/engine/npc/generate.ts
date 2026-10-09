@@ -221,7 +221,12 @@ export function generateNpc(data: CharacterData, opts: GenerateOptions): NpcDraf
   // altura: gente comum é de altura média; um pouco de variedade (idosos tendem a ser mais baixos)
   const hr = rnd()
   const height = elder ? (hr < 0.5 ? 0.92 : 1) : hr < 0.6 ? 1 : hr < 0.8 ? 0.92 : hr < 0.95 ? 1.08 : 0.84
-  const appearance = normalizeAppearance(data, { version: 2, body, skin, slots, height })
+  // porte: a maioria normal; um pouco de gente magra e gorda, e variedade de peito e bunda nas mulheres
+  const wr = rnd()
+  const weight = body === 'muscular' ? 0 : wr < 0.1 ? -1 : wr < 0.22 ? 1 : 0
+  const mild = () => { const r = rnd(); return r < 0.2 ? -1 : r < 0.8 ? 0 : 1 }
+  const shape = { weight, ...(body === 'female' ? { bust: mild(), hips: mild() } : {}) }
+  const appearance = normalizeAppearance(data, { version: 2, body, skin, slots, height, shape })
 
   // nome e registro do que foi usado (a leva evita repetir)
   const first = pick(sex === 'male' ? MALE_NAMES : FEMALE_NAMES, rnd)
