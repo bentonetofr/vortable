@@ -108,12 +108,27 @@ interface PlacedLayer {
   slot: string
   /** Peça desenhada por código: pinta no rosto em vez de carregar imagem. */
   proc?: { def: ProcDef; color?: string }
+  /** Versão masculina da mesma camada: vale nas linhas do tronco "liso" (sem peito e/ou sem bunda). */
+  alt?: string
+}
+
+/** Peças do tronco e da cintura pra baixo que trocam pela versão masculina quando o corpo feminino é "liso". */
+const FLAT_SLOTS = new Set(['body', 'clothes', 'vest', 'jacket', 'armour', 'overalls', 'legs', 'belt', 'sash', 'shoulders', 'arms', 'socks', 'apron'])
+
+/** Linhas do quadro que usam o desenho masculino: tronco liso (despeitada) e/ou quadril reto (desbundada). */
+export function flatRanges(a: Appearance): [number, number][] {
+  if (a.body !== 'female') return []
+  const out: [number, number][] = []
+  if (a.shape?.bust === -2) out.push([36, 46])
+  if (a.shape?.hips === -2) out.push([46, 56])
+  return out
 }
 
 /** Todas as camadas da aparência, em ordem de desenho. */
 function layersOf(data: CharacterData, assetBase: string, a: Appearance, anim: AnimName, only?: string): PlacedLayer[] {
   const out: PlacedLayer[] = []
   let order = 0
+  const flat = flatRanges(a).length > 0
   for (const [slot, chosen] of Object.entries(a.slots)) {
     if (only && slot !== only) continue
     const item = data.byId.get(chosen.id)
@@ -129,7 +144,9 @@ function layersOf(data: CharacterData, assetBase: string, a: Appearance, anim: A
     for (const layer of item.layers) {
       const dir = layerDir(layer, a.body)
       const rel = chosen.variant ? `${dir}${file}/${chosen.variant}.png` : `${dir}${file}.png`
-      out.push({ z: layer.z, order: order++, url: assetBase + data.catalog.sheets + rel, fallback: !has, map, slot })
+      const altDir = flat && FLAT_SLOTS.has(slot) && a.body === 'female' ? layer.paths.male : undefined
+      const alt = altDir ? assetBase + data.catalog.sheets + (chosen.variant ? `${altDir}${file}/${chosen.variant}.png` : `${altDir}${file}.png`) : undefined
+      out.push({ z: layer.z, order: order++, url: assetBase + data.catalog.sheets + rel, fallback: !has, map, slot, ...(alt ? { alt } : {}) })
     }
   }
   return out.sort((x, y) => x.z - y.z || x.order - y.order)
@@ -149,6 +166,9 @@ export async function composeAnim(assetBase: string, a: Appearance, anim: AnimNa
     console.warn('[vortable] camada do boneco não carregou:', err.message)
     return null
   }))))
+  // versões masculinas (tronco liso / quadril reto)
+  const alts = await Promise.all(layers.map((l) => (l.alt ? loadImage(l.alt).catch(() => null) : null)))
+  const ranges = flatRanges(a)
   // a cabeça (já na cor da pele) serve de máscara pras marcas do rosto
   let headData: ImageData | null = null
   layers.forEach((l, i) => {
@@ -165,7 +185,21 @@ export async function composeAnim(assetBase: string, a: Appearance, anim: AnimNa
     const src = l.fallback ? fromWalk(img, anim) : img
     sheet.getContext('2d', { willReadFrequently: true })!.drawImage(src, 0, 0)
     recolor(sheet, l.map)
-    octx.drawImage(sheet, 0, 0)
+    const altImg = alts[i]
+    if (altImg && ranges.length) {
+      // as linhas do tronco liso vêm da versão masculina; o resto, da feminina
+      const altSheet = document.createElement('canvas')
+      altSheet.width = out.width
+      altSheet.height = out.height
+      altSheet.getContext('2d', { willReadFrequently: true })!.drawImage(l.fallback ? fromWalk(altImg, anim) : altImg, 0, 0)
+      recolor(altSheet, l.map)
+      for (let row = 0; row < 4; row++) {
+        let y = 0
+        const slice = (img: HTMLCanvasElement, y0: number, y1: number) => { if (y1 > y0) octx.drawImage(img, 0, row * FRAME + y0, out.width, y1 - y0, 0, row * FRAME + y0, out.width, y1 - y0) }
+        for (const [y0, y1] of ranges) { slice(sheet, y, y0); slice(altSheet, y0, y1); y = y1 }
+        slice(sheet, y, FRAME)
+      }
+    } else octx.drawImage(sheet, 0, 0)
     if (l.slot === 'head') headData = sheet.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, sheet.width, sheet.height)
   })
   // porte (peito, bunda, peso): ajusta o desenho pronto, roupa junto (as miniaturas de um espaço só ficam como estão)

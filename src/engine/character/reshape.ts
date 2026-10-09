@@ -9,7 +9,7 @@
 
 import type { Appearance } from '../types'
 
-/** Níveis -1 (menor), 0 (como o LPC desenha) e 1 (maior). */
+/** Níveis -2 (nenhum: tronco liso / quadril reto, só feminino), -1 (menor), 0 (como o LPC desenha) e 1 (maior). */
 export interface Shape {
   bust?: number
   hips?: number
@@ -17,11 +17,11 @@ export interface Shape {
 }
 
 /** O quanto cada nível mexe na largura (fração). */
-const BUST = { '-1': -0.07, '0': 0, '1': 0.17 } as const
-const HIPS = { '-1': -0.07, '0': 0, '1': 0.17 } as const
-const WEIGHT = { '-1': -0.13, '0': 0, '1': 0.22 } as const
+const BUST = { '-2': -0.05, '-1': -0.07, '0': 0, '1': 0.17 } as const
+const HIPS = { '-2': -0.05, '-1': -0.07, '0': 0, '1': 0.17 } as const
+const WEIGHT = { '-2': 0, '-1': -0.13, '0': 0, '1': 0.22 } as const
 
-const lvl = (v: number | undefined) => (v === -1 || v === 1 ? v : 0)
+const lvl = (v: number | undefined) => (v === -2 || v === -1 || v === 1 ? v : 0)
 
 /** Linha do quadro (de 64) onde começa o tronco abaixo da cabeça. */
 const TORSO_Y = 37
@@ -46,9 +46,9 @@ export function hasShape(a: Appearance) {
 export function reshapeSheet(canvas: HTMLCanvasElement, a: Appearance, frames: number) {
   if (!hasShape(a)) return
   const s = a.shape!
-  const bust = BUST[String(lvl(s.bust)) as '-1']
-  const hips = HIPS[String(lvl(s.hips)) as '-1']
-  const weight = WEIGHT[String(lvl(s.weight)) as '-1']
+  const bust = BUST[String(lvl(s.bust)) as '-2']
+  const hips = HIPS[String(lvl(s.hips)) as '-2']
+  const weight = WEIGHT[String(lvl(s.weight)) as '-2']
   const ctx = canvas.getContext('2d', { willReadFrequently: true })!
   const src = ctx.getImageData(0, 0, canvas.width, canvas.height)
   const out = new ImageData(new Uint8ClampedArray(src.data), canvas.width, canvas.height)

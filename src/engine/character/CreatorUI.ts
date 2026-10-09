@@ -348,11 +348,14 @@ export class CreatorUI {
     const a = this.appearance
     const sh = a.shape ?? {}
     const lv = (v: number | undefined) => (v === -1 ? 0 : v === 1 ? 2 : 1)
+    // peito e bunda têm um nível a mais: -2 = nenhum (despeitada, desbundada)
+    const lv4 = (v: number | undefined) => (v === -2 ? 0 : v === -1 ? 1 : v === 1 ? 3 : 2)
     const set = (key: 'bust' | 'hips' | 'weight', i: number) => this.update((x) => { x.shape = { ...x.shape, [key]: i - 1 } })
+    const set4 = (key: 'bust' | 'hips', i: number) => this.update((x) => { x.shape = { ...x.shape, [key]: i - 2 } })
     if (a.body === 'female') {
       return [
-        this.choiceRow('Peito', ['Pequeno', 'Médio', 'Grande'], lv(sh.bust), (i) => set('bust', i)),
-        this.choiceRow('Bunda', ['Pequena', 'Média', 'Grande'], lv(sh.hips), (i) => set('hips', i)),
+        this.choiceRow('Peito', ['Nenhum (despeitada)', 'Pequeno', 'Médio', 'Grande'], lv4(sh.bust), (i) => set4('bust', i)),
+        this.choiceRow('Bunda', ['Nenhuma (desbundada)', 'Pequena', 'Média', 'Grande'], lv4(sh.hips), (i) => set4('hips', i)),
         this.choiceRow('Porte', ['Magra', 'Normal', 'Gorda'], lv(sh.weight), (i) => set('weight', i)),
       ]
     }

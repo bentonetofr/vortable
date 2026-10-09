@@ -215,9 +215,9 @@ export function normalizeAppearance(data: CharacterData, a: Appearance): Appeara
   const skin = data.palettes.body?.[a.skin] ? a.skin : 'light'
   const height = HEIGHTS.includes(a.height as (typeof HEIGHTS)[number]) && a.height !== 1 ? a.height : undefined
   // porte: peito e bunda só no corpo feminino; peso em todos menos no musculoso
-  const lv = (v: number | undefined) => (v === -1 || v === 1 ? v : 0)
-  const bust = a.body === 'female' ? lv(a.shape?.bust) : 0
-  const hips = a.body === 'female' ? lv(a.shape?.hips) : 0
+  const lv = (v: number | undefined, min = -1) => (v === 1 || (v !== undefined && v < 0 && v >= min) ? v : 0)
+  const bust = a.body === 'female' ? lv(a.shape?.bust, -2) : 0
+  const hips = a.body === 'female' ? lv(a.shape?.hips, -2) : 0
   const weight = a.body === 'muscular' ? 0 : lv(a.shape?.weight)
   const shape = bust || hips || weight ? { ...(bust ? { bust } : {}), ...(hips ? { hips } : {}), ...(weight ? { weight } : {}) } : undefined
   return { version: 2, body: a.body, skin, slots, ...(height ? { height } : {}), ...(shape ? { shape } : {}) }
