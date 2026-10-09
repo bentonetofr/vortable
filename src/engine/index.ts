@@ -20,6 +20,8 @@ import { registerObjectArt } from './world/objects'
 import { formatHour, hourToCycle, skyOf, worldHour } from './world/daylight'
 import { DAY_MINUTES } from './types'
 import { AudioEngine, setAudioBase } from './audio/engine'
+import { readPrefs, writePrefs } from './audio/prefs'
+import type { Surface } from './audio/steps'
 import { NetHub, type LiveSound, type NetLink } from './net/hub'
 
 import { CreatorUI } from './character/CreatorUI'
@@ -35,6 +37,8 @@ export { defaultAppearance, randomAppearance, loadCharacterData, normalizeAppear
 
 export { parseNet, REACTIONS } from './net/hub'
 export type { LiveSound } from './net/hub'
+export { ICONS as EDITOR_ICONS } from './editor/icons'
+export { SURFACE_LABELS } from './audio/steps'
 export { LAYERS as SOUND_LAYERS } from './audio/ambience'
 export type { NetLink, NetMsg, NetHello, NetState, NetAnim, NetEnv, NetReact } from './net/hub'
 export { formatHour }
@@ -111,6 +115,20 @@ export interface WatchControls {
   setEnv(env: { zone: string; hour: number | null; weather: string | null; wind: number | null; sound?: LiveSound | null }): void
   /** Ajuste que está valendo agora (pra a interface mostrar). */
   envs(): { zone: string; hour: number | null; weather: string | null; wind: number | null; sound: LiveSound | null }[]
+  /** Som da zona que o mestre ouve no Controle (os jogadores ouvem o deles). */
+  audio: {
+    /** Nível de cada camada agora (0–1). */
+    levels(): Record<string, number>
+    /** "Ouvir" ligado? */
+    listening(): boolean
+    listen(on: boolean): void
+    prefs(): { master: number; muted: boolean; steps: number }
+    setPrefs(patch: { master?: number; muted?: boolean; steps?: number }): void
+    /** Ouvir o passo num chão. */
+    previewStep(surface: string): void
+    /** Ouvir um trovão. */
+    thunderNow(): void
+  }
   /** Hora do mundo definida no editor: fixa (número) ou ciclo (null), e a duração do dia em minutos. */
   sky(): { hour: number | null; dayMinutes: number }
 }
@@ -140,6 +158,8 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
   let appearance = opts.appearance
 
   let inputLocked = false
+  /** Câmera do mestre: o "Ouvir" está ligado? (vale nas trocas de zona) */
+  let watchListening = true
   const hub = opts.net ? new NetHub(opts.net) : undefined
   let ui: EditorUI | null = null
   let state: EditorState | null = null
@@ -159,6 +179,7 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
     hub,
     watch: mode === 'watch',
     listen: opts.listen,
+    audioOn: () => watchListening,
   })
 
   /**
@@ -303,6 +324,23 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
       setEnv: (env) => hub?.setEnv(env),
       envs: () => [...(hub?.envs.values() ?? [])].map(({ zone, hour, weather, wind, sound }) => ({ zone, hour, weather, wind, sound: sound ?? null })),
       sky: () => world()?.watchSky() ?? { hour: null, dayMinutes: DAY_MINUTES },
+      audio: {
+        levels: () => (world()?.watchAudio()?.levels() ?? {}) as Record<string, number>,
+        listening: () => watchListening,
+        listen: (on) => {
+          watchListening = on
+          const a = world()?.watchAudio()
+          if (a) a.enabled = on
+        },
+        prefs: () => { const p = readPrefs(); return { master: p.master, muted: p.muted, steps: p.steps } },
+        setPrefs: (patch) => {
+          writePrefs(patch)
+          const scene = game.scene.getScenes(true)[0]
+          if (scene) AudioEngine.of(scene)?.applyPrefs()
+        },
+        previewStep: (surface) => world()?.watchAudio()?.previewStep(surface as Surface),
+        thunderNow: () => world()?.watchAudio()?.thunderNow(),
+      },
     }
     : undefined
 

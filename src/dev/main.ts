@@ -73,6 +73,8 @@ if (params.has('personagem')) {
     onEditCharacter: () => go('?personagem'),
     curate: import.meta.env.DEV,
     net: play ? devNet() : undefined,
+    // a câmera do mestre também ouve o som da zona (como no Controle do Vorterium)
+    listen: watching,
   })
 
   if (import.meta.env.DEV) (window as unknown as { __handle?: unknown }).__handle = vortable

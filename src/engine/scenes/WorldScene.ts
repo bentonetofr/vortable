@@ -53,8 +53,10 @@ export interface WorldSceneData {
   follow?: string
   /** Zoom da câmera enquanto acompanha alguém (padrão 2, o do jogo). */
   followZoom?: number
-  /** Observador que também ouve os sons da zona (espectador; o mestre não precisa). */
+  /** Observador que também ouve os sons da zona (espectador; o mestre no Controle). */
   listen?: boolean
+  /** Observador que ouve: o "Ouvir" está ligado? (lido a cada zona nova) */
+  audioOn?: () => boolean
 }
 
 const PLAYER_KEY = 'char:me'
@@ -138,6 +140,7 @@ export class WorldScene extends Phaser.Scene {
     this.events.on(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
     // o observador (mestre) não ouve os sons da zona
     this.audio = this.cfg.watch && !this.cfg.listen ? null : ZoneAudio.create(this, zone)
+    if (this.audio) this.audio.enabled = this.cfg.audioOn?.() ?? true
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.events.off(Phaser.Scenes.Events.PRE_RENDER, this.preRender, this)
       this.audio?.destroy()
@@ -535,6 +538,11 @@ export class WorldScene extends Phaser.Scene {
 
   private npcNoScroll = (e: KeyboardEvent) => {
     if (!isTyping() && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault()
+  }
+
+  /** O som da zona (pra o painel Sons do mestre: níveis, passos, trovão). */
+  watchAudio() {
+    return this.audio
   }
 
   /** Hora do mundo definida no editor (fixa ou ciclo). */
