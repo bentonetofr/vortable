@@ -540,6 +540,11 @@ export class WorldScene extends Phaser.Scene {
     if (!isTyping() && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault()
   }
 
+  /** Hora que a cena está mostrando agora (0–24), pro relógio do Controle. */
+  watchClock() {
+    return this.lighting?.hour ?? 12
+  }
+
   /** O som da zona (pra o painel Sons do mestre: níveis, passos, trovão). */
   watchAudio() {
     return this.audio

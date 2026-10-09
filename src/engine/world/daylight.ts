@@ -231,6 +231,17 @@ export function worldHour(dayMinutes = DAY_MINUTES, now = Date.now()) {
   return cycleToHour(hourToCycle(6) + (now % day) / day) % 24
 }
 
+/**
+ * Quanto (ms) somar ao relógio pro ciclo marcar `hour` agora, e seguir correndo dali (calibrar a hora
+ * sem parar o tempo). Vale pro ciclo de `dayMinutes` minutos.
+ */
+export function shiftForHour(hour: number, dayMinutes = DAY_MINUTES, now = Date.now()) {
+  const day = dayMinutes * 60_000
+  const want = hourToCycle(hour) - hourToCycle(6)
+  const diff = (((want - (now % day) / day) % 1) + 1) % 1
+  return Math.round(diff * day)
+}
+
 /** Hora do mundo agora (a mesma em todas as zonas): a fixa, ou a do ciclo. */
 export function skyHour(sky: WorldSky, now = Date.now()) {
   return sky.hour ?? worldHour(sky.dayMinutes, now)

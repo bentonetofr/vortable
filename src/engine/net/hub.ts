@@ -33,7 +33,7 @@ export const NPC_PEER = 'npc:'
 export interface NetState { t: 'state'; id: string; zone: string; x: number; y: number; dir: Dir; anim: NetAnim }
 /** Sons ao vivo do mestre: `auto` = as camadas seguem o mundo; `layers` = camadas postas à mão (volume 0–1). */
 export interface LiveSound { auto: boolean; layers: Record<string, number> }
-export interface NetEnv { t: 'env'; zone: string; hour: number | null; weather: string | null; wind: number | null; sound?: LiveSound | null; dayMinutes?: number | null }
+export interface NetEnv { t: 'env'; zone: string; hour: number | null; weather: string | null; wind: number | null; sound?: LiveSound | null; dayMinutes?: number | null; timeShift?: number | null }
 /** Reações que o espectador pode mandar. */
 export const REACTIONS = ['👏', '😮', '😂', '❤️', '🔥', '🎉', '😱', '🤔'] as const
 export interface NetReact { t: 'react'; id: string; name: string; emoji: string; zone: string; x: number; y: number }
@@ -98,6 +98,7 @@ export function parseNet(raw: unknown): NetMsg | null {
         wind: num(m.wind) ? Math.min(1, Math.max(0, m.wind)) : null,
         sound: parseLiveSound(m.sound),
         dayMinutes: num(m.dayMinutes) && m.dayMinutes >= 1 && m.dayMinutes <= 1440 ? m.dayMinutes : null,
+        timeShift: num(m.timeShift) && Math.abs(m.timeShift) < 1e11 ? m.timeShift : null,
       }
     case 'react':
       if (typeof m.id !== 'string' || typeof m.zone !== 'string' || !num(m.x) || !num(m.y)) return null
