@@ -11,6 +11,7 @@ import {
 import { buildGeneratedTerrains } from '../assets/genTerrain'
 import { CATALOG_URL, setObjectCatalog, sheetTexture, type ObjectCatalog } from '../assets/objects'
 import { registerObjectArt } from '../world/objects'
+import { loaderCover } from '../ui/loader'
 
 export class BootScene extends Phaser.Scene {
   constructor(private assetBase: string, private onReady: () => void) {
@@ -18,10 +19,19 @@ export class BootScene extends Phaser.Scene {
   }
 
   private failed: string[] = []
-  private status?: Phaser.GameObjects.Text
+  /** O cavaleiro correndo, por cima do palco enquanto a arte carrega. */
+  private cover?: HTMLElement
 
   preload() {
-    this.status = this.add.text(16, 16, 'Carregando...', { color: '#a08e7a', fontFamily: 'system-ui' })
+    const host = this.game.canvas.parentElement
+    if (host) {
+      if (getComputedStyle(host).position === 'static') host.style.position = 'relative'
+      this.cover = loaderCover(this.assetBase)
+      host.append(this.cover)
+    }
+    const drop = () => this.dropCover()
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, drop)
+    this.events.once(Phaser.Scenes.Events.DESTROY, drop)
     this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, (file: Phaser.Loader.File) => this.failed.push(file.src))
     this.load.image(TERRAIN_TEXTURE, this.assetBase + TERRAIN_URL)
     this.load.json('catalog', this.assetBase + CATALOG_URL)
@@ -32,7 +42,13 @@ export class BootScene extends Phaser.Scene {
   private fail() {
     console.error('[vortable] arte não carregou:', this.failed)
     const lines = ['Não deu pra carregar a arte do Vortable:', ...this.failed, '', 'Confira a pasta de assets e recarregue.']
-    this.status?.setText(lines.join('\n')).setColor('#ef4444')
+    this.dropCover()
+    this.add.text(16, 16, lines.join('\n'), { color: '#ef4444', fontFamily: 'system-ui' })
+  }
+
+  private dropCover() {
+    this.cover?.remove()
+    this.cover = undefined
   }
 
   create() {
@@ -52,6 +68,7 @@ export class BootScene extends Phaser.Scene {
       if (this.failed.length) return this.fail()
       this.registerTerrains()
       registerObjectArt(this, catalog)
+      this.dropCover()
       this.onReady()
     })
     this.load.start()

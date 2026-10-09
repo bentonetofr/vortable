@@ -5,6 +5,7 @@
 // ────────────────────────────────────────────────────────
 
 import { h } from '../ui/dom'
+import { loaderEl } from '../ui/loader'
 import { ICONS } from './icons'
 import { loadCharacterData, type CharacterData } from '../character/catalog'
 import { composeFrame } from '../character/compose'
@@ -66,7 +67,7 @@ export class NpcPanel {
     this.opened = true
     this.el.hidden = false
     if (!this.data) {
-      this.body.replaceChildren(h('p', { class: 'vt-npc-note' }, 'Carregando o catálogo de personagens...'))
+      this.body.replaceChildren(h('div', { class: 'vt-npc-note', style: 'display:flex;justify-content:center' }, loaderEl(this.hooks.assetBase, true)))
       try {
         this.data = await loadCharacterData(this.hooks.assetBase)
       } catch (err) {

@@ -8,6 +8,7 @@
 import editorCss from '../editor/editor.css?inline'
 import css from './creator.css?inline'
 import { h, injectStyle } from '../ui/dom'
+import { loaderCover } from '../ui/loader'
 import { creditsBody } from '../ui/credits'
 import { ICONS } from '../editor/icons'
 import {
@@ -58,6 +59,8 @@ export class CreatorUI {
   private slotsEl: HTMLDivElement
   private optionsEl: HTMLDivElement
   private statusEl: HTMLElement
+  /** O cavaleiro correndo, por cima do criador enquanto o catálogo carrega. */
+  private loading?: HTMLElement
   private animButtons = new Map<AnimName, HTMLButtonElement>()
   private thumbObserver: IntersectionObserver | null = null
   private baseThumb: Promise<HTMLCanvasElement> | null = null
@@ -129,7 +132,9 @@ export class CreatorUI {
     this.root.addEventListener('click', (e) => (e.target as HTMLElement).closest('button')?.blur())
     window.addEventListener('keydown', this.onKey)
     window.addEventListener('beforeunload', this.onBeforeUnload)
-    this.statusEl.textContent = 'Carregando o catálogo...'
+    // o cavaleiro corre por cima do criador até o catálogo chegar
+    this.loading = loaderCover(opts.assetBase)
+    this.root.append(this.loading)
     this.init()
   }
 
@@ -137,6 +142,7 @@ export class CreatorUI {
     try {
       this.data = await loadCharacterData(this.opts.assetBase)
     } catch (err) {
+      this.loading?.remove()
       this.statusEl.textContent = `Não deu pra carregar o catálogo de personagem: ${(err as Error).message}`
       return
     }
@@ -155,6 +161,7 @@ export class CreatorUI {
     this.refreshAnimButtons()
     this.recompose()
     this.loop()
+    this.loading?.remove()
   }
 
   destroy() {

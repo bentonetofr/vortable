@@ -2,6 +2,7 @@
 // exigem que os autores sejam creditados onde a arte aparece.
 
 import { h } from './dom'
+import { loaderEl } from './loader'
 import { CATALOG_URL, objectCatalog, type ObjectCatalog, type PackInfo } from '../assets/objects'
 
 const FIXED = [
@@ -17,7 +18,7 @@ export function creditsBody(assetBase: string): Node[] {
     '(CC-BY-SA 3.0, GPL 3.0, OGA-BY e outras indicadas abaixo). Obrigado a todos.',
   )
   const section = ({ title, file }: { title: string; file: string }) => {
-    const pre = h('pre', { class: 'vt-credits-text' }, 'Carregando...')
+    const pre = h('pre', { class: 'vt-credits-text' }, loaderEl(assetBase, true))
     fetch(assetBase + file)
       .then((r) => (r.ok ? r.text() : Promise.reject(new Error(String(r.status)))))
       .then((t) => { pre.textContent = t.trim() })
