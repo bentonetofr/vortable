@@ -21,6 +21,9 @@ export class Player {
   /** Travado de fora (o mestre cobriu a tela do jogador): ignora o teclado, sem mexer no `frozen` das transições. */
   locked = false
 
+  /** Velocidade em relação à normal (o rato é um pouco mais ligeiro). */
+  speedScale = 1
+
   constructor(scene: Phaser.Scene, private charKey: string, x: number, y: number, private dir: Dir = 'down') {
     this.sprite = scene.physics.add.sprite(x, y, `${charKey}:idle`, 0)
     this.sprite.setOrigin(0.5, FEET_Y / 64)
@@ -36,6 +39,20 @@ export class Player {
       w: K.W, a: K.A, s: K.S, d: K.D, shift: K.SHIFT,
     }, false) as Keys
     this.play('idle')
+  }
+
+  /** Troca de boneco (outra chave de texturas) sem mexer na posição. */
+  setSkin(charKey: string) {
+    this.charKey = charKey
+    this.sprite.setTexture(`${charKey}:idle`, 0)
+    this.sprite.anims.stop()
+    this.play(this.current)
+  }
+
+  /** Caixa de colisão dos pés (a do boneco é 18×10; a de um rato é bem menor). */
+  setFeetBox(w: number, h: number) {
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body
+    body.setSize(w, h).setOffset(32 - w / 2, FEET_Y - h)
   }
 
   /** Troca a aparência (as texturas foram regeradas com a mesma chave). */
@@ -67,7 +84,7 @@ export class Player {
     const vx = (on(k.right) || on(k.d) ? 1 : 0) - (on(k.left) || on(k.a) ? 1 : 0)
     const vy = (on(k.down) || on(k.s) ? 1 : 0) - (on(k.up) || on(k.w) ? 1 : 0)
     const running = on(k.shift)
-    const speed = running ? RUN_SPEED : WALK_SPEED
+    const speed = (running ? RUN_SPEED : WALK_SPEED) * this.speedScale
     const v = new Phaser.Math.Vector2(vx, vy).normalize().scale(speed)
     this.sprite.setVelocity(v.x, v.y)
 

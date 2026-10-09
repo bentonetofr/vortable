@@ -13,7 +13,8 @@ import { Occluders, addObjectSolids, createObjectSprite } from '../world/objects
 import { FenceLayer, fenceSolids } from '../world/fences'
 import { Player, isTyping } from '../world/Player'
 import { Remotes } from '../net/remotes'
-import { NPC_PEER } from '../net/hub'
+import { NPC_PEER, type NpcForm } from '../net/hub'
+import { RAT_KEY, buildRat } from '../character/rat'
 import { NpcLayer } from '../world/npcs'
 import type { NetHub } from '../net/hub'
 import { BLOB, Lighting } from '../world/lighting'
@@ -59,6 +60,8 @@ export interface WorldSceneData {
   audioOn?: () => boolean
   /** Câmera do mestre: id do NPC que atravessou uma saída e continua controlado na zona nova. */
   carryNpc?: string
+  /** Forma do NPC que atravessou a saída (continua rato se era rato). */
+  carryForm?: NpcForm
   /** O NPC controlado trocou de zona: avisa a sala e guarda a mudança (sai de uma zona, entra na outra). */
   onNpcTransfer?: (t: { npc: ZoneNpc; from: string; to: string; x: number; y: number; dir: Dir }) => void
 }
@@ -97,7 +100,7 @@ export class WorldScene extends Phaser.Scene {
   private npcSolids = new Map<string, Phaser.GameObjects.Zone>()
   private solids?: Phaser.Physics.Arcade.StaticGroup
   /** NPC que o mestre (câmera) controla agora, como se fosse um jogador. */
-  private npcCtl: { id: string; player: Player; blob: Phaser.GameObjects.Image; at: number; sent: string } | null = null
+  private npcCtl: { id: string; player: Player; blob: Phaser.GameObjects.Image; at: number; sent: string; form: NpcForm | null } | null = null
   private hiddenNpcs = ''
   /** Quanto andou desde o último passo, e onde estava no quadro anterior. */
 
@@ -189,9 +192,10 @@ export class WorldScene extends Phaser.Scene {
     if (this.cfg.watch) {
       this.startWatch(zone, W, H)
       // o NPC que o mestre controlava atravessou uma saída: continua controlado aqui
-      const carry = this.cfg.carryNpc
+      const carry = this.cfg.carryNpc, form = this.cfg.carryForm
       this.cfg.carryNpc = undefined
-      if (carry) void this.controlNpc(carry)
+      this.cfg.carryForm = undefined
+      if (carry) void this.controlNpc(carry).then(() => form && this.transformNpc(form))
       return
     }
 
@@ -602,7 +606,7 @@ export class WorldScene extends Phaser.Scene {
     player.locked = this.inputLocked
     this.physics.add.collider(player.sprite, this.solids)
     const blob = this.add.image(npc.x, npc.y, BLOB).setScale(0.75, 0.6).setAlpha(0.32)
-    this.npcCtl = { id, player, blob, at: 0, sent: '' }
+    this.npcCtl = { id, player, blob, at: 0, sent: '', form: null }
     this.following = null
     this.cameras.main.setZoom(2)
     window.addEventListener('keydown', this.npcNoScroll)
@@ -631,6 +635,36 @@ export class WorldScene extends Phaser.Scene {
     hub?.moveNpc(r)
     hub?.unhostNpc(NPC_PEER + r.id)
     try { await persist?.(r) } catch (err) { console.error('[vortable] não deu pra guardar o ponto do NPC', err) }
+  }
+
+  /** Forma do NPC controlado agora (null = ele mesmo). */
+  controllingForm(): NpcForm | null {
+    return this.npcCtl?.form ?? null
+  }
+
+  /** Transforma o NPC controlado em rato (ou volta ao normal com null). A sala vê na hora. */
+  async transformNpc(form: NpcForm | null) {
+    const ctl = this.npcCtl
+    if (!ctl || ctl.form === form) return
+    const npc = (this.cfg.zone.npcs ?? []).find((n) => n.id === ctl.id)
+    if (!npc) return
+    if (form === 'rat') {
+      buildRat(this)
+      ctl.player.setSkin(RAT_KEY)
+      ctl.player.setFeetBox(8, 5)
+      ctl.player.speedScale = 1.15
+      ctl.blob.setScale(0.38, 0.3)
+    } else {
+      const texKey = `char:npc:${npc.id}`
+      try { await buildCharacter(this, texKey, this.cfg.assetBase, npc.appearance) } catch { return }
+      if (this.npcCtl !== ctl) return
+      ctl.player.setSkin(texKey)
+      ctl.player.setFeetBox(18, 10)
+      ctl.player.speedScale = 1
+      ctl.blob.setScale(0.75, 0.6)
+    }
+    ctl.form = form
+    this.cfg.hub?.hostNpc({ id: npc.id, name: npc.name, appearance: npc.appearance, showName: !!npc.showName, ...(form ? { form } : {}) })
   }
 
   /** O NPC parado passa pra este ponto (e o "calço" dele junto). */
@@ -697,7 +731,7 @@ export class WorldScene extends Phaser.Scene {
     const moved: ZoneNpc = { ...npc, x: Math.round(at.x), y: Math.round(at.y), dir }
     ;(zone.npcs ??= []).push(moved)
     this.cfg.onNpcTransfer?.({ npc: moved, from: this.cfg.zone.id, to: zone.id, x: moved.x, y: moved.y, dir })
-    this.scene.restart({ ...this.cfg, zone, arrival: undefined, at: undefined, carryNpc: ctl.id, notice: undefined } satisfies WorldSceneData)
+    this.scene.restart({ ...this.cfg, zone, arrival: undefined, at: undefined, carryNpc: ctl.id, carryForm: ctl.form ?? undefined, notice: undefined } satisfies WorldSceneData)
   }
 
   /** Quem está sendo controlado pelo mestre some do lugar parado (e o "calço" dele deixa de barrar). */

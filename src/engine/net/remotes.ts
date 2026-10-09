@@ -6,6 +6,7 @@
 
 import Phaser from 'phaser'
 import { buildCharacter } from '../character/compose'
+import { buildRat } from '../character/rat'
 import { BLOB } from '../world/lighting'
 import type { Appearance } from '../types'
 import type { NetHub, NetState } from './hub'
@@ -29,6 +30,8 @@ interface Avatar {
   name: string
   /** Nome em cima da cabeça (NPC controlado só mostra se o mestre ligou). */
   showLabel: boolean
+  /** NPC transformado em rato: desenho próprio, bem menor. */
+  rat: boolean
   state: NetState | null
   stateAt: number
   placed: boolean
@@ -56,12 +59,13 @@ export class Remotes {
     const now = this.scene.time.now
     // entrou / trocou de boneco
     for (const [id, peer] of this.hub.peers) {
-      const sig = JSON.stringify(peer.hello.appearance)
+      const rat = peer.hello.form === 'rat'
+      const sig = (rat ? 'rato:' : '') + JSON.stringify(peer.hello.appearance)
       let a = this.avatars.get(id)
       if (!a) {
         a = {
           id, texKey: `char:r:${id}`, sig: '', appearance: peer.hello.appearance, building: false,
-          sprite: null, shadow: null, label: null, name: peer.hello.name, showLabel: true, state: null, stateAt: 0, placed: false, playing: '',
+          sprite: null, shadow: null, label: null, name: peer.hello.name, showLabel: true, rat: false, state: null, stateAt: 0, placed: false, playing: '',
         }
         this.avatars.set(id, a)
       }
@@ -69,7 +73,7 @@ export class Remotes {
       a.showLabel = !peer.hello.npc || !!peer.hello.showName
       if (a.label && a.label.text !== a.name) a.label.setText(a.name)
       if (peer.state && peer.state !== a.state) { a.state = peer.state; a.stateAt = now }
-      if (a.sig !== sig && !a.building) void this.build(a, peer.hello.appearance, sig)
+      if (a.sig !== sig && !a.building) void this.build(a, peer.hello.appearance, sig, rat)
     }
     // saiu
     for (const [id, a] of this.avatars) {
@@ -93,7 +97,7 @@ export class Remotes {
       }
       sprite.setDepth(sprite.y)
       shadow.setPosition(sprite.x, sprite.y - 1).setDepth(sprite.depth - 0.5)
-      label.setPosition(sprite.x, sprite.y - 66).setDepth(1e8)
+      label.setPosition(sprite.x, sprite.y - (a.rat ? 22 : 66)).setDepth(1e8)
       const key = `${a.texKey}:${state.anim}:${state.dir}`
       if (a.playing !== key && this.scene.anims.exists(key)) {
         sprite.anims.play(key, true)
@@ -102,10 +106,11 @@ export class Remotes {
     }
   }
 
-  private async build(a: Avatar, appearance: Appearance, sig: string) {
+  private async build(a: Avatar, appearance: Appearance, sig: string, rat = false) {
     a.building = true
     try {
-      await buildCharacter(this.scene, a.texKey, this.assetBase, appearance)
+      if (rat) buildRat(this.scene, a.texKey)
+      else await buildCharacter(this.scene, a.texKey, this.assetBase, appearance)
     } catch (err) {
       console.error('[vortable] boneco de outro jogador não carregou', err)
       a.building = false
@@ -118,6 +123,7 @@ export class Remotes {
     a.sig = sig
     a.appearance = appearance
     a.playing = ''
+    a.rat = rat
     if (!a.sprite) {
       a.sprite = this.scene.add.sprite(0, 0, `${a.texKey}:idle`, 0).setOrigin(0.5, 62 / 64).setVisible(false)
       a.shadow = this.scene.add.image(0, 0, BLOB).setScale(0.75, 0.6).setAlpha(0.32).setVisible(false)
@@ -126,6 +132,9 @@ export class Remotes {
       }).setOrigin(0.5, 1).setResolution(4).setVisible(false)
     }
     a.label?.setText(a.name)
+    // a textura de mesmo nome foi refeita: o sprite aponta pra ela de novo; o rato tem sombra menor
+    a.sprite.setTexture(`${a.texKey}:idle`, 0)
+    a.shadow?.setScale(rat ? 0.38 : 0.75, rat ? 0.3 : 0.6)
   }
 
   private drop(a: Avatar) {

@@ -26,7 +26,9 @@ export type NetAnim = 'idle' | 'walk' | 'run'
  * `npc`: NPC que o mestre está controlando (id `npc:<id do NPC>`). Aparece como um jogador, mas o NPC
  * parado da zona some enquanto isso, e o nome só aparece se `showName`.
  */
-export interface NetHello { t: 'hello'; id: string; name: string; appearance: Appearance; npc?: boolean; showName?: boolean }
+/** Forma do NPC controlado: `rat` = o mestre o transformou num rato. */
+export type NpcForm = 'rat'
+export interface NetHello { t: 'hello'; id: string; name: string; appearance: Appearance; npc?: boolean; showName?: boolean; form?: NpcForm }
 /**
  * `from`: o NPC mudou de zona (saiu dela); `npc`: os dados dele pra quem ainda não o tem na zona de destino.
  */
@@ -83,7 +85,7 @@ export function parseNet(raw: unknown): NetMsg | null {
       if (typeof m.id !== 'string' || !m.id || !a || a.version !== 2 || typeof a.slots !== 'object') return null
       return {
         t: 'hello', id: m.id, name: typeof m.name === 'string' ? m.name.slice(0, 60) : 'Jogador', appearance: a,
-        ...(m.id.startsWith(NPC_PEER) ? { npc: true, showName: m.showName === true } : {}),
+        ...(m.id.startsWith(NPC_PEER) ? { npc: true, showName: m.showName === true, ...(m.form === 'rat' ? { form: 'rat' as const } : {}) } : {}),
       }
     }
     case 'who': return { t: 'who' }
@@ -185,8 +187,8 @@ export class NetHub {
   }
 
   /** Mestre: começa a controlar um NPC (a sala o vê como um jogador de id `npc:<id>`). */
-  hostNpc(npc: { id: string; name: string; appearance: Appearance; showName: boolean }) {
-    const hello: NetHello = { t: 'hello', id: NPC_PEER + npc.id, name: npc.name, appearance: npc.appearance, npc: true, showName: npc.showName }
+  hostNpc(npc: { id: string; name: string; appearance: Appearance; showName: boolean; form?: NpcForm }) {
+    const hello: NetHello = { t: 'hello', id: NPC_PEER + npc.id, name: npc.name, appearance: npc.appearance, npc: true, showName: npc.showName, ...(npc.form ? { form: npc.form } : {}) }
     this.hosted.set(hello.id, hello)
     this.link.send(hello)
   }

@@ -195,7 +195,24 @@ export async function buildCharacter(scene: Phaser.Scene, key: string, assetBase
   if (!cache) built.set(scene.textures, (cache = new Map()))
   if (cache.get(key) === sig && scene.textures.exists(`${key}:walk`)) return
 
-  const sheets = await composeAll(assetBase, appearance)
+  registerSheets(scene, key, await composeAll(assetBase, appearance))
+  cache.set(key, sig)
+}
+
+/** A chave já está montada com esta assinatura? (o rato usa 'rato' no lugar da aparência) */
+export function isBuilt(scene: Phaser.Scene, key: string, sig: string) {
+  return built.get(scene.textures)?.get(key) === sig && scene.textures.exists(`${key}:walk`)
+}
+
+/** Anota o que está montado em `key` (assim buildCharacter sabe quando precisa refazer). */
+export function markBuilt(scene: Phaser.Scene, key: string, sig: string) {
+  let cache = built.get(scene.textures)
+  if (!cache) built.set(scene.textures, (cache = new Map()))
+  cache.set(key, sig)
+}
+
+/** Põe as folhas (parado, andando, correndo) no Phaser como texturas e animações de `key`. */
+export function registerSheets(scene: Phaser.Scene, key: string, sheets: Record<AnimName, HTMLCanvasElement>) {
   for (const anim of Object.keys(ANIMS) as AnimName[]) {
     const texKey = `${key}:${anim}`
     const { frames, rate } = ANIMS[anim]
@@ -217,5 +234,4 @@ export async function buildCharacter(scene: Phaser.Scene, key: string, assetBase
       })
     })
   }
-  cache.set(key, sig)
 }
