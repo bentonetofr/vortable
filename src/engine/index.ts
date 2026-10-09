@@ -167,7 +167,10 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
 
   if (mode === 'edit') {
     const back = opts.resume?.kind === 'edit' ? opts.resume : null
-    state = new EditorState(back ? back.zone : opts.zone ?? newZone('Nova zona', 40, 30))
+    // sem alterações não salvas, a zona vem fresca do banco (o mestre pode ter mexido nela fora do editor,
+    // ex.: largar um NPC no Controle); com alterações, volta como estava
+    const fresh = back && !back.dirty && opts.zone?.id === back.zone.id
+    state = new EditorState(back && !fresh ? back.zone : opts.zone ?? newZone('Nova zona', 40, 30))
     state.assetBase = assetBase
     // voltando: a zona vem como estava (inclusive o que não foi salvo) e a câmera no mesmo lugar
     if (back) { state.dirty = back.dirty; state.view = back.view; state.zoom = back.zoom }
