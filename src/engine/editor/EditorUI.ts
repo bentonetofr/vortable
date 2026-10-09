@@ -46,6 +46,8 @@ export interface EditorHooks {
   scene(): EditorScene | null
   /** Abrir o criador de personagem (se quem montou o editor oferecer). */
   editCharacter?: () => void
+  /** As ações do topo (nome, Nova, Abrir, Salvar, Testar…) ficam numa barra de fora (`controls()`), não na gaveta. */
+  externalBar?: boolean
   /** O volume mudou (o motor de som relê as preferências). */
   applySound?: () => void
   /** Curadoria (só no desenvolvimento): grava o ajuste de uma peça no pacote e recarrega o catálogo. */
@@ -68,9 +70,35 @@ const TOOLS: { id: Tool; label: string; key: string }[] = [
 const BRUSH_MAX = 8
 const FAV_KEY = 'vortable:objects:favorites'
 const DRAWER_KEY = 'vortable:editor:drawer'
-/** A gaveta do editor começa fechada (o mapa fica livre); lembra como a pessoa deixou. */
-function readDrawer() {
-  try { return localStorage.getItem(DRAWER_KEY) === '1' } catch { return false }
+/** A gaveta do editor começa fechada (o mapa fica livre); lembra como a pessoa deixou. Com a barra de fora ela começa aberta (é onde ficam terrenos e objetos). */
+function readDrawer(external: boolean) {
+  try {
+    const v = localStorage.getItem(DRAWER_KEY)
+    return external ? v !== '0' : v === '1'
+  } catch { return external }
+}
+
+/** O que a barra de fora mostra do editor. */
+export interface EditorBarState { name: string; canUndo: boolean; canRedo: boolean; dirty: boolean; testing: boolean; panel: boolean; character: boolean }
+
+/** Ações do editor pra uma barra de fora (o Vorterium põe na faixa de cima). */
+export interface EditorControls {
+  state(): EditorBarState
+  /** Avisa a cada mudança (nome, desfazer, salvo, teste, painel). Devolve quem cancela. */
+  subscribe(fn: () => void): () => void
+  setName(name: string): void
+  newZone(): void
+  open(): void
+  world(): void
+  save(): void
+  exportZone(): void
+  importZone(file: File): void
+  undo(): void
+  redo(): void
+  character(): void
+  test(): void
+  /** Abre/fecha o painel de terrenos e objetos. */
+  togglePanel(): void
 }
 const RECENT_KEY = 'vortable:objects:recent'
 const RECENT_MAX = 24
@@ -86,12 +114,13 @@ const FAV = '★', RECENT = '⟲'
 export class EditorUI {
   readonly root: HTMLDivElement
   readonly stage: HTMLDivElement
-  private nameInput!: HTMLInputElement
+  private nameInput?: HTMLInputElement
   private toolButtons = new Map<Tool, HTMLButtonElement>()
   private toggles: { el: HTMLButtonElement; on: () => boolean }[] = []
   private brushLabel!: HTMLElement
-  private undoBtn!: HTMLButtonElement
-  private redoBtn!: HTMLButtonElement
+  private undoBtn?: HTMLButtonElement
+  private redoBtn?: HTMLButtonElement
+  private barListeners = new Set<() => void>()
   private statusEl!: HTMLElement
   private tab: 'terrains' | 'objects' | 'rooms' | 'light' | 'sound' = 'terrains'
   /** Atualiza as barrinhas de nível do painel Sons. */
@@ -140,8 +169,8 @@ export class EditorUI {
       focus: (x, y) => hooks.scene()?.focusAt(x, y),
       toast: (msg, error) => this.toast(msg, error),
     })
-    this.stage = h('div', { class: 'vt-stage' }, this.buildZoomBar(), this.buildQuick(), this.npcPanel.el)
-    this.root = h('div', { class: `vt-root${readDrawer() ? ' vt-drawer-open' : ''}` },
+    this.stage = h('div', { class: 'vt-stage' }, this.buildZoomBar(), hooks.externalBar ? null : this.buildQuick(), this.npcPanel.el)
+    this.root = h('div', { class: `vt-root${readDrawer(!!hooks.externalBar) ? ' vt-drawer-open' : ''}` },
       this.buildTools(),
       this.buildDrawer(),
       this.stage,
@@ -163,7 +192,7 @@ export class EditorUI {
     this.offState = state.on((c) => {
       if (c === 'view') return this.updateZoomBar()
       if (c === 'cursor') return this.refresh()
-      if (c === 'zone') this.nameInput.value = state.zone.name
+      if (c === 'zone' && this.nameInput) this.nameInput.value = state.zone.name
       if (c === 'zone' || c === 'edit') this.renderZoneProps()
       if (c === 'zone' || c === 'world' || state.selectedPortal !== this.shownPortal) this.renderPortal()
       // painel Luz: zona nova/desfeita (outra luz) ou outra luz selecionada
@@ -230,11 +259,7 @@ export class EditorUI {
       class: 'vt-name',
       value: this.state.zone.name,
       title: 'Nome da zona',
-      oninput: () => {
-        this.state.zone.name = this.nameInput.value
-        this.state.dirty = true
-        this.refresh()
-      },
+      oninput: () => this.setName(this.nameInput!.value),
     })
     this.undoBtn = h('button', { class: 'vt-btn', title: 'Desfazer (Ctrl+Z)', html: ICONS.undo, onclick: () => this.state.undo() })
     this.redoBtn = h('button', { class: 'vt-btn', title: 'Refazer (Ctrl+Y)', html: ICONS.redo, onclick: () => this.state.redo() })
@@ -263,7 +288,7 @@ export class EditorUI {
 
   /** Gaveta da esquerda: nome da zona e ações em cima, painel de terrenos/objetos embaixo. */
   private buildDrawer() {
-    return h('aside', { class: 'vt-drawer' }, this.buildTop(), this.buildPanel())
+    return h('aside', { class: 'vt-drawer' }, this.hooks.externalBar ? null : this.buildTop(), this.buildPanel())
   }
 
   /** Canto do palco com a gaveta fechada: abre o painel, salva e testa. */
@@ -275,8 +300,40 @@ export class EditorUI {
     )
   }
 
+  private setName(name: string) {
+    this.state.zone.name = name
+    this.state.dirty = true
+    this.refresh()
+  }
+
+  private notifyBar() {
+    for (const fn of this.barListeners) fn()
+  }
+
+  /** As ações do editor pra uma barra de fora (ver `EditorHooks.externalBar`). */
+  controls(): EditorControls {
+    const s = this.state
+    return {
+      state: () => ({ name: s.zone.name, canUndo: s.canUndo, canRedo: s.canRedo, dirty: s.dirty, testing: this.testing, panel: this.root.classList.contains('vt-drawer-open'), character: !!this.hooks.editCharacter }),
+      subscribe: (fn) => { this.barListeners.add(fn); return () => { this.barListeners.delete(fn) } },
+      setName: (name) => this.setName(name),
+      newZone: () => this.openNewModal(),
+      open: () => void this.openOpenModal(),
+      world: () => void this.openWorldModal(),
+      save: () => void this.save(),
+      exportZone: () => this.exportZone(),
+      importZone: (file) => void this.importZone(file),
+      undo: () => s.undo(),
+      redo: () => s.redo(),
+      character: () => void this.openCharacter(),
+      test: () => { if (!this.testing) this.startTest() },
+      togglePanel: () => this.setDrawer(!this.root.classList.contains('vt-drawer-open')),
+    }
+  }
+
   private setDrawer(open: boolean) {
     this.root.classList.toggle('vt-drawer-open', open)
+    this.notifyBar()
     try { localStorage.setItem(DRAWER_KEY, open ? '1' : '0') } catch { /* sem storage */ }
     // o palco mudou de largura: o Phaser acompanha o evento de resize
     requestAnimationFrame(() => window.dispatchEvent(new Event('resize')))
@@ -1301,8 +1358,9 @@ export class EditorUI {
     for (const [id, c] of this.objectCells) c.classList.toggle('vt-on', chosenBase === id)
     this.renderObjectInfo()
     this.brushLabel.textContent = String(s.brush)
-    this.undoBtn.disabled = !s.canUndo
-    this.redoBtn.disabled = !s.canRedo
+    if (this.undoBtn) this.undoBtn.disabled = !s.canUndo
+    if (this.redoBtn) this.redoBtn.disabled = !s.canRedo
+    this.notifyBar()
 
     const z = s.zone
     const parts: Node[] = []
@@ -1387,11 +1445,14 @@ export class EditorUI {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000)
   }
 
-  private async importFile(e: Event) {
+  private importFile(e: Event) {
     const input = e.target as HTMLInputElement
     const file = input.files?.[0]
     input.value = ''
-    if (!file) return
+    if (file) void this.importZone(file)
+  }
+
+  private async importZone(file: File) {
     try {
       const zone = parseZone(JSON.parse(await file.text()))
       if (!(await this.resolveUnsaved())) return
@@ -1549,6 +1610,7 @@ export class EditorUI {
     this.root.classList.add('vt-testing')
     this.applySound()
     this.hooks.startTest()
+    this.notifyBar()
   }
 
   /** O pé do boneco no ponto de início encosta em água, buraco ou tronco? */
@@ -1569,6 +1631,7 @@ export class EditorUI {
     this.testing = false
     this.root.classList.remove('vt-testing')
     this.hooks.stopTest()
+    this.notifyBar()
   }
 
   // ── Janelas ────────────────────────────────────────────
