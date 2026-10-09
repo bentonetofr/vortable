@@ -214,6 +214,7 @@ export class WorldScene extends Phaser.Scene {
     // chega no meio da saída de destino; sem ela, no início da zona
     const at = this.cfg.at ?? (door ? { x: door.x + door.w / 2, y: door.y + door.h / 2 + 5 } : zone.spawn)
     this.player = new Player(this, PLAYER_KEY, at.x, at.y, arrival?.dir ?? this.cfg.facing ?? 'down')
+    this.applyHeight(this.player, appearance)
     this.inputLocked = this.cfg.inputLocked?.() ?? this.inputLocked
     this.player.locked = this.inputLocked
     this.physics.add.collider(this.player.sprite, solids)
@@ -446,6 +447,11 @@ export class WorldScene extends Phaser.Scene {
     this.scene.restart({ ...this.cfg, zone, arrival: undefined, at: { x, y }, notice: undefined } satisfies WorldSceneData)
   }
 
+  /** Altura do boneco (Appearance.height): escala do sprite, e a sombra acompanha. */
+  private applyHeight(player: Player, appearance: Appearance) {
+    player.setHeight(appearance.height ?? 1)
+  }
+
   /** Troca a aparência do jogador sem recarregar a cena. */
   async setAppearance(appearance: Appearance) {
     this.cfg.appearance = appearance
@@ -453,6 +459,7 @@ export class WorldScene extends Phaser.Scene {
       await buildCharacter(this, PLAYER_KEY, this.cfg.assetBase, appearance)
       this.cfg.hub?.announce(appearance)
       this.player?.refresh()
+      if (this.player) this.applyHeight(this.player, appearance)
     } catch (err) {
       console.error('[vortable] aparência não carregou', err)
     }
@@ -603,6 +610,7 @@ export class WorldScene extends Phaser.Scene {
     }
     if (!this.sys.isActive() || this.npcCtl || !this.solids) return false
     const player = new Player(this, texKey, npc.x, npc.y, npc.dir)
+    this.applyHeight(player, npc.appearance)
     player.locked = this.inputLocked
     this.physics.add.collider(player.sprite, this.solids)
     const blob = this.add.image(npc.x, npc.y, BLOB).setScale(0.75, 0.6).setAlpha(0.32)
@@ -651,6 +659,7 @@ export class WorldScene extends Phaser.Scene {
     if (form === 'rat') {
       buildRat(this)
       ctl.player.setSkin(RAT_KEY)
+      ctl.player.setHeight(1)
       ctl.player.setFeetBox(8, 5)
       ctl.player.speedScale = 1.15
       ctl.blob.setScale(0.38, 0.3)
@@ -660,6 +669,7 @@ export class WorldScene extends Phaser.Scene {
       if (this.npcCtl !== ctl) return
       ctl.player.setSkin(texKey)
       ctl.player.setFeetBox(18, 10)
+      this.applyHeight(ctl.player, npc.appearance)
       ctl.player.speedScale = 1
       ctl.blob.setScale(0.75, 0.6)
     }

@@ -7,6 +7,7 @@
 
 import Phaser from 'phaser'
 import { layerDir, loadCharacterData, type CharItem, type CharacterData } from './catalog'
+import { PROC_DEFS, paintProc, type ProcDef } from './proc'
 import type { Appearance, AppearanceItem, Dir } from '../types'
 
 export const FRAME = 64
@@ -102,6 +103,10 @@ interface PlacedLayer {
   url: string
   fallback: boolean
   map: Map<number, number>
+  /** Espaço do personagem que gerou a camada. */
+  slot: string
+  /** Peça desenhada por código: pinta no rosto em vez de carregar imagem. */
+  proc?: { def: ProcDef; color?: string }
 }
 
 /** Todas as camadas da aparência, em ordem de desenho. */
@@ -112,13 +117,18 @@ function layersOf(data: CharacterData, assetBase: string, a: Appearance, anim: A
     if (only && slot !== only) continue
     const item = data.byId.get(chosen.id)
     if (!item) continue
+    if (item.proc) {
+      const def = PROC_DEFS.get(item.id)
+      if (def) out.push({ z: def.z ?? 102, order: order++, url: '', fallback: false, map: new Map(), slot, proc: { def, color: chosen.colors?.color } })
+      continue
+    }
     const has = item.anims.includes(anim)
     const file = has ? anim : 'walk'
     const map = colorMap(data, item, chosen, a.skin)
     for (const layer of item.layers) {
       const dir = layerDir(layer, a.body)
       const rel = chosen.variant ? `${dir}${file}/${chosen.variant}.png` : `${dir}${file}.png`
-      out.push({ z: layer.z, order: order++, url: assetBase + data.catalog.sheets + rel, fallback: !has, map })
+      out.push({ z: layer.z, order: order++, url: assetBase + data.catalog.sheets + rel, fallback: !has, map, slot })
     }
   }
   return out.sort((x, y) => x.z - y.z || x.order - y.order)
@@ -134,11 +144,18 @@ export async function composeAnim(assetBase: string, a: Appearance, anim: AnimNa
   const octx = out.getContext('2d')!
 
   const layers = layersOf(data, assetBase, a, anim, only)
-  const images = await Promise.all(layers.map((l) => loadImage(l.url).catch((err) => {
+  const images = await Promise.all(layers.map((l) => (l.proc ? null : loadImage(l.url).catch((err) => {
     console.warn('[vortable] camada do boneco não carregou:', err.message)
     return null
-  })))
+  }))))
+  // a cabeça (já na cor da pele) serve de máscara pras marcas do rosto
+  let headData: ImageData | null = null
   layers.forEach((l, i) => {
+    if (l.proc) {
+      if (!headData) return
+      for (let row = 0; row < 4; row++) for (let col = 0; col < frames; col++) paintProc(octx, col * FRAME, row * FRAME, headData, col * FRAME, row * FRAME, row, l.proc.def, l.proc.color)
+      return
+    }
     const img = images[i]
     if (!img) return
     const sheet = document.createElement('canvas')
@@ -148,6 +165,7 @@ export async function composeAnim(assetBase: string, a: Appearance, anim: AnimNa
     sheet.getContext('2d', { willReadFrequently: true })!.drawImage(src, 0, 0)
     recolor(sheet, l.map)
     octx.drawImage(sheet, 0, 0)
+    if (l.slot === 'head') headData = sheet.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, sheet.width, sheet.height)
   })
   return out
 }
@@ -162,15 +180,22 @@ export async function composeFrame(assetBase: string, a: Appearance, row = 2, co
   out.width = out.height = FRAME
   const octx = out.getContext('2d')!
   const layers = layersOf(data, assetBase, a, 'walk')
-  const images = await Promise.all(layers.map((l) => loadImage(l.url).catch(() => null)))
+  const images = await Promise.all(layers.map((l) => (l.proc ? null : loadImage(l.url).catch(() => null))))
+  let headTile: ImageData | null = null
   layers.forEach((l, i) => {
+    if (l.proc) {
+      if (headTile) paintProc(octx, 0, 0, headTile, 0, 0, row, l.proc.def, l.proc.color)
+      return
+    }
     const img = images[i]
     if (!img) return
     const tile = document.createElement('canvas')
     tile.width = tile.height = FRAME
-    tile.getContext('2d', { willReadFrequently: true })!.drawImage(img, col * FRAME, row * FRAME, FRAME, FRAME, 0, 0, FRAME, FRAME)
+    const tctx = tile.getContext('2d', { willReadFrequently: true })!
+    tctx.drawImage(img, col * FRAME, row * FRAME, FRAME, FRAME, 0, 0, FRAME, FRAME)
     recolor(tile, l.map)
     octx.drawImage(tile, 0, 0)
+    if (l.slot === 'head') headTile = tctx.getImageData(0, 0, FRAME, FRAME)
   })
   return out
 }

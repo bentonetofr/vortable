@@ -19,8 +19,8 @@ const REPO = 'LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator'
 const SHA = '58ce1aa479e4df32845a73a5d0afc221c3a893c2'
 const CDN = `https://raw.githubusercontent.com/${REPO}/${SHA}/`
 
-/** Tipos de corpo oferecidos (os outros do LPC ficam pra depois). */
-const BODIES = ['male', 'female']
+/** Tipos de corpo oferecidos: masculino, feminino, musculoso (forte), jovem esguio e pequeno (criança). */
+const BODIES = ['male', 'female', 'muscular', 'teen', 'child']
 /** Animações que o jogo usa hoje (walk é obrigatória). */
 const ANIMS = ['walk', 'idle', 'run']
 
@@ -36,11 +36,12 @@ const SLOTS = [
   { id: 'eyebrows', label: 'Sobrancelhas', group: 'Corpo', types: ['eyebrows'] },
   { id: 'eyes', label: 'Olhos especiais', group: 'Corpo', types: ['eyes'] },
   { id: 'wrinkles', label: 'Rugas', group: 'Corpo', types: ['wrinkles'] },
+  { id: 'expression', label: 'Expressão', group: 'Corpo', types: ['expression', 'expression_crying'] },
   { id: 'horns', label: 'Chifres', group: 'Corpo', types: ['horns'] },
   { id: 'tail', label: 'Cauda', group: 'Corpo', types: ['tail'] },
   { id: 'wings', label: 'Asas', group: 'Corpo', types: ['wings'] },
 
-  { id: 'hair', label: 'Cabelo', group: 'Cabelo', types: ['hair'] },
+  { id: 'hair', label: 'Cabelo', group: 'Cabelo', types: ['hair', 'updo'] },
   { id: 'ponytail', label: 'Rabo de cavalo', group: 'Cabelo', types: ['ponytail'] },
   { id: 'beard', label: 'Barba', group: 'Cabelo', types: ['beard'] },
   { id: 'mustache', label: 'Bigode', group: 'Cabelo', types: ['mustache'] },
@@ -57,11 +58,11 @@ const SLOTS = [
   { id: 'gloves', label: 'Luvas', group: 'Roupa', types: ['gloves'] },
 
   { id: 'hat', label: 'Chapéu / elmo', group: 'Acessórios', types: ['hat'] },
-  { id: 'bandana', label: 'Bandana', group: 'Acessórios', types: ['bandana'] },
+  { id: 'bandana', label: 'Bandana / faixa', group: 'Acessórios', types: ['bandana', 'headcover'] },
   { id: 'facial', label: 'Óculos', group: 'Acessórios', types: ['facial_eyes'] },
   { id: 'mask', label: 'Máscara', group: 'Acessórios', types: ['facial_mask'] },
-  { id: 'earrings', label: 'Brincos', group: 'Acessórios', types: ['earrings'] },
-  { id: 'neck', label: 'Pescoço', group: 'Acessórios', types: ['neck', 'necklace'] },
+  { id: 'earrings', label: 'Brincos', group: 'Acessórios', types: ['earrings', 'earring_left', 'earring_right'] },
+  { id: 'neck', label: 'Pescoço / amuleto', group: 'Acessórios', types: ['neck', 'necklace', 'charm'] },
   { id: 'cape', label: 'Capa', group: 'Acessórios', types: ['cape'] },
   { id: 'shoulders', label: 'Ombreiras', group: 'Acessórios', types: ['shoulders'] },
   { id: 'arms', label: 'Braçadeiras', group: 'Acessórios', types: ['bracers', 'wrists'] },
@@ -81,6 +82,17 @@ const SLOTS = [
   { id: 'prosthesis_leg', label: 'Prótese de perna', group: 'Marcas', types: ['prosthesis_leg'] },
 ]
 const slotOfType = new Map(SLOTS.flatMap((s) => s.types.map((t) => [t, s.id])))
+
+/** Expressões do rosto: pedem cabeça humana e trazem ${head} no caminho (male/female). */
+const isFace = (d) => String(d.type_name).startsWith('expression') && d.required_tags?.length === 1 && d.required_tags[0] === 'human'
+/** Pede etiquetas que não sabemos atender (fora as expressões)? */
+const needsTags = (d) => !!d.required_tags && !isFace(d)
+/** Caminho de uma camada pro corpo b, com ${head} resolvido (corpo feminino = rosto feminino, os outros = masculino). */
+const dirFor = (dir, b) => {
+  if (typeof dir !== 'string') return null
+  const out = dir.replace('${head}', b === 'female' ? 'female' : 'male')
+  return out.includes('${') ? null : out
+}
 
 const MATERIALS = ['body', 'hair', 'cloth', 'eye', 'metal', 'wood']
 const VERSIONS = ['ulpc', 'lpcr']
@@ -162,12 +174,12 @@ const sheetFile = (dir, anim, variant) => (variant ? `${dir}${anim}/${variant}.p
 // 1ª passada: quais "walk" existem (é o que decide se a camada vale)
 const candidates = new Set()
 for (const { def: d } of defs) {
-  if (!slotOfType.get(d.type_name) || d.required_tags) continue
+  if (!slotOfType.get(d.type_name) || needsTags(d)) continue
   const v = Array.isArray(d.variants) ? variantFile(d.variants[0]) : null
   for (const k of Object.keys(d).filter((k) => /^layer_\d+$/.test(k))) {
     for (const b of BODIES) {
-      const dir = d[k][b]
-      if (typeof dir === 'string' && !dir.includes('${')) candidates.add(sheetFile(dir, 'walk', v))
+      const dir = dirFor(d[k][b], b)
+      if (dir) candidates.add(sheetFile(dir, 'walk', v))
     }
   }
 }
@@ -179,7 +191,7 @@ const credits = new Map()
 let skipped = 0
 for (const { path: p, def: d } of defs) {
   const slot = slotOfType.get(d.type_name)
-  if (!slot || d.required_tags) { skipped++; continue }
+  if (!slot || needsTags(d)) { skipped++; continue }
   const layerKeys = Object.keys(d).filter((k) => /^layer_\d+$/.test(k)).sort()
   // no LPC, variante "dark brown" fica no arquivo dark_brown.png
   const variants = Array.isArray(d.variants) ? [...new Set(d.variants.map(variantFile))] : null
@@ -194,8 +206,8 @@ for (const { path: p, def: d } of defs) {
     const L = d[k]
     const paths = {}
     for (const b of BODIES) {
-      const dir = L[b]
-      if (typeof dir === 'string' && !dir.includes('${') && exists(dir)) paths[b] = dir
+      const dir = dirFor(L[b], b)
+      if (dir && exists(dir)) paths[b] = dir
     }
     if (!Object.keys(paths).length) { broken = true; break }
     layers.push({ z: L.zPos ?? 0, paths })
@@ -217,6 +229,11 @@ for (const { path: p, def: d } of defs) {
     }
   }
 
+  if (!channels.length && d.match_body_color) {
+    const source = resolveSource({ material: 'body' })
+    if (source) channels.push({ key: 'color', material: 'body', source })
+  }
+
   const id = p.replace(/^sheet_definitions\//, '').replace(/\.json$/, '')
   items.push({
     id,
@@ -228,6 +245,7 @@ for (const { path: p, def: d } of defs) {
     ...(variants ? { variants } : {}),
     ...(channels.length ? { colors: channels } : {}),
     ...(d.match_body_color ? { matchBody: true } : {}),
+    ...(isFace(d) ? { requiresHead: 'human' } : {}),
   })
   for (const c of d.credits ?? []) {
     if (!credits.has(c.file)) credits.set(c.file, c)
@@ -305,6 +323,47 @@ const EXTRA_PALETTES = {
     saddle: ['#0a0604', '#1a0f0a', '#2b1a12', '#3d281c', '#573a29', '#6f4e38'],
   },
 }
+
+// ── Tons gerados: rampas de 6 cores (escuro → claro) a partir de uma cor média, como as do LPC ──
+const toRgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+const toHex = (r, g, b) => '#' + [r, g, b].map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('')
+const mix = (a, b, t) => toHex(...toRgb(a).map((v, i) => v + (toRgb(b)[i] - v) * t))
+const lighten = (hex, t) => mix(hex, '#ffffff', t)
+const darken = (hex, t, tint = '#0a0508') => mix(hex, tint, t)
+/** Pele: contorno escuro, sombra avermelhada, meia sombra, base, luz e brilho. */
+const skinRamp = (base) => [darken(base, 0.84), mix(darken(base, 0.45), '#8a2a28', 0.25), darken(base, 0.2, '#5a2a1c'), base, lighten(base, 0.38), lighten(base, 0.7)]
+/** Cabelo: do quase preto ao mechado claro. */
+const hairRamp = (base) => [darken(base, 0.78), darken(base, 0.58), darken(base, 0.3), base, lighten(base, 0.28), lighten(base, 0.52)]
+/** Roupa: sombra funda até o realce. */
+const clothRamp = (base) => [darken(base, 0.8), darken(base, 0.6), darken(base, 0.32), base, lighten(base, 0.22), lighten(base, 0.42)]
+/** Olho: contorno, íris e brilho (3 cores). */
+const eyeRamp = (base) => [darken(base, 0.62), base, lighten(base, 0.45)]
+const gen = (fn, list) => Object.fromEntries(Object.entries(list).map(([name, base]) => [name, fn(base)]))
+
+Object.assign(EXTRA_PALETTES.body ??= {}, gen(skinRamp, {
+  porcelain: '#f4d9c8', fair: '#eab99a', peach: '#e8ae86', beige: '#d9a074', sand_tan: '#cf9468', honey: '#c2865a', caramel: '#b57a4f',
+  tan: '#a86d44', golden_brown: '#9c6038', chestnut_skin: '#8a5232', mocha: '#744327', cocoa_skin: '#5f3721', espresso_skin: '#4a2b19',
+  ebony: '#36201a', rosy: '#e6a39a', ashen: '#b9b3ad', pale_blue: '#c9d3de', moon: '#e9e4ef',
+}))
+Object.assign(EXTRA_PALETTES.hair, gen(hairRamp, {
+  jet_black: '#2b2528', blue_black: '#263042', chocolate: '#5a382a', mahogany: '#6e3426', auburn: '#8a431f', copper: '#b4602a',
+  honey_blonde: '#d2a24a', dirty_blonde: '#b09258', silver: '#b8bcc4', snow: '#e8eaee', steel: '#7f8794',
+  neon_pink: '#ff4fa3', hot_magenta: '#d81b8a', electric_blue: '#2f7bff', cyan_hair: '#19d3e0', teal_hair: '#12a39a', mint: '#62e0a8',
+  lime_hair: '#a6e22e', sunset: '#ff7a2f', crimson_hair: '#c4122c', lilac: '#b79af0', midnight_blue: '#233a8a', rose_gold: '#e0a190',
+}))
+Object.assign(EXTRA_PALETTES.cloth, gen(clothRamp, {
+  burgundy: '#8a2336', wine: '#6a1f35', crimson: '#c0243a', coral: '#ee6b5d', salmon: '#f2998a', peach_cloth: '#f6b98f', mustard: '#caa228',
+  gold_cloth: '#e0b335', olive: '#76852f', moss: '#557433', lime: '#9ac93a', mint_cloth: '#7fd1ae', turquoise: '#1fb5ad', cyan: '#29b6d6',
+  azure: '#2f86d8', cobalt: '#2c56d0', indigo: '#403fa6', plum: '#722f7a', magenta: '#b8279f', hot_pink: '#ee3f95', neon_green: '#39ff88',
+  neon_blue: '#3ab7ff', neon_pink: '#ff4fa3', neon_yellow: '#f4f23a', silver: '#b6bcc6', ivory: '#efe6d0', cream: '#f3e9c8', khaki: '#b8a56d',
+  rust: '#a94e26', terracotta: '#c0603f', chocolate: '#583527', graphite: '#464a53', onyx: '#1b1c21', snow: '#f6f6f7',
+}))
+EXTRA_PALETTES.eye ??= {}
+Object.assign(EXTRA_PALETTES.eye, gen(eyeRamp, {
+  hazel: '#8a6a2f', amber: '#c28a1d', ice: '#9cd5ef', lime: '#7ed321', pink: '#e86fb0', white: '#e6e6ea', black: '#26262e', teal: '#12a39a',
+  gold: '#e0b335', violet: '#8a5be0', crimson: '#d01a38', silver: '#aeb4c0',
+}))
+EXTRA_PALETTES.body ??= {}
 
 const outDir = path.join(ROOT, 'public', 'assets', 'character')
 fs.mkdirSync(outDir, { recursive: true })

@@ -410,3 +410,13 @@ Dividido em três partes (decisão: tudo grátis; começar pela integração, se
   investigação curta no começo do M3.2).
 - **Desempenho** com muitas luzes e objetos: zonas grandes podem precisar dividir o chão
   em pedaços e limitar luzes.
+
+## Criador de personagem (rework)
+
+- Tela cheia no estilo cyberpunk (`CreatorUI.ts` + `creator.css`): boneco grande ampliado com Scale2x, câmera que chega no rosto
+  (Rosto, Cabelo, Maquiagem) e afasta pro corpo (Corpo, Roupa), giro por arrasto, abas com linhas ◀ valor ▶, cores logo abaixo, grade com miniaturas.
+- Cada jogador cria o dele na ficha (botão no Vorterium); o personagem salvo é o fixo da campanha (`controller_id`). O mestre não entrega mais bonecos.
+- Biblioteca: corpos masculino, feminino, musculoso, esguio (teen) e pequeno (child); altura (escala do sprite, `Appearance.height`);
+  15 expressões do LPC; ~35 cores novas de cabelo, ~35 de roupa, ~18 de pele e 12 de olho (geradas no script do catálogo);
+  peças desenhadas por código (`proc.ts`): sardas e manchas, cicatrizes, batom, olhos, blush, pintura de rosto e tatuagens.
+- Limites do LPC nesta versão: o corpo musculoso quase não tem roupa de cima, o pequeno tem pouquíssimas peças.

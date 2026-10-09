@@ -3,7 +3,9 @@
 // personagem fica junto da ficha; aqui, no navegador.
 // ────────────────────────────────────────────────────────
 
-import type { Appearance, CharacterSave } from '../types'
+import type { Appearance, BodyType, CharacterSave } from '../types'
+
+const BODIES: BodyType[] = ['male', 'female', 'muscular', 'teen', 'child']
 import { newId } from '../types'
 
 export interface CharacterStorage {
@@ -23,13 +25,13 @@ export function newCharacter(name: string, appearance: Appearance): CharacterSav
 export function parseCharacter(json: unknown): CharacterSave | null {
   const c = json as Partial<CharacterSave> | null
   const a = c?.appearance as Partial<Appearance> | undefined
-  if (!c || typeof c.id !== 'string' || !a || a.version !== 2 || (a.body !== 'male' && a.body !== 'female')) return null
+  if (!c || typeof c.id !== 'string' || !a || a.version !== 2 || !BODIES.includes(a.body as BodyType)) return null
   if (typeof a.slots !== 'object' || !a.slots) return null
   return {
     version: 1,
     id: c.id,
     name: typeof c.name === 'string' ? c.name : 'Sem nome',
-    appearance: { version: 2, body: a.body, skin: typeof a.skin === 'string' ? a.skin : 'light', slots: a.slots },
+    appearance: { version: 2, body: a.body as BodyType, skin: typeof a.skin === 'string' ? a.skin : 'light', slots: a.slots, ...(typeof a.height === 'number' ? { height: a.height } : {}) },
     updatedAt: typeof c.updatedAt === 'number' ? c.updatedAt : 0,
   }
 }

@@ -14,13 +14,13 @@ import { creditsBody } from '../ui/credits'
 import { scale2x } from '../ui/scale2x'
 import { ICONS } from '../editor/icons'
 import {
-  BODY_LABELS, defaultAppearance, itemLabel, itemsForSlot, loadCharacterData, normalizeAppearance, randomAppearance, swatch,
+  BODY_LABELS, HEIGHT_LABELS, defaultAppearance, itemLabel, itemsForSlot, loadCharacterData, normalizeAppearance, randomAppearance, swatch,
   type CharItem, type CharSlot, type CharacterData,
 } from './catalog'
 import { ANIMS, FRAME, composeAll, composeFrame, type AnimName } from './compose'
 import { newCharacter, type CharacterStorage } from './storage'
 import { characterFileName, downloadText, exportCharacters, parseCharacterFile, pickTextFile } from './transfer'
-import type { Appearance, AppearanceItem, BodyType, CharacterSave } from '../types'
+import { HEIGHTS, type Appearance, type AppearanceItem, type BodyType, type CharacterSave } from '../types'
 
 export interface CreatorOptions {
   assetBase: string
@@ -43,18 +43,26 @@ export interface CreatorOptions {
 const ANIM_LABELS: Record<AnimName, string> = { idle: 'Parado', walk: 'Andando', run: 'Correndo' }
 
 /** Abas, na ordem. Peças que o catálogo põe em outro grupo são realocadas aqui. */
-const GROUP_ORDER = ['Corpo', 'Rosto', 'Cabelo', 'Roupa', 'Acessórios', 'Marcas']
+const GROUP_ORDER = ['Corpo', 'Rosto', 'Cabelo', 'Maquiagem', 'Marcas', 'Roupa', 'Acessórios']
 const GROUP_OF: Record<string, string> = {
   body: 'Corpo', tail: 'Corpo', wings: 'Corpo', horns: 'Corpo',
-  head: 'Rosto', ears: 'Rosto', nose: 'Rosto', eyebrows: 'Rosto', eyes: 'Rosto', wrinkles: 'Rosto',
+  head: 'Rosto', ears: 'Rosto', nose: 'Rosto', eyebrows: 'Rosto', eyes: 'Rosto', wrinkles: 'Rosto', expression: 'Rosto',
   hair: 'Cabelo', ponytail: 'Cabelo', beard: 'Cabelo', mustache: 'Cabelo',
 }
 /** Peças que se veem de perto: a câmera chega no rosto. */
 const FACE_SLOTS = new Set([
-  'head', 'ears', 'nose', 'eyebrows', 'eyes', 'wrinkles', 'hair', 'ponytail', 'beard', 'mustache', 'horns',
+  'head', 'ears', 'nose', 'eyebrows', 'eyes', 'wrinkles', 'expression', 'hair', 'ponytail', 'beard', 'mustache', 'horns',
   'hat', 'bandana', 'facial', 'mask', 'earrings', 'scar_eye_l', 'scar_eye_r', 'scar_mouth', 'wound_head',
+  'skin_spots', 'scar_face', 'makeup_lips', 'makeup_eyes', 'makeup_cheeks', 'face_paint', 'tattoo_face',
 ])
-const FACE_GROUPS = new Set(['Rosto', 'Cabelo'])
+const FACE_GROUPS = new Set(['Rosto', 'Cabelo', 'Maquiagem'])
+
+/** Rótulos dos canais de cor e dos materiais (vêm em inglês do LPC). */
+const COLOR_LABELS: Record<string, string> = {
+  'Eye color': 'Cor dos olhos', 'Eye Color': 'Cor dos olhos', 'eye color': 'Cor dos olhos', Hair: 'Cabelo', Skin: 'Pele', Primary: 'Cor principal',
+  Secondary: 'Cor secundária', Trim: 'Detalhe', Metal: 'Metal', Fabric: 'Tecido', Cloth: 'Tecido', Leather: 'Couro',
+}
+const MATERIAL_LABELS: Record<string, string> = { body: 'pele', hair: 'cabelo', cloth: 'tecido', eye: 'olho', metal: 'metal', wood: 'madeira' }
 
 /** Enquadramentos (em px do quadro de 64): centro e altura visível. */
 const CAMERA = { face: { cx: 32, cy: 27, h: 42, minW: 40 }, body: { cx: 32, cy: 35, h: 70, minW: 46 } }
@@ -77,6 +85,8 @@ export class CreatorUI {
   private rev = 0
   private raf = 0
   private cam = { cx: 32, cy: 34, h: 68 }
+  /** Altura mostrada agora (anima até a escolhida). */
+  private hs = 1
   private camOverride: 'face' | 'body' | null = null
   private upCache = new Map<string, HTMLCanvasElement>()
   private stageEl: HTMLElement
@@ -235,19 +245,24 @@ export class CreatorUI {
     return this.character.appearance
   }
 
+  /** As peças de um espaço que servem pro corpo e pra cabeça de agora. */
+  private itemsFor(slot: string) {
+    return itemsForSlot(this.data, slot, this.appearance.body, this.appearance)
+  }
+
   private groupOf(s: CharSlot) {
     return GROUP_OF[s.id] ?? s.group
   }
 
   /** Abas com peças pra escolher (na ordem do criador). */
   private groups() {
-    const have = new Set(this.data.catalog.slots.filter((s) => itemsForSlot(this.data, s.id, this.appearance.body).length).map((s) => this.groupOf(s)))
+    const have = new Set(this.data.catalog.slots.filter((s) => this.itemsFor(s.id).length).map((s) => this.groupOf(s)))
     const extra = [...have].filter((g) => !GROUP_ORDER.includes(g))
     return [...GROUP_ORDER, ...extra].filter((g) => have.has(g))
   }
 
   private slotsOfGroup(group = this.group) {
-    return this.data.catalog.slots.filter((s) => this.groupOf(s) === group && itemsForSlot(this.data, s.id, this.appearance.body).length)
+    return this.data.catalog.slots.filter((s) => this.groupOf(s) === group && this.itemsFor(s.id).length)
   }
 
   private renderTabs() {
@@ -292,7 +307,7 @@ export class CreatorUI {
   private renderRows() {
     const keep = this.rowsEl.scrollTop
     const rows: Node[] = []
-    if (this.group === 'Corpo') rows.push(this.bodyRow(), this.skinRow())
+    if (this.group === 'Corpo') rows.push(this.bodyRow(), this.heightRow(), this.skinRow())
     for (const s of this.slotsOfGroup()) rows.push(this.slotRow(s))
     this.rowsEl.replaceChildren(...rows)
     this.rowsEl.scrollTop = keep
@@ -318,6 +333,24 @@ export class CreatorUI {
     )
   }
 
+  private heightRow() {
+    const a = this.appearance
+    const idx = Math.max(0, HEIGHTS.findIndex((v) => v === (a.height ?? 1)))
+    const step = (d: number) => this.update((x) => {
+      const h = HEIGHTS[(idx + d + HEIGHTS.length) % HEIGHTS.length]
+      if (h === 1) delete x.height
+      else x.height = h
+    })
+    return h('div', { class: 'cp-row cp-plain' },
+      h('div', { class: 'cp-row__head' }, h('span', { class: 'cp-row__label' }, 'Altura'), h('span', { class: 'cp-row__count' }, `${idx + 1}/${HEIGHTS.length}`)),
+      h('div', { class: 'cp-row__ctl' },
+        this.arrow(-1, () => step(-1)),
+        h('span', { class: 'cp-row__value' }, HEIGHT_LABELS[idx]),
+        this.arrow(1, () => step(1)),
+      ),
+    )
+  }
+
   private skinRow() {
     return h('div', { class: 'cp-row cp-plain' },
       h('div', { class: 'cp-row__head' }, h('span', { class: 'cp-row__label' }, 'Tom de pele')),
@@ -327,12 +360,13 @@ export class CreatorUI {
 
   private slotRow(s: CharSlot) {
     const a = this.appearance
-    const items = itemsForSlot(this.data, s.id, a.body)
+    const items = this.itemsFor(s.id)
     const chosen = a.slots[s.id]
     const current = chosen && this.data.byId.get(chosen.id)
     const focused = s.id === this.slot
     const total = items.length + (s.required ? 0 : 1)
-    const pos = (current ? items.findIndex((i) => i.id === current.id) + 1 : 0) + (s.required ? 1 : 0)
+    // posição na lista ("Nenhum" é a primeira, nos espaços que podem ficar vazios)
+    const pos = current ? items.findIndex((i) => i.id === current.id) + 1 + (s.required ? 0 : 1) : 1
     const row = h('div', { class: `cp-row${focused ? ' cp-on' : ''}${current ? ' cp-filled' : ''}`, 'data-slot': s.id },
       h('button', { class: 'cp-row__head', onclick: () => this.focusSlot(s.id) },
         h('span', { class: 'cp-row__label' }, s.label),
@@ -354,7 +388,7 @@ export class CreatorUI {
     const parts: Node[] = []
     for (const ch of current.colors ?? []) {
       if (ch.material === 'body' && current.matchBody) continue
-      const label = ch.label ?? (current.colors!.length > 1 ? `Cor (${ch.material})` : 'Cor')
+      const label = ch.label ? (COLOR_LABELS[ch.label] ?? ch.label) : current.colors!.length > 1 ? `Cor (${MATERIAL_LABELS[ch.material] ?? ch.material})` : 'Cor'
       parts.push(h('div', { class: 'cp-sub' }, label), this.swatches(ch.material, chosen.colors?.[ch.key] ?? null, (c) =>
         this.update((x) => { (x.slots[s.id].colors ??= {})[ch.key] = c })))
     }
@@ -380,7 +414,7 @@ export class CreatorUI {
   /** Janela com todas as opções de uma peça, com miniaturas. */
   private openGrid(s: CharSlot) {
     const a = this.appearance
-    const items = itemsForSlot(this.data, s.id, a.body)
+    const items = this.itemsFor(s.id)
     const chosen = a.slots[s.id]
     const grid = h('div', { class: 'cp-grid-list' })
     const body = h('div', { class: 'cp-modal-body' }, grid)
@@ -425,11 +459,19 @@ export class CreatorUI {
       ? a.slots[slot]
       : { id, ...(item.variants ? { variant: item.variants[0] } : {}), colors: this.carryColors(slot, item) }
     try {
+      const ctx = canvas.getContext('2d')!
+      // peças do rosto desenhadas por código: miniatura do rosto de perto (cabeça + a peça, sem cabelo)
+      if (item.proc) {
+        const face = await composeFrame(this.opts.assetBase, { ...a, slots: { ...pickSlots(a, ['body', 'head']), [slot]: chosen } })
+        ctx.clearRect(0, 0, FRAME, FRAME)
+        ctx.imageSmoothingEnabled = false
+        ctx.drawImage(face, 16, 10, 32, 32, 0, 0, FRAME, FRAME)
+        return
+      }
       const [base, frame] = await Promise.all([
         (this.baseThumb ??= composeFrame(this.opts.assetBase, { ...a, slots: pickSlots(a, ['body', 'head']) })),
         composeFrame(this.opts.assetBase, { ...a, slots: { [slot]: chosen } }),
       ])
-      const ctx = canvas.getContext('2d')!
       ctx.clearRect(0, 0, FRAME, FRAME)
       if (slot !== 'body' && slot !== 'head') {
         ctx.globalAlpha = 0.35
@@ -475,7 +517,7 @@ export class CreatorUI {
 
   /** Passa pra a peça anterior/seguinte do espaço (volta ao começo no fim; "Nenhum" conta, se puder). */
   private cycle(s: CharSlot, step: number) {
-    const items = itemsForSlot(this.data, s.id, this.appearance.body)
+    const items = this.itemsFor(s.id)
     const chosen = this.appearance.slots[s.id]
     const options: (CharItem | null)[] = s.required ? [...items] : [null, ...items]
     const at = Math.max(0, options.findIndex((o) => (o?.id ?? null) === (chosen?.id ?? null)))
@@ -489,11 +531,19 @@ export class CreatorUI {
   private setBody(body: BodyType) {
     if (body === this.appearance.body) return
     this.update((a) => {
+      // peças que não existem pro corpo novo: troca por uma parecida (mesmo nome) ou, em roupa de baixo, pela primeira da lista
+      for (const [slot, chosen] of Object.entries(a.slots)) {
+        const item = this.data.byId.get(chosen.id)
+        if (!item || item.bodies.includes(body)) continue
+        const options = itemsForSlot(this.data, slot, body)
+        const alt = options.find((i) => i.name === item.name) ?? (['legs', 'shoes'].includes(slot) ? options[0] : undefined)
+        if (alt) a.slots[slot] = { id: alt.id, ...(alt.variants ? { variant: alt.variants[0] } : {}), ...(chosen.colors ? { colors: chosen.colors } : {}) }
+      }
       a.body = body
-      // cabeça humana acompanha o corpo
+      // cabeça humana acompanha o corpo (só o feminino usa a cabeça feminina)
       const head = a.slots.head?.id ?? ''
       if (head.includes('/human/')) {
-        const other = body === 'male' ? head.replace('_female', '_male') : head.replace(/_male/, '_female')
+        const other = body === 'female' ? head.replace(/_male/, '_female') : head.replace('_female', '_male')
         if (this.data.byId.has(other)) a.slots.head = { ...a.slots.head, id: other }
       }
     })
@@ -607,12 +657,16 @@ export class CreatorUI {
       ctx.clearRect(0, 0, W, H)
 
       // a câmera vai (suave) pro enquadramento da peça que se mexe
-      const target = CAMERA[this.cameraMode()]
-      // palco estreito: aumenta a altura visível pra a largura do boneco caber
-      const wantH = Math.max(target.h, target.minW / (W / H))
+      const mode = this.cameraMode()
+      const target = CAMERA[mode]
       const k = 1 - Math.exp(-dt * 7)
+      // a altura do personagem (escala em volta dos pés): a câmera acompanha o rosto e o topo
+      this.hs += ((this.appearance.height ?? 1) - this.hs) * k
+      const hs = this.hs
+      const wantCy = 62 - (62 - target.cy) * hs
+      const wantH = Math.max(target.h * (mode === 'body' ? Math.max(1, hs) : 1), target.minW * hs / (W / H))
       this.cam.cx += (target.cx - this.cam.cx) * k
-      this.cam.cy += (target.cy - this.cam.cy) * k
+      this.cam.cy += (wantCy - this.cam.cy) * k
       this.cam.h += (wantH - this.cam.h) * k
       this.camBtn.textContent = this.cameraMode() === 'face' ? 'Ver o corpo' : 'Ver o rosto'
 
@@ -652,7 +706,13 @@ export class CreatorUI {
       ctx.stroke()
       ctx.restore()
 
+      // o personagem cresce/encolhe em volta dos pés
+      ctx.save()
+      ctx.translate(fx, (62 - y0) * px)
+      ctx.scale(this.hs, this.hs)
+      ctx.translate(-fx, -(62 - y0) * px)
       drawRegion(ctx, up, x0 * UP, y0 * UP, camW * UP, camH * UP, 0, 0, W, H)
+      ctx.restore()
     }
     this.raf = requestAnimationFrame(tick)
   }

@@ -32,6 +32,8 @@ interface Avatar {
   showLabel: boolean
   /** NPC transformado em rato: desenho próprio, bem menor. */
   rat: boolean
+  /** Altura (escala) do boneco. */
+  hs: number
   state: NetState | null
   stateAt: number
   placed: boolean
@@ -65,7 +67,7 @@ export class Remotes {
       if (!a) {
         a = {
           id, texKey: `char:r:${id}`, sig: '', appearance: peer.hello.appearance, building: false,
-          sprite: null, shadow: null, label: null, name: peer.hello.name, showLabel: true, rat: false, state: null, stateAt: 0, placed: false, playing: '',
+          sprite: null, shadow: null, label: null, name: peer.hello.name, showLabel: true, rat: false, hs: 1, state: null, stateAt: 0, placed: false, playing: '',
         }
         this.avatars.set(id, a)
       }
@@ -97,7 +99,7 @@ export class Remotes {
       }
       sprite.setDepth(sprite.y)
       shadow.setPosition(sprite.x, sprite.y - 1).setDepth(sprite.depth - 0.5)
-      label.setPosition(sprite.x, sprite.y - (a.rat ? 22 : 66)).setDepth(1e8)
+      label.setPosition(sprite.x, sprite.y - (a.rat ? 22 : 66 * a.hs)).setDepth(1e8)
       const key = `${a.texKey}:${state.anim}:${state.dir}`
       if (a.playing !== key && this.scene.anims.exists(key)) {
         sprite.anims.play(key, true)
@@ -134,7 +136,9 @@ export class Remotes {
     a.label?.setText(a.name)
     // a textura de mesmo nome foi refeita: o sprite aponta pra ela de novo; o rato tem sombra menor
     a.sprite.setTexture(`${a.texKey}:idle`, 0)
-    a.shadow?.setScale(rat ? 0.38 : 0.75, rat ? 0.3 : 0.6)
+    a.hs = rat ? 1 : appearance.height ?? 1
+    a.sprite.setScale(a.hs)
+    a.shadow?.setScale((rat ? 0.38 : 0.75) * a.hs, (rat ? 0.3 : 0.6) * a.hs)
   }
 
   private drop(a: Avatar) {

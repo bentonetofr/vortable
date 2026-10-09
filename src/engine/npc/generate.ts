@@ -5,7 +5,7 @@
 // também só em cores naturais.
 // ────────────────────────────────────────────────────────
 
-import type { Appearance, AppearanceItem, BodyType } from '../types'
+import type { Appearance, AppearanceItem } from '../types'
 import { itemsForSlot, normalizeAppearance, type CharItem, type CharacterData } from '../character/catalog'
 import type { ProfileId } from './analyze'
 import { HAIR_STYLES, PROFILES, type Age, type Outfit, type Role, type SlotSpec } from './profiles'
@@ -71,7 +71,7 @@ function safeColors(spec: SlotSpec, family: SkinFamily): SlotSpec {
 }
 
 /** Escolhe uma peça do espaço dentro das opções do papel, já com cor e variante. */
-function choose(data: CharacterData, slot: string, body: BodyType, specs: SlotSpec[] | undefined, rnd: Rng, force = false): AppearanceItem | null {
+function choose(data: CharacterData, slot: string, body: 'male' | 'female', specs: SlotSpec[] | undefined, rnd: Rng, force = false): AppearanceItem | null {
   if (!specs?.length) return null
   const order = shuffle(specs, rnd)
   for (const spec of order) {
@@ -100,7 +100,7 @@ function dress(data: CharacterData, item: CharItem, prefer: string[] | undefined
   return out
 }
 
-function hairFor(data: CharacterData, body: BodyType, style: Outfit['hair'], elder: boolean, family: SkinFamily, rnd: Rng, taken: Set<string>): AppearanceItem | null {
+function hairFor(data: CharacterData, body: 'male' | 'female', style: Outfit['hair'], elder: boolean, family: SkinFamily, rnd: Rng, taken: Set<string>): AppearanceItem | null {
   const hairs = itemsForSlot(data, 'hair', body)
   const key = elder ? 'elder' : style
   const re = HAIR_STYLES[key][body]
@@ -119,7 +119,7 @@ function hairFor(data: CharacterData, body: BodyType, style: Outfit['hair'], eld
 }
 
 /** Cabeça humana do corpo e da idade. */
-function headFor(data: CharacterData, body: BodyType, elder: boolean, rnd: Rng): AppearanceItem {
+function headFor(data: CharacterData, body: 'male' | 'female', elder: boolean, rnd: Rng): AppearanceItem {
   const heads = itemsForSlot(data, 'head', body).filter((h) => h.id.includes('/human/') && !/_small$/.test(h.id))
   const byAge = heads.filter((h) => (elder ? /elderly/.test(h.id) : !/elderly/.test(h.id)))
   let pool = byAge.length ? byAge : heads
@@ -155,7 +155,7 @@ export function generateNpc(data: CharacterData, opts: GenerateOptions): NpcDraf
   const candidates = roles.map((r): Role => ({ ...r, weight: r.weight / (1 + (avoid?.roles.get(r.label[0]) ?? 0) * 1.5) }))
   const role = (opts.role && candidates.find((r) => r.label[0] === opts.role)) || weighted(candidates, rnd)
 
-  const body: BodyType = rnd() < 0.5 ? 'male' : 'female'
+  const body: 'male' | 'female' = rnd() < 0.5 ? 'male' : 'female'
   const family = opts.skin ?? pick(Object.keys(SKIN_FAMILIES) as SkinFamily[], rnd)
   const skin = pick(SKIN_FAMILIES[family], rnd)
   const o = role.outfit

@@ -23,6 +23,9 @@ export class Player {
 
   /** Velocidade em relação à normal (o rato é um pouco mais ligeiro). */
   speedScale = 1
+  /** Caixa dos pés em px do mundo (a escala do boneco não muda o que ele ocupa no chão). */
+  private feet = { w: 18, h: 10 }
+  private heightScale = 1
 
   constructor(scene: Phaser.Scene, private charKey: string, x: number, y: number, private dir: Dir = 'down') {
     this.sprite = scene.physics.add.sprite(x, y, `${charKey}:idle`, 0)
@@ -51,8 +54,23 @@ export class Player {
 
   /** Caixa de colisão dos pés (a do boneco é 18×10; a de um rato é bem menor). */
   setFeetBox(w: number, h: number) {
+    this.feet = { w, h }
+    this.applyFeet()
+  }
+
+  /** Altura do boneco (1 = normal): escala em volta dos pés, sem mudar a caixa de colisão no chão. */
+  setHeight(scale: number) {
+    this.heightScale = scale
+    this.sprite.setScale(scale)
+    this.applyFeet()
+  }
+
+  private applyFeet() {
+    const { w, h } = this.feet
+    const s = this.heightScale
+    // o corpo de física escala junto com o sprite: a caixa é dada já dividida pela escala
     const body = this.sprite.body as Phaser.Physics.Arcade.Body
-    body.setSize(w, h).setOffset(32 - w / 2, FEET_Y - h)
+    body.setSize(w / s, h / s).setOffset(32 - w / (2 * s), FEET_Y - h / s)
   }
 
   /** Troca a aparência (as texturas foram regeradas com a mesma chave). */

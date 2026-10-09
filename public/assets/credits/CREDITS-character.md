@@ -487,6 +487,11 @@ original by kirts, repositioned by JaidynReiman along with shading and recolors
 - Licenças: CC0
 - https://opengameart.org/content/lpc-jewelry
 
+## facial/earrings/simple
+- Autores: bluecarrot16
+- Licenças: CC0
+- https://opengameart.org/content/lpc-pirates
+
 ## facial/earrings/stud
 - Autores: bluecarrot16
 - Licenças: CC0
@@ -518,6 +523,13 @@ Original by Pennomi, repositioning and recolors by JaidynReiman.
 - https://opengameart.org/content/lpc-gentleman
 
 ## facial/glasses/secretary
+Original by Pennomi, repositioning and recolors by JaidynReiman.
+
+- Autores: JaidynReiman, Thane Brimhall (pennomi), laetissima
+- Licenças: CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/lpc-base-character-expressions
+
+## facial/glasses/shades
 Original by Pennomi, repositioning and recolors by JaidynReiman.
 
 - Autores: JaidynReiman, Thane Brimhall (pennomi), laetissima
@@ -940,6 +952,13 @@ Original by bluecarrot16. Animated by ElizaWy.
 - Licenças: OGA-BY 3.0+ / CC-BY 3.0+ / CC-BY-SA 3.0 / GPL 3.0
 - https://opengameart.org/content/lpc-1-hairstyle-2-hair-extensions-3-previously-unofficially-released-hairstyles
 
+## hair/extensions/ties/high_bun
+Custom by JaidynReiman
+
+- Autores: JaidynReiman
+- Licenças: OGA-BY 3.0
+- https://opengameart.org/content/lpc-expanded-xlong-hair
+
 ## hair/flat_top_fade
 Original by bluecarrot16, animated by ElizaWy.
 
@@ -1312,6 +1331,11 @@ down 4 and 5 added by JaidynReiman; recolors by Joe White; original by Manuel Ri
 - https://opengameart.org/content/3-hairs-for-lpc
 - https://opengameart.org/content/lpc-expanded-hair
 
+## hair/wavy/child
+- Autores: Nila122
+- Licenças: OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 2.0 / GPL 3.0
+- https://opengameart.org/content/3-hairs-for-lpc
+
 ## hair/xlong
 Original by Nila122; cleaned up, resplit into separate layers, and added jump/run/sit/revised combat by JaidynReiman
 
@@ -1394,6 +1418,18 @@ original by Johannes Sjölund (wulax), female by Matthew Krohn, mapped to all fr
 - Autores: bluecarrot16
 - Licenças: CC-BY-SA 3.0 / GPL 3.0
 - https://opengameart.org/content/lpc-gentleman
+- https://opengameart.org/content/lpc-expanded-hats-facial-helmets
+
+## hat/headband/thick
+- Autores: JaidynReiman
+- Licenças: OGA-BY 3.0+ / CC-BY 3.0+ / GPL 3.0
+- https://opengameart.org/content/lpc-relm-hair-xlong-ponytail
+- https://opengameart.org/content/lpc-expanded-hats-facial-helmets
+
+## hat/headband/tied
+- Autores: Nila122
+- Licenças: OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/lpc-lizard-headgear
 - https://opengameart.org/content/lpc-expanded-hats-facial-helmets
 
 ## hat/helmet/armet
@@ -1690,6 +1726,15 @@ Cavalier Hat by Bluecarrot16, layers and added animations by JaidynReiman
 - https://opengameart.org/content/lpc-pirates
 - https://opengameart.org/content/lpc-expanded-hats-facial-helmets
 
+## hat/pirate/kerchief
+original Kerchief by Nila122, recolors by bluecarrot16, more frames by JaidynReiman
+
+- Autores: bluecarrot16, JaidynReiman, Nila122
+- Licenças: OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 2.0 / GPL 3.0
+- https://opengameart.org/content/more-lpc-clothes-and-hair
+- https://opengameart.org/content/lpc-pirates
+- https://opengameart.org/content/lpc-expanded-hats-facial-helmets
+
 ## hat/pirate/tricorne
 Pirate Hat by Bluecarrot16, layers and added animations by JaidynReiman
 
@@ -1773,6 +1818,327 @@ adapted to v3 base by bluecarrot16; expanded to other animations and child by Ja
 - Licenças: OGA-BY 3.0+ / CC-BY 3.0+ / GPL 3.0
 - https://opengameart.org/content/lpc-furry-ears-tails-for-rpg-sprites
 
+## head/faces
+Original by Redshrike, Expressions by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/elderly/anger
+Original by Redshrike, Anger Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/elderly/blush
+Original by Redshrike, Blush Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/elderly/closed
+Original by Redshrike, Closed Eye Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/elderly/closing
+Original by Redshrike, closing Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/elderly/eyeroll
+Original by Redshrike, Eyeroll Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/elderly/happy
+Original by Redshrike, Happy Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/elderly/look_l
+Original by Redshrike, Looking Left Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/elderly/look_r
+Original by Redshrike, Looking Right Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/elderly/neutral
+Original by Redshrike, Elderly Head/Eyes by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/elderly/sad
+Original by Redshrike, Sad Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/elderly/shame
+Original by Redshrike, Shame Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/elderly/shock
+Original by Redshrike, Shock Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/female/anger
+Original by Redshrike, Anger Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/female/blush
+Original by Redshrike, Blush Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/female/closed
+Original by Redshrike, Closed Eye Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/female/closing
+Original by Redshrike, closing Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/female/eyeroll
+Original by Redshrike, Eyeroll Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/female/happy
+Original by Redshrike, Happy Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/female/look_l
+Original by Redshrike, Looking Left Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/female/look_r
+Original by Redshrike, Looking Right Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/female/neutral
+Original by Redshrike, spellcast and jump overrides by JaidynReiman
+
+- Autores: JaidynReiman, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/female/sad
+Original by Redshrike, Sad Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/female/shame
+Original by Redshrike, Shame Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/female/shock
+Original by Redshrike, Shock Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/global/angry2
+Original Bases by Redshrike, Alt Angry Expression by Laetissima and Pennomi, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, Thane Brimhall (pennomi), laetissima, Stephen Challener (Redshrike)
+- Licenças: CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/lpc-base-character-expressions
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/global/happy2
+Original Bases by Redshrike, Alt Happy Expression by Laetissima and Pennomi, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, Thane Brimhall (pennomi), laetissima, Stephen Challener (Redshrike)
+- Licenças: CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/lpc-base-character-expressions
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/global/tears
+Original Bases by Redshrike, Tears Expression by Laetissima and Pennomi, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, Thane Brimhall (pennomi), laetissima, Stephen Challener (Redshrike)
+- Licenças: CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/lpc-base-character-expressions
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/male/anger
+Original by Redshrike, Anger Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/male/blush
+Original by Redshrike, Blush Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/male/closed
+Original by Redshrike, Closed Eye Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/male/closing
+Original by Redshrike, closing Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/male/eyeroll
+Original by Redshrike, Eyeroll Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/male/happy
+Original by Redshrike, Happy Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/male/look_l
+Original by Redshrike, Looking Left Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/male/look_r
+Original by Redshrike, Looking Right Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/male/neutral
+Original by Redshrike, spellcast and jump overrides by JaidynReiman
+
+- Autores: JaidynReiman, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/male/sad
+Original by Redshrike, Sad Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/male/shame
+Original by Redshrike, Shame Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
+## head/faces/male/shock
+Original by Redshrike, Shock Expression by ElizaWy, mapped to all frames by JaidynReiman
+
+- Autores: JaidynReiman, ElizaWy, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0
+- https://github.com/ElizaWy/LPC/tree/main/Characters/Head
+- https://opengameart.org/content/ulpc-expanded-expressions
+
 ## head/heads/alien
 based on lizard originally by Nila122, modified by BenCreating, further edited by bluecarrot16. Nila122 gave blanket permission to MedicineStorm to use Nila122's LPC assets under OGA-BY 3.0 (where original or derived only from other works under OGA-BY).
 
@@ -1790,6 +2156,16 @@ pig by daneeklu adapted to boarman by BenCreating, placed to v3 bases by bluecar
 - https://opengameart.org/content/lpc-wild-boar
 - https://opengameart.org/content/lpc-boarman
 
+## head/heads/boarman/child
+pig by daneeklu adapted to boarman by BenCreating, adapted to child version by bluecarrot16
+
+- Autores: bluecarrot16, Benjamin K. Smith (BenCreating), Daniel Eddeland (daneeklu)
+- Licenças: CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/lpc-style-farm-animals
+- https://opengameart.org/content/lpc-wild-boar
+- https://opengameart.org/content/lpc-boarman
+- https://opengameart.org/content/lpc-character-bases
+
 ## head/heads/frankenstein
 original head by Redshrike, frankenstein's monster version by bluecarrot16
 
@@ -1805,6 +2181,21 @@ original goblin by Redshrike, commisioned by William.Thomsponj; modular head ext
 - Licenças: OGA-BY 3.0 / CC-BY 4.0 / GPL 2.0 / GPL 3.0
 - https://opengameart.org/content/lpc-goblin
 - https://opengameart.org/content/lpc-folk
+
+## head/heads/goblin/child
+original goblin by Redshrike, commisioned by William.Thomsponj; modular head extracted and slightly modified by bluecarrot16
+
+- Autores: bluecarrot16, Stephen Challener (Redshrike), William.Thomsponj
+- Licenças: OGA-BY 3.0 / CC-BY 4.0 / GPL 2.0 / GPL 3.0
+- https://opengameart.org/content/lpc-goblin
+- https://opengameart.org/content/lpc-folk
+
+## head/heads/human/child
+- Autores: Stephen Challener (Redshrike), kheftel, bluecarrot16
+- Licenças: OGA-BY 3.0 / CC-BY 3.0 / GPL 3.0
+- https://opengameart.org/content/
+- https://opengameart.org/content/lpc-child-standing-template
+- https://opengameart.org/content/lpc-character-bases
 
 ## head/heads/human/elderly_small
 original head by Redshrike, elderly & reduced size head by ElizaWy
@@ -1878,6 +2269,14 @@ original pumpkin by Joshua Taylor, modified to head by bluecarrot16
 - https://opengameart.org/content/fruit-and-veggie-inventory
 - https://opengameart.org/content/lpc-folk
 
+## head/heads/lizard/child
+original lizard/drake by Nila122, reworked by BenCreating, modular head and further revisions by bluecarrot16, child version by bluecarrot16. Nila122 gave blanket permission to MedicineStorm to use Nila122's LPC assets under OGA-BY 3.0 (where original or derived only from other works under OGA-BY).
+
+- Autores: bluecarrot16, Benjamin K. Smith (BenCreating), Nila122
+- Licenças: OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/drakes-and-lizardfolk
+- https://opengameart.org/content/lpc-character-bases
+
 ## head/heads/lizard/female
 original lizard/drake by Nila122, reworked by BenCreating, modular head and further revisions by bluecarrot16. Nila122 gave blanket permission to MedicineStorm to use Nila122's LPC assets under OGA-BY 3.0 (where original or derived only from other works under OGA-BY).
 
@@ -1903,6 +2302,16 @@ original cow by daneeklu, combined with horns by Nila122 and adapted to minotaur
 - https://opengameart.org/content/lpc-lizard-headgear
 - https://opengameart.org/content/lpc-faun-and-minotaur
 
+## head/heads/minotaur/child
+original cow by daneeklu, combined with horns by Nila122 and adapted to minotaur by Evert; child version by bluecarrot16
+
+- Autores: bluecarrot16, Evert, Nila122, Daniel Eddeland (daneeklu)
+- Licenças: CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/lpc-style-farm-animals
+- https://opengameart.org/content/lpc-lizard-headgear
+- https://opengameart.org/content/lpc-faun-and-minotaur
+- https://opengameart.org/content/lpc-character-bases
+
 ## head/heads/minotaur/female
 original cow by daneeklu, adapted to minotaur by Evert, female version modified by bluecarrot16 to remove horns
 
@@ -1919,6 +2328,23 @@ original rabbit by Redshrike, adapted to modular head by bluecarrot16, modified 
 - Licenças: OGA-BY 3.0 / CC-BY 3.0 / CC-BY-SA 3.0
 - https://opengameart.org/content/bunny-rabbit-lpc-style-for-pixelfarm
 - http://opengameart.org/content/lpc-folk
+
+## head/heads/mouse/child
+original rabbit by Redshrike, adapted to modular head by bluecarrot16, modified to mouse head by bluecarrot16, color reduction by napsio (Vitruvian Studio) and JaidynReiman
+
+- Autores: bluecarrot16, Stephen Challener (Redshrike), Napsio (Vitruvian Studio), JaidynReiman
+- Licenças: OGA-BY 3.0 / CC-BY 3.0 / CC-BY-SA 3.0
+- https://opengameart.org/content/bunny-rabbit-lpc-style-for-pixelfarm
+- http://opengameart.org/content/lpc-folk
+
+## head/heads/orc/child
+child base by kheftel, orc version created by Nila122, head extracted by bluecarrot16
+
+- Autores: Nila122, kheftel, Stephen Challener (Redshrike)
+- Licenças: OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
+- https://opengameart.org/content/lpc-child-standing-template
+- https://opengameart.org/content/lpc-children-walk-animation
 
 ## head/heads/orc/female
 human head adapted to orc by madmarcel, hurt/cast animations made by makrohn, headless version and tweaks by bluecarrot16
@@ -1948,7 +2374,23 @@ original pig by daneeklu, adapted to modular head by bluecarrot16
 - https://opengameart.org/content/lpc-style-farm-animals
 - http://opengameart.org/content/lpc-folk
 
+## head/heads/pig/child
+original pig by daneeklu, adapted to modular head by bluecarrot16
+
+- Autores: bluecarrot16, Daniel Eddeland (daneeklu)
+- Licenças: CC-BY 3.0 / GPL 3.0
+- https://opengameart.org/content/lpc-style-farm-animals
+- http://opengameart.org/content/lpc-folk
+
 ## head/heads/rabbit
+original rabbit by Redshrike, adapted to modular head by bluecarrot16, color reduction by napsio (Vitruvian Studio) and JaidynReiman
+
+- Autores: bluecarrot16, Stephen Challener (Redshrike), Napsio (Vitruvian Studio), JaidynReiman
+- Licenças: OGA-BY 3.0 / CC-BY 3.0 / CC-BY-SA 3.0
+- https://opengameart.org/content/bunny-rabbit-lpc-style-for-pixelfarm
+- http://opengameart.org/content/lpc-folk
+
+## head/heads/rabbit/child
 original rabbit by Redshrike, adapted to modular head by bluecarrot16, color reduction by napsio (Vitruvian Studio) and JaidynReiman
 
 - Autores: bluecarrot16, Stephen Challener (Redshrike), Napsio (Vitruvian Studio), JaidynReiman
@@ -1964,7 +2406,23 @@ original rabbit by Redshrike, adapted to modular head by bluecarrot16, modified 
 - https://opengameart.org/content/bunny-rabbit-lpc-style-for-pixelfarm
 - http://opengameart.org/content/lpc-folk
 
+## head/heads/rat/child
+original rabbit by Redshrike, adapted to modular head by bluecarrot16, modified to rat by bluecarrot16, color reduction by napsio (Vitruvian Studio) and JaidynReiman
+
+- Autores: bluecarrot16, Stephen Challener (Redshrike), Napsio (Vitruvian Studio), JaidynReiman
+- Licenças: OGA-BY 3.0 / CC-BY 3.0 / CC-BY-SA 3.0
+- https://opengameart.org/content/bunny-rabbit-lpc-style-for-pixelfarm
+- http://opengameart.org/content/lpc-folk
+
 ## head/heads/sheep
+original sheep by daneeklu, adapted to modular head by bluecarrot16, color reduction by napsio (Vitruvian Studio) and JaidynReiman
+
+- Autores: bluecarrot16, Daniel Eddeland (daneeklu), Napsio (Vitruvian Studio), JaidynReiman
+- Licenças: CC-BY 3.0 / GPL 3.0
+- https://opengameart.org/content/lpc-style-farm-animals
+- http://opengameart.org/content/lpc-folk
+
+## head/heads/sheep/child
 original sheep by daneeklu, adapted to modular head by bluecarrot16, color reduction by napsio (Vitruvian Studio) and JaidynReiman
 
 - Autores: bluecarrot16, Daniel Eddeland (daneeklu), Napsio (Vitruvian Studio), JaidynReiman
@@ -1989,6 +2447,15 @@ original "Muscleman/Ogre/Minotaur" by Reemax, modified to "Troll" by AntumDeluge
 - https://opengameart.org/content/trolls-0
 - https://opengameart.org/content/lpc-folk
 
+## head/heads/troll/child
+original "Muscleman/Ogre/Minotaur" by Reemax, modified to "Troll" by AntumDeluge, edited to LPC style and converted to modular head by bluecarrot16; child version by bluecarrot16
+
+- Autores: bluecarrot16, AntumDeluge, Tuomo Untinen (reemax)
+- Licenças: CC-BY 3.0
+- https://opengameart.org/content/musclemanogreminotaur
+- https://opengameart.org/content/trolls-0
+- https://opengameart.org/content/lpc-folk
+
 ## head/heads/vampire
 original head by Redshrike, gaunt version by bluecarrot16, vampire fangs by bluecarrot16
 
@@ -2005,6 +2472,16 @@ original "wart-o-taur" concept and sprite by Redshrike, extended to 4 directions
 - https://opengameart.org/content/tower-defense-prototyping-assets-4-monsters-some-tiles-a-background-image
 - https://opengameart.org/content/wartotaur-4-directions
 - https://opengameart.org/content/lpc-folk
+
+## head/heads/wolf/child
+original wolf animation by Redshrike, commissioned by William.Thompsonj; wolfman sprite by BenCreating, commissioned by castelonia; child version by bluecarrot16
+
+- Autores: bluecarrot16, Sander Frenken (castelonia), Benjamin K. Smith (BenCreating), William.Thompsonj, Stephen Challener (Redshrike)
+- Licenças: CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
+- https://opengameart.org/content/lpc-wolf-animation
+- https://opengameart.org/content/lpc-wolfman
+- https://opengameart.org/content/lpc-character-bases
 
 ## head/heads/wolf/female
 original wolf animation by Redshrike, commissioned by William.Thompsonj; wolfman sprite by BenCreating, commissioned by castelonia; tweaks and headless version by bluecarrot16
@@ -2216,6 +2693,11 @@ Original bases by Redshrike, thrust/shoot bases by Wulax, Original Pantaloons by
 - https://opengameart.org/content/more-lpc-clothes-and-hair
 - https://opengameart.org/content/lpc-expanded-pants
 
+## legs/pants/child
+- Autores: Nila122
+- Licenças: OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/lpc-clothes-for-children
+
 ## legs/pants/male
 original male pants by wulax, recolors and edits to v3 base by bluecarrot16, climb/jump/run/sit/emotes/revised combat by JaidynReiman based on ElizaWy's LPC Revised
 
@@ -2224,6 +2706,15 @@ original male pants by wulax, recolors and edits to v3 base by bluecarrot16, cli
 - https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
 - https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
 - https://opengameart.org/content/lpc-expanded-pants
+
+## legs/pants/muscular
+original muscular pants by ElizaWy, muscular by dalonedrau, cast and thrust frames by JaidynReiman
+
+- Autores: ElizaWy, JaidynReiman, dalonedrau, Johannes Sjölund (wulax), Stephen Challener (Redshrike)
+- Licenças: CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/lpc-muscular-pants
+- https://opengameart.org/content/lpc-muscular-swing-animation
+- https://opengameart.org/content/lpc-muscular-hurt-animation
 
 ## legs/pants/thin
 original male pants by wulax, edited for female by Joe White, recolors and edits to v3 base by bluecarrot16, teen legs by ElizaWy derived from base, climb/jump/run/sit/emotes/revised combat by JaidynReiman based on ElizaWy's LPC Revised
@@ -2296,6 +2787,11 @@ extended to all poses by makrohn, edited to v3 bases and animation cleanup by bl
 - https://opengameart.org/content/lpc-dress-in-combat-poses
 - http://opengameart.org/content/lpc-clothing-updates
 
+## legs/skirts/child
+- Autores: Nila122
+- Licenças: OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/lpc-clothes-for-children
+
 ## legs/skirts/legion
 original by Nila122 to legion, adapted to v3 bases by bluecarrot16, climb/jump/sit/run by JaidynReiman
 
@@ -2336,6 +2832,30 @@ original skirt by ElizaWy, extended to all animation frames and edited for v3 ba
 - Licenças: OGA-BY 3.0 / GPL 3.0
 - http://opengameart.org/content/lpc-clothing-updates
 
+## neck/amulet/cross
+- Autores: bluecarrot16
+- Licenças: CC0
+- https://opengameart.org/content/lpc-jewelry
+
+## neck/amulet/dangle
+- Autores: bluecarrot16, AntumDeluge
+- Licenças: CC0
+- https://opengameart.org/content/dungeon-crawl-32x32-tiles
+- https://opengameart.org/content/cc0-jewelry-icons
+- https://opengameart.org/content/lpc-jewelry
+
+## neck/amulet/spider
+- Autores: bluecarrot16
+- Licenças: CC0
+- https://opengameart.org/content/lpc-jewelry
+
+## neck/amulet/star
+- Autores: bluecarrot16, AntumDeluge, 7Soul
+- Licenças: CC0
+- https://www.deviantart.com/7soul1/art/129892453
+- https://opengameart.org/content/cc0-jewelry-icons
+- https://opengameart.org/content/lpc-jewelry
+
 ## neck/capeclip
 adapted to male body and v3 bases by bluecarrot16
 
@@ -2351,10 +2871,20 @@ adapted to male body and v3 bases by bluecarrot16
 - Licenças: OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
 - https://opengameart.org/content/lpc-curly-hair-elven-ears-white-cape-with-blue-trim-and-more
 
+## neck/charm
+- Autores: bluecarrot16
+- Licenças: CC0
+- https://opengameart.org/content/lpc-jewelry
+
 ## neck/cravat
 - Autores: bluecarrot16
 - Licenças: OGA-BY 3.0 / GPL 3.0
 - https://opengameart.org/content/lpc-pirates
+
+## neck/gem
+- Autores: bluecarrot16
+- Licenças: CC0
+- https://opengameart.org/content/lpc-jewelry
 
 ## neck/jabot
 - Autores: bluecarrot16
@@ -2773,6 +3303,11 @@ body by Redshrike, scoop shirt by ElizaWy derived from base; adapted to v3 bodie
 - Licenças: CC-BY-SA 3.0 / GPL 3.0
 - https://opengameart.org/content/female-mage-clothing-set
 
+## torso/clothes/shirt/child
+- Autores: Nila122
+- Licenças: OGA-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0
+- https://opengameart.org/content/lpc-clothes-for-children
+
 ## torso/clothes/shortsleeve/shortsleeve_cardigan
 original by ElizaWy; shortsleeve cardigan adapted from original by JaidynReiman
 
@@ -3187,8 +3722,3 @@ LPC Sara by Redshrike, contributed by William Thompsonj, Waistband Separated by 
 - http://opengameart.org/content/sara-wizard
 - https://opengameart.org/content/lpc-sara
 
-
-## Cabelos montados pelo Vortable
-
-Os cabelos "vt_*" (ex.: Desgrenhado) são combinações dos cabelos pixie, messy1 e unkempt do LPC,
-feitas por scripts/make-hair.mjs. Obra derivada: mantém os autores e as licenças desses cabelos (CC-BY-SA 3.0 / GPL 3.0 / OGA-BY 3.0).

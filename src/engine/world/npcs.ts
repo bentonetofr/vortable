@@ -84,6 +84,9 @@ export class NpcLayer {
     }
     // aparência nova: a textura de mesmo nome foi refeita, o sprite precisa apontar pra ela de novo
     else it.sprite.setTexture(`${it.texKey}:idle`, 0)
+    const hs = it.npc.appearance.height ?? 1
+    it.sprite.setScale(hs)
+    it.shadow?.setScale(0.75 * hs, 0.6 * hs)
     it.sprite.anims.play(`${it.texKey}:idle:${it.npc.dir}`, true)
     this.place(it)
   }
@@ -96,7 +99,7 @@ export class NpcLayer {
     shadow.setVisible(!gone)
     sprite.setPosition(npc.x, npc.y).setDepth(npc.y)
     shadow.setPosition(npc.x, npc.y - 1).setDepth(npc.y - 0.5)
-    label.setPosition(npc.x, npc.y - 66).setDepth(1e8)
+    label.setPosition(npc.x, npc.y - 66 * (npc.appearance.height ?? 1)).setDepth(1e8)
     if (label.text !== npc.name) label.setText(npc.name)
     // sem nome em cima da cabeça, a não ser que o mestre ligue (ZoneNpc.showName)
     if (!npc.showName || gone) label.setVisible(false)
