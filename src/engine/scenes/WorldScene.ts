@@ -19,7 +19,7 @@ import type { NetHub } from '../net/hub'
 import { BLOB, Lighting } from '../world/lighting'
 import { ZoneAudio } from '../audio/ZoneAudio'
 import { AudioEngine, readPrefs, writePrefs } from '../audio/engine'
-import { TILE, type Appearance, type Dir, type Portal, type WorldSky, type ZoneData } from '../types'
+import { DAY_MINUTES, TILE, type Appearance, type Dir, type Portal, type WorldSky, type ZoneData } from '../types'
 
 export interface WorldSceneData {
   zone: ZoneData
@@ -475,7 +475,9 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     // hora, tempo e vento do mestre (ao vivo)
-    if (this.lighting) this.lighting.liveEnv = this.cfg.hub?.envFor(this.cfg.zone.id) ?? null
+    const liveEnv = this.cfg.hub?.envFor(this.cfg.zone.id) ?? null
+    if (this.lighting) this.lighting.liveEnv = liveEnv
+    if (this.audio) this.audio.live = liveEnv?.sound ?? null
     this.ground?.tufts.update(cam, this.game.loop.delta / 1000, moving ? [{ x: s!.x, y: s!.y - 2 }] : [])
     const lighting = this.lighting
     if (!lighting) return
@@ -533,6 +535,12 @@ export class WorldScene extends Phaser.Scene {
 
   private npcNoScroll = (e: KeyboardEvent) => {
     if (!isTyping() && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault()
+  }
+
+  /** Hora do mundo definida no editor (fixa ou ciclo). */
+  watchSky() {
+    const sky = this.cfg.sky ?? { hour: null }
+    return { hour: sky.hour, dayMinutes: sky.dayMinutes ?? DAY_MINUTES }
   }
 
   /** NPCs parados desta zona (pra lista do mestre). */

@@ -27,7 +27,7 @@ import { objectDef, sheetTexture, type ObjectDef } from '../assets/objects'
 import { TILE, type WorldSky, type ZoneData, type ZoneObject } from '../types'
 import { hash2 } from '../rng'
 import { cornerTerrain } from './ground'
-import { ambientAt, darkness, daylight, golden, hexToRgb, moonAt, nightAmount, sunny, twilight, lightingOf, rgbToInt, sunAt, skyHour, type RGB } from './daylight'
+import { ambientAt, darkness, daylight, golden, hexToRgb, moonAt, nightAmount, sunny, twilight, lightingOf, rgbToInt, sunAt, skyHour, worldHour, type RGB } from './daylight'
 import { buildOcclusion, maskedLight, type Occlusion } from './shadowcast'
 import { DOT, PUFF, Particles, type FireSource, type LeafSource } from './particles'
 import { DEFAULT_WIND, Wind, setActiveWind, swayOf, swaySpec, type SwaySpec } from './wind'
@@ -389,7 +389,9 @@ export class Lighting {
     const l = live?.wind != null ? { ...base, wind: live.wind } : base
     // o ajuste do mestre ao vivo vence o do mundo
     const weather = live?.weather != null ? (live.weather === 'clear' ? undefined : live.weather) : this.sky.weather
-    const hour = (this.hour = this.hourOverride ?? live?.hour ?? skyHour(this.sky, Date.now() + this.timeOffset))
+    // com o mestre mexendo no Controle, "automática" é o ciclo dia/noite (o tempo passa), mesmo que o mundo esteja com hora fixa
+    const now = Date.now() + this.timeOffset
+    const hour = (this.hour = this.hourOverride ?? live?.hour ?? (live ? worldHour(this.sky.dayMinutes, now) : skyHour(this.sky, now)))
     const v = this.view()
     const t = this.time
     const outdoor = l.place === 'outdoor'

@@ -54,6 +54,8 @@ export class ZoneAudio {
   private nearCache = { at: 0, fire: { level: 0, pan: 0 }, torch: { level: 0, pan: 0 }, lake: { level: 0, pan: 0 }, swamp: { level: 0, pan: 0 } }
   /** Silencia tudo (editor com a prévia de som desligada). */
   enabled = true
+  /** Sons ao vivo do mestre (Controle): valem no lugar do som salvo da zona. null = o da zona. */
+  live: ZoneSound | null = null
 
   constructor(private engine: AudioEngine, private zone: ZoneData) {
     for (const l of LAYERS) this.layers.set(l.id, new Layer(engine, l.id))
@@ -115,7 +117,7 @@ export class ZoneAudio {
     const day = place === 'underground' ? 0 : daylight(f.hour)
     const w = f.weather
     const outdoor = place === 'outdoor', indoor = place === 'indoor'
-    const sound = soundOf(this.zone)
+    const sound = this.live ?? soundOf(this.zone)
     const auto = sound.auto !== false && this.enabled
     const near = this.near(f.x, f.y)
 

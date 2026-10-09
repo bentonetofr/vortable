@@ -31,7 +31,9 @@ export interface NetNpcMove { t: 'npcmove'; zone: string; id: string; x: number;
 /** Prefixo do id de um NPC controlado pelo mestre na rede. */
 export const NPC_PEER = 'npc:'
 export interface NetState { t: 'state'; id: string; zone: string; x: number; y: number; dir: Dir; anim: NetAnim }
-export interface NetEnv { t: 'env'; zone: string; hour: number | null; weather: string | null; wind: number | null }
+/** Sons ao vivo do mestre: `auto` = as camadas seguem o mundo; `layers` = camadas postas à mão (volume 0–1). */
+export interface LiveSound { auto: boolean; layers: Record<string, number> }
+export interface NetEnv { t: 'env'; zone: string; hour: number | null; weather: string | null; wind: number | null; sound?: LiveSound | null }
 /** Reações que o espectador pode mandar. */
 export const REACTIONS = ['👏', '😮', '😂', '❤️', '🔥', '🎉', '😱', '🤔'] as const
 export interface NetReact { t: 'react'; id: string; name: string; emoji: string; zone: string; x: number; y: number }
@@ -94,6 +96,7 @@ export function parseNet(raw: unknown): NetMsg | null {
         hour: num(m.hour) ? Math.min(24, Math.max(0, m.hour)) : null,
         weather: typeof m.weather === 'string' ? m.weather.slice(0, 20) : null,
         wind: num(m.wind) ? Math.min(1, Math.max(0, m.wind)) : null,
+        sound: parseLiveSound(m.sound),
       }
     case 'react':
       if (typeof m.id !== 'string' || typeof m.zone !== 'string' || !num(m.x) || !num(m.y)) return null
@@ -106,6 +109,19 @@ export function parseNet(raw: unknown): NetMsg | null {
       return typeof m.zone === 'string' && num(m.x) && num(m.y) ? { t: 'teleport', zone: m.zone, x: m.x, y: m.y } : null
     default: return null
   }
+}
+
+/** Confere os sons ao vivo vindos da rede (camadas desconhecidas ou volumes fora de 0–1 não passam). */
+function parseLiveSound(raw: unknown): LiveSound | null {
+  const s = raw as { auto?: unknown; layers?: unknown } | null
+  if (!s || typeof s !== 'object') return null
+  const layers: Record<string, number> = {}
+  if (s.layers && typeof s.layers === 'object') {
+    for (const [k, v] of Object.entries(s.layers as Record<string, unknown>).slice(0, 24)) {
+      if (/^[a-z]{2,16}$/.test(k) && num(v) && v > 0) layers[k] = Math.min(1, v)
+    }
+  }
+  return { auto: s.auto !== false, layers }
 }
 
 export class NetHub {

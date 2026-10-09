@@ -20,7 +20,7 @@ import { registerObjectArt } from './world/objects'
 import { formatHour, hourToCycle, skyOf, worldHour } from './world/daylight'
 import { DAY_MINUTES } from './types'
 import { AudioEngine, setAudioBase } from './audio/engine'
-import { NetHub, type NetLink } from './net/hub'
+import { NetHub, type LiveSound, type NetLink } from './net/hub'
 
 import { CreatorUI } from './character/CreatorUI'
 import { LocalCharacterStorage, type CharacterStorage } from './character/storage'
@@ -34,6 +34,8 @@ export { composeFrame as characterFrame } from './character/compose'
 export { defaultAppearance, randomAppearance, loadCharacterData, normalizeAppearance } from './character/catalog'
 
 export { parseNet, REACTIONS } from './net/hub'
+export type { LiveSound } from './net/hub'
+export { LAYERS as SOUND_LAYERS } from './audio/ambience'
 export type { NetLink, NetMsg, NetHello, NetState, NetAnim, NetEnv, NetReact } from './net/hub'
 export { formatHour }
 export { WEATHERS, WEATHER_ORDER } from './world/weather'
@@ -102,10 +104,15 @@ export interface WatchControls {
   controlNpc(id: string): Promise<boolean>
   /** Solta o NPC onde ele está: todos o veem parado ali, e o ponto fica guardado na zona. */
   releaseNpc(): Promise<void>
-  /** Muda hora/tempo/vento ao vivo pra todos (zone '*' = todas as zonas; null = padrão da zona). */
-  setEnv(env: { zone: string; hour: number | null; weather: string | null; wind: number | null }): void
+  /**
+   * Muda hora/tempo/vento/sons ao vivo pra todos (zone '*' = todas as zonas). `hour: null` = ciclo dia/noite
+   * (o tempo passa); `weather`/`wind`/`sound` null = o padrão do mundo e da zona.
+   */
+  setEnv(env: { zone: string; hour: number | null; weather: string | null; wind: number | null; sound?: LiveSound | null }): void
   /** Ajuste que está valendo agora (pra a interface mostrar). */
-  envs(): { zone: string; hour: number | null; weather: string | null; wind: number | null }[]
+  envs(): { zone: string; hour: number | null; weather: string | null; wind: number | null; sound: LiveSound | null }[]
+  /** Hora do mundo definida no editor: fixa (número) ou ciclo (null), e a duração do dia em minutos. */
+  sky(): { hour: number | null; dayMinutes: number }
 }
 
 export interface VortableHandle {
@@ -294,7 +301,8 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
       react: (emoji) => world()?.watchReact(emoji),
       peers: () => world()?.watchPeers() ?? [],
       setEnv: (env) => hub?.setEnv(env),
-      envs: () => [...(hub?.envs.values() ?? [])].map(({ zone, hour, weather, wind }) => ({ zone, hour, weather, wind })),
+      envs: () => [...(hub?.envs.values() ?? [])].map(({ zone, hour, weather, wind, sound }) => ({ zone, hour, weather, wind, sound: sound ?? null })),
+      sky: () => world()?.watchSky() ?? { hour: null, dayMinutes: DAY_MINUTES },
     }
     : undefined
 
