@@ -131,7 +131,7 @@ export class Lighting {
   /** Hora forçada (prévia do editor); null = a da zona. */
   hourOverride: number | null = null
   /** Ajuste ao vivo do mestre (hora, tempo, vento); cada campo null = o padrão da zona. */
-  liveEnv: { hour: number | null; weather: string | null; wind: number | null } | null = null
+  liveEnv: { hour: number | null; weather: string | null; wind: number | null; dayMinutes?: number | null } | null = null
   /** Deslocamento do relógio do mundo, em ms (o teste do editor começa na hora da prévia). */
   timeOffset = 0
   /** Hora e tempo do mundo: os mesmos em todas as zonas. */
@@ -391,7 +391,7 @@ export class Lighting {
     const weather = live?.weather != null ? (live.weather === 'clear' ? undefined : live.weather) : this.sky.weather
     // com o mestre mexendo no Controle, "automática" é o ciclo dia/noite (o tempo passa), mesmo que o mundo esteja com hora fixa
     const now = Date.now() + this.timeOffset
-    const hour = (this.hour = this.hourOverride ?? live?.hour ?? (live ? worldHour(this.sky.dayMinutes, now) : skyHour(this.sky, now)))
+    const hour = (this.hour = this.hourOverride ?? live?.hour ?? (live ? worldHour(live.dayMinutes ?? this.sky.dayMinutes, now) : skyHour(this.sky, now)))
     const v = this.view()
     const t = this.time
     const outdoor = l.place === 'outdoor'

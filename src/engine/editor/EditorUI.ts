@@ -22,7 +22,7 @@ import {
   DAY_MINUTES, LIGHT_RADIUS_MAX, LIGHT_RADIUS_MIN, TILE, ZONE_MAX, ZONE_MIN, Z_MAX, clampZoneSize, newId, newZone,
   type Portal, type WorldSky, type ZoneData, type ZoneLighting, type ZoneObject,
 } from '../types'
-import { LIGHT_PRESETS, SKY_PRESETS, UNDERGROUND_TINT, ambientAt, daylight, formatHour, lightingOf, rgbToInt, skyOf } from '../world/daylight'
+import { DAY_LENGTHS, LIGHT_PRESETS, SKY_PRESETS, UNDERGROUND_TINT, ambientAt, daylight, formatHour, lightingOf, rgbToInt, skyOf } from '../world/daylight'
 import type { LightLook } from './EditorState'
 import { DEFAULT_WIND, WIND_LEVELS } from '../world/wind'
 import { WEATHERS, WEATHER_ORDER } from '../world/weather'
@@ -79,7 +79,6 @@ const LIGHT_COLORS: [string, string, number][] = [
   ['Fogo', '#ffa050', 0.3], ['Vela', '#ffd080', 0.15], ['Lampião', '#ffe0a0', 0.05], ['Luar', '#9fb8ff', 0],
   ['Magia', '#a07dff', 0.1], ['Veneno', '#7dff5a', 0.1], ['Sangue', '#ff4848', 0.2], ['Gelo', '#8ae8ff', 0],
 ]
-const DAY_LENGTHS = [12, 24, 48, 96]
 
 /** Seções especiais da lista de objetos. */
 const FAV = '★', RECENT = '⟲'

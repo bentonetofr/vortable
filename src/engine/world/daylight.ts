@@ -251,6 +251,15 @@ export const LIGHT_PRESETS: { id: string; label: string; lighting: ZoneLighting 
 ]
 
 /** Presets de hora do painel Luz (valem pro mundo todo). */
+/** Durações do dia no ciclo (minutos reais). */
+export const DAY_LENGTHS = [12, 24, 48, 96]
+
+/** Amostra de cor de uma hora do mundo (no ciclo, dois tons: dia e noite). */
+export function skySwatch(hour: number | null): string {
+  const css = (h: number) => `#${rgbToInt(ambientAt({ place: 'outdoor' }, h)).toString(16).padStart(6, '0')}`
+  return hour === null ? `linear-gradient(135deg, ${css(12)} 0 50%, ${css(23)} 50% 100%)` : css(hour)
+}
+
 export const SKY_PRESETS: { id: string; label: string; hour: number | null }[] = [
   { id: 'cycle', label: 'Ciclo dia/noite', hour: null },
   { id: 'day', label: 'Dia', hour: 12 },

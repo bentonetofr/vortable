@@ -17,7 +17,7 @@ import { LocalWorldStorage, type WorldStorage } from './storage'
 import { newZone, type Appearance, type CharacterSave, type Dir, type WorldSky, type ZoneData } from './types'
 import { setObjectCatalog, type ObjectCatalog } from './assets/objects'
 import { registerObjectArt } from './world/objects'
-import { formatHour, hourToCycle, skyOf, worldHour } from './world/daylight'
+import { daylight, formatHour, hourToCycle, skyOf, worldHour } from './world/daylight'
 import { DAY_MINUTES } from './types'
 import { AudioEngine, setAudioBase } from './audio/engine'
 import { readPrefs, writePrefs } from './audio/prefs'
@@ -38,10 +38,11 @@ export { defaultAppearance, randomAppearance, loadCharacterData, normalizeAppear
 export { parseNet, REACTIONS } from './net/hub'
 export type { LiveSound } from './net/hub'
 export { ICONS as EDITOR_ICONS } from './editor/icons'
+export { DAY_LENGTHS, SKY_PRESETS, skySwatch } from './world/daylight'
 export { SURFACE_LABELS } from './audio/steps'
 export { LAYERS as SOUND_LAYERS } from './audio/ambience'
 export type { NetLink, NetMsg, NetHello, NetState, NetAnim, NetEnv, NetReact } from './net/hub'
-export { formatHour }
+export { formatHour, worldHour, daylight }
 export { WEATHERS, WEATHER_ORDER } from './world/weather'
 export { WIND_LEVELS, DEFAULT_WIND } from './world/wind'
 
@@ -112,9 +113,9 @@ export interface WatchControls {
    * Muda hora/tempo/vento/sons ao vivo pra todos (zone '*' = todas as zonas). `hour: null` = ciclo dia/noite
    * (o tempo passa); `weather`/`wind`/`sound` null = o padrão do mundo e da zona.
    */
-  setEnv(env: { zone: string; hour: number | null; weather: string | null; wind: number | null; sound?: LiveSound | null }): void
+  setEnv(env: { zone: string; hour: number | null; weather: string | null; wind: number | null; sound?: LiveSound | null; dayMinutes?: number | null }): void
   /** Ajuste que está valendo agora (pra a interface mostrar). */
-  envs(): { zone: string; hour: number | null; weather: string | null; wind: number | null; sound: LiveSound | null }[]
+  envs(): { zone: string; hour: number | null; weather: string | null; wind: number | null; sound: LiveSound | null; dayMinutes: number | null }[]
   /** Som da zona que o mestre ouve no Controle (os jogadores ouvem o deles). */
   audio: {
     /** Nível de cada camada agora (0–1). */
@@ -322,7 +323,7 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
       react: (emoji) => world()?.watchReact(emoji),
       peers: () => world()?.watchPeers() ?? [],
       setEnv: (env) => hub?.setEnv(env),
-      envs: () => [...(hub?.envs.values() ?? [])].map(({ zone, hour, weather, wind, sound }) => ({ zone, hour, weather, wind, sound: sound ?? null })),
+      envs: () => [...(hub?.envs.values() ?? [])].map(({ zone, hour, weather, wind, sound, dayMinutes }) => ({ zone, hour, weather, wind, sound: sound ?? null, dayMinutes: dayMinutes ?? null })),
       sky: () => world()?.watchSky() ?? { hour: null, dayMinutes: DAY_MINUTES },
       audio: {
         levels: () => (world()?.watchAudio()?.levels() ?? {}) as Record<string, number>,
