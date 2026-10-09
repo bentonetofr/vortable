@@ -439,6 +439,8 @@ export interface CreatorMountOptions {
   back?: { label: string; onClick: () => void }
   /** Modo jogador (um boneco só). Ver CreatorOptions. */
   single?: boolean
+  /** Título no alto da tela (padrão: "Definir aparência"). */
+  title?: string
   saveLabel?: string
   activateOnSave?: boolean
   onSaved?: (c: CharacterSave) => void
@@ -451,6 +453,7 @@ export function mountCharacterCreator(parent: HTMLElement, opts: CreatorMountOpt
     storage: opts.storage ?? new LocalCharacterStorage(),
     back: opts.back,
     single: opts.single,
+    title: opts.title,
     saveLabel: opts.saveLabel,
     activateOnSave: opts.activateOnSave,
     onSaved: opts.onSaved,
