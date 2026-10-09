@@ -126,6 +126,16 @@ export interface ZoneNpc {
   dir: Dir
   /** Mostra o nome em cima da cabeça. Desligado por padrão. */
   showName?: boolean
+  /** NPC especial: a chave do personagem dele na ficha (a aparência acompanha a ficha). Sem ela, é um NPC comum. */
+  sheet?: string
+}
+
+/** Um NPC especial (com ficha), como a interface do mestre o entrega ao editor. */
+export interface SpecialNpc {
+  /** Chave que liga o NPC da zona à ficha. */
+  key: string
+  name: string
+  appearance: Appearance
 }
 
 /** Uma luz solta no mapa, em px; o brilho dos objetos vem do catálogo. */

@@ -5,7 +5,7 @@
 // também só em cores naturais.
 // ────────────────────────────────────────────────────────
 
-import type { Appearance, AppearanceItem } from '../types'
+import type { Appearance, AppearanceItem, BodyType } from '../types'
 import { itemsForSlot, normalizeAppearance, type CharItem, type CharacterData } from '../character/catalog'
 import type { ProfileId } from './analyze'
 import { HAIR_STYLES, PROFILES, type Age, type Outfit, type Role, type SlotSpec } from './profiles'
@@ -17,6 +17,8 @@ export interface NpcDraft {
   name: string
   role: string
   appearance: Appearance
+  /** NPC especial: a ficha a que pertence (o gerador não usa). */
+  sheet?: string
 }
 
 /** Famílias de tom de pele aceitas, cada uma com as cores da paleta que a representam. */
@@ -71,7 +73,7 @@ function safeColors(spec: SlotSpec, family: SkinFamily): SlotSpec {
 }
 
 /** Escolhe uma peça do espaço dentro das opções do papel, já com cor e variante. */
-function choose(data: CharacterData, slot: string, body: 'male' | 'female', specs: SlotSpec[] | undefined, rnd: Rng, force = false): AppearanceItem | null {
+function choose(data: CharacterData, slot: string, body: BodyType, specs: SlotSpec[] | undefined, rnd: Rng, force = false): AppearanceItem | null {
   if (!specs?.length) return null
   const order = shuffle(specs, rnd)
   for (const spec of order) {
@@ -100,15 +102,15 @@ function dress(data: CharacterData, item: CharItem, prefer: string[] | undefined
   return out
 }
 
-function hairFor(data: CharacterData, body: 'male' | 'female', style: Outfit['hair'], elder: boolean, family: SkinFamily, rnd: Rng, taken: Set<string>): AppearanceItem | null {
+function hairFor(data: CharacterData, body: BodyType, sex: 'male' | 'female', style: Outfit['hair'], elder: boolean, family: SkinFamily, rnd: Rng, taken: Set<string>): AppearanceItem | null {
   const hairs = itemsForSlot(data, 'hair', body)
   const key = elder ? 'elder' : style
-  const re = HAIR_STYLES[key][body]
+  const re = HAIR_STYLES[key][sex]
   // um quinto das vezes vale qualquer estilo "parente" (cabelo de homem em mulher e vice-versa), pra não ficar tudo igual
   let pool = hairs.filter((h) => re.test(h.id) && !taken.has(h.id))
   if (!pool.length) pool = hairs.filter((h) => re.test(h.id))
   if (rnd() < 0.2) {
-    const other = HAIR_STYLES[key][body === 'male' ? 'female' : 'male']
+    const other = HAIR_STYLES[key][sex === 'male' ? 'female' : 'male']
     const alt = hairs.filter((h) => other.test(h.id) && !taken.has(h.id))
     if (alt.length) pool = alt
   }
@@ -119,15 +121,15 @@ function hairFor(data: CharacterData, body: 'male' | 'female', style: Outfit['ha
 }
 
 /** Cabeça humana do corpo e da idade. */
-function headFor(data: CharacterData, body: 'male' | 'female', elder: boolean, rnd: Rng): AppearanceItem {
+function headFor(data: CharacterData, body: BodyType, sex: 'male' | 'female', elder: boolean, rnd: Rng): AppearanceItem {
   const heads = itemsForSlot(data, 'head', body).filter((h) => h.id.includes('/human/') && !/_small$/.test(h.id))
   const byAge = heads.filter((h) => (elder ? /elderly/.test(h.id) : !/elderly/.test(h.id)))
   let pool = byAge.length ? byAge : heads
   // homens: um pouco de variedade de rosto (magro, robusto)
-  if (body === 'male' && !elder && rnd() < 0.25) {
+  if (sex === 'male' && !elder && rnd() < 0.25) {
     const odd = pool.filter((h) => /gaunt|plump/.test(h.id))
     if (odd.length) pool = odd
-  } else if (body === 'male' && !elder) {
+  } else if (sex === 'male' && !elder) {
     pool = pool.filter((h) => !/gaunt|plump/.test(h.id)).length ? pool.filter((h) => !/gaunt|plump/.test(h.id)) : pool
   }
   const head = pick(pool, rnd)
@@ -155,23 +157,29 @@ export function generateNpc(data: CharacterData, opts: GenerateOptions): NpcDraf
   const candidates = roles.map((r): Role => ({ ...r, weight: r.weight / (1 + (avoid?.roles.get(r.label[0]) ?? 0) * 1.5) }))
   const role = (opts.role && candidates.find((r) => r.label[0] === opts.role)) || weighted(candidates, rnd)
 
-  const body: 'male' | 'female' = rnd() < 0.5 ? 'male' : 'female'
+  const sex: 'male' | 'female' = rnd() < 0.5 ? 'male' : 'female'
   const family = opts.skin ?? pick(Object.keys(SKIN_FAMILIES) as SkinFamily[], rnd)
   const skin = pick(SKIN_FAMILIES[family], rnd)
   const o = role.outfit
   const ageRule: Age = o.age ?? 'adult'
   const elder = ageRule === 'elder' || (ageRule !== 'adult' ? rnd() < 0.35 : rnd() < 0.08)
 
-  const slots: Record<string, AppearanceItem> = { body: { id: 'body/body' }, head: headFor(data, body, elder, rnd) }
+  // corpo: o do sexo; o ferreiro (e às vezes o prisioneiro) é musculoso; gente jovem das casas e do campo pode ser esguia
+  let body: BodyType = sex
+  const job = role.label[0]
+  if (sex === 'male' && !elder && ((job === 'Ferreiro' && rnd() < 0.55) || (job === 'Prisioneiro' && rnd() < 0.25))) body = 'muscular'
+  else if (!elder && ['Criado', 'Peão', 'Garçom', 'Cliente', 'Freguês', 'Morador', 'Estudioso'].includes(job) && rnd() < 0.18) body = 'teen'
 
-  const hair = hairFor(data, body, o.hair, elder, family, rnd, avoid?.hair ?? new Set())
+  const slots: Record<string, AppearanceItem> = { body: { id: 'body/body' }, head: headFor(data, body, sex, elder, rnd) }
+
+  const hair = hairFor(data, body, sex, o.hair, elder, family, rnd, avoid?.hair ?? new Set())
   if (hair) {
     slots.hair = hair
     const color = hair.colors?.color
     // sobrancelhas combinando com o cabelo (às vezes só um tom mais escuro)
     const brow = choose(data, 'eyebrows', body, [{ re: /eyebrows_(thick|thin)/, chance: 1 }], rnd, true)
     if (brow) { brow.colors = { color: color && rnd() < 0.8 ? color : 'black' }; slots.eyebrows = brow }
-    if (body === 'male' && o.beard && rnd() < (elder ? Math.max(o.beard, 0.45) : o.beard)) {
+    if (sex === 'male' && o.beard && rnd() < (elder ? Math.max(o.beard, 0.45) : o.beard)) {
       const beard = choose(data, rnd() < 0.7 ? 'beard' : 'mustache', body, [{ re: /beards_/ }], rnd, true)
       if (beard) { if (color) beard.colors = { color }; slots[slotOf(data, beard)] = beard }
     }
@@ -179,7 +187,7 @@ export function generateNpc(data: CharacterData, opts: GenerateOptions): NpcDraf
 
   // vestido (mulher): substitui blusa, colete e calça
   let dressed = false
-  if (body === 'female' && o.dress) {
+  if (sex === 'female' && o.dress) {
     const d = choose(data, 'dress', body, o.dress, rnd)
     if (d) { slots.dress = d; dressed = true }
   }
@@ -209,18 +217,63 @@ export function generateNpc(data: CharacterData, opts: GenerateOptions): NpcDraf
   extra('backpack', o.backpack)
   extra('facial', o.facial)
 
-  const appearance = normalizeAppearance(data, { version: 2, body, skin, slots })
+  flavor(data, body, sex, role, elder, slots, rnd)
+  // altura: gente comum é de altura média; um pouco de variedade (idosos tendem a ser mais baixos)
+  const hr = rnd()
+  const height = elder ? (hr < 0.5 ? 0.92 : 1) : hr < 0.6 ? 1 : hr < 0.8 ? 0.92 : hr < 0.95 ? 1.08 : 0.84
+  const appearance = normalizeAppearance(data, { version: 2, body, skin, slots, height })
 
   // nome e registro do que foi usado (a leva evita repetir)
-  const first = pick(body === 'male' ? MALE_NAMES : FEMALE_NAMES, rnd)
+  const first = pick(sex === 'male' ? MALE_NAMES : FEMALE_NAMES, rnd)
   const name = `${first} ${pick(SURNAMES, rnd)}`
-  const label = role.label[body === 'male' ? 0 : 1]
+  const label = role.label[sex === 'male' ? 0 : 1]
   if (avoid) {
     if (appearance.slots.hair) avoid.hair.add(appearance.slots.hair.id)
     avoid.roles.set(role.label[0], (avoid.roles.get(role.label[0]) ?? 0) + 1)
     avoid.looks.add(`${appearance.slots.clothes?.id ?? appearance.slots.dress?.id}:${JSON.stringify(appearance.slots.clothes?.colors ?? appearance.slots.clothes?.variant ?? '')}`)
   }
   return { name, role: label, appearance }
+}
+
+/** Ocupações que costumam ter cicatriz, tatuagem ou maquiagem. */
+const ROUGH = ['Guarda do palácio', 'Guarda da vila', 'Guarda', 'Vigia', 'Carcereiro', 'Prisioneiro', 'Aventureiro', 'Batedor', 'Caçador', 'Montanhês', 'Ferreiro', 'Taverneiro']
+const SHOWY = ['Nobre', 'Bardo', 'Garçom', 'Criado', 'Cliente', 'Freguês', 'Mercador', 'Comerciante']
+const NATURAL: Record<string, string[]> = {
+  freckle: ['castanho', 'ruivo', 'claro', 'escuro', 'dourado'],
+  scar: ['palida', 'antiga', 'branca', 'fresca'],
+  lip: ['vermelho', 'rosa', 'vinho', 'nude', 'coral', 'ameixa'],
+  shadow: ['preto', 'marrom', 'cinza', 'roxo'],
+  blush: ['rosa', 'pessego', 'coral'],
+  ink: ['preto', 'azul_escuro', 'verde_escuro', 'cinza'],
+  paint: ['branco', 'vermelho', 'preto', 'verde', 'azul'],
+}
+
+/** Marcas do rosto (sardas, cicatrizes, maquiagem, tatuagem) e expressão: dão personalidade sem tirar o ar de gente comum. */
+function flavor(data: CharacterData, body: BodyType, sex: 'male' | 'female', role: Role, elder: boolean, slots: Record<string, AppearanceItem>, rnd: Rng) {
+  const job = role.label[0]
+  const put = (slot: string, chance: number, only?: RegExp) => {
+    if (rnd() > chance) return
+    const items = itemsForSlot(data, slot, body).filter((i) => i.proc && (!only || only.test(i.id)))
+    if (!items.length) return
+    const item = pick(items, rnd)
+    const palette = item.colors?.[0]?.material
+    slots[slot] = dress(data, item, palette ? NATURAL[palette] : undefined, rnd)
+  }
+  const rough = ROUGH.includes(job)
+  put('skin_spots', elder ? 0.5 : 0.22, elder ? /manchas_idade|olheiras|sardas_leves/ : /sardas|pinta|acne|fuligem|queimado|olheiras/)
+  put('scar_face', rough ? 0.3 : 0.04)
+  if (sex === 'female' || SHOWY.includes(job)) {
+    put('makeup_lips', sex === 'female' ? (SHOWY.includes(job) ? 0.5 : 0.14) : 0.03, /batom_(fino|cheio)|gloss/)
+    put('makeup_cheeks', sex === 'female' && SHOWY.includes(job) ? 0.35 : 0.06, /blush_suave|rubor/)
+    put('makeup_eyes', sex === 'female' && SHOWY.includes(job) ? 0.2 : 0.03, /delineado|sombra/)
+  }
+  if (job === 'Bardo') put('face_paint', 0.18)
+  if (rough || job === 'Andarilho') put('tattoo_face', 0.1)
+  // expressão: quase todos de rosto neutro, alguns com uma cara marcada
+  if (rnd() < 0.18 && !elder) {
+    const faces = itemsForSlot(data, 'expression', body).filter((i) => !i.proc && /happy|sad|angry|shame|neutral|blush/i.test(i.name))
+    if (faces.length) slots.expression = dress(data, pick(faces, rnd), EYE_COLORS, rnd)
+  }
 }
 
 /** Espaço (slot) de um item do catálogo. */

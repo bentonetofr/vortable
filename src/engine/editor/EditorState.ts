@@ -20,6 +20,8 @@ export interface NpcDraft {
   dir?: Dir
   /** Só quando está sendo movido: mantém o nome em cima da cabeça como estava. */
   showName?: boolean
+  /** NPC especial: a ficha a que ele pertence. */
+  sheet?: string
 }
 
 /** Jeito de uma luz solta (o que a ferramenta Luz põe; a selecionada é editada no lugar). */

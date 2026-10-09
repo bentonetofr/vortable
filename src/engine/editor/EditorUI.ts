@@ -20,7 +20,7 @@ import { readList, writeList } from './prefs'
 import { parseZone, summarize, type WorldStorage, type ZoneSummary } from '../storage'
 import {
   DAY_MINUTES, LIGHT_RADIUS_MAX, LIGHT_RADIUS_MIN, TILE, ZONE_MAX, ZONE_MIN, Z_MAX, clampZoneSize, newId, newZone,
-  type Portal, type WorldSky, type ZoneData, type ZoneLighting, type ZoneObject,
+  type Portal, type SpecialNpc, type WorldSky, type ZoneData, type ZoneLighting, type ZoneObject,
 } from '../types'
 import { DAY_LENGTHS, LIGHT_PRESETS, SKY_PRESETS, UNDERGROUND_TINT, ambientAt, daylight, formatHour, lightingOf, rgbToInt, skyOf } from '../world/daylight'
 import type { LightLook } from './EditorState'
@@ -46,6 +46,8 @@ export interface EditorHooks {
   scene(): EditorScene | null
   /** Abrir o criador de personagem (se quem montou o editor oferecer). */
   editCharacter?: () => void
+  /** Os NPCs especiais (com ficha) que o mestre criou, pra pôr nas zonas. */
+  npcLibrary?: () => Promise<SpecialNpc[]>
   /** As ações do topo (nome, Nova, Abrir, Salvar, Testar…) ficam numa barra de fora (`controls()`), não na gaveta. */
   externalBar?: boolean
   /** O volume mudou (o motor de som relê as preferências). */
@@ -168,6 +170,7 @@ export class EditorUI {
       assetBase: hooks.assetBase,
       focus: (x, y) => hooks.scene()?.focusAt(x, y),
       toast: (msg, error) => this.toast(msg, error),
+      specials: hooks.npcLibrary,
     })
     this.stage = h('div', { class: 'vt-stage' }, this.buildZoomBar(), hooks.externalBar ? null : this.buildQuick(), this.npcPanel.el)
     this.root = h('div', { class: `vt-root${readDrawer(!!hooks.externalBar) ? ' vt-drawer-open' : ''}` },

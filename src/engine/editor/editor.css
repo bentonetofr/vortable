@@ -803,3 +803,7 @@
 /* Criador de personagem aberto por cima do editor (alterar a aparência de um NPC). */
 .vt-npc-look { position: fixed; inset: 0; z-index: 2000; }
 .vt-npc-look > .vt-root { position: absolute; inset: 0; }
+
+/* NPCs especiais (com ficha) no painel do gerador */
+.vt-npc-specials h4 { display: flex; align-items: center; justify-content: space-between; }
+.vt-npc-specials-list { display: flex; flex-direction: column; gap: 6px; }

@@ -14,7 +14,7 @@ import { EditorScene } from './editor/EditorScene'
 import { EditorState } from './editor/EditorState'
 import { EditorUI, type EditorControls } from './editor/EditorUI'
 import { LocalWorldStorage, type WorldStorage } from './storage'
-import { newZone, type Appearance, type CharacterSave, type Dir, type WorldSky, type ZoneData, type ZoneNpc } from './types'
+import { newZone, type Appearance, type CharacterSave, type Dir, type WorldSky, type ZoneData, type ZoneNpc, type SpecialNpc } from './types'
 import { setObjectCatalog, type ObjectCatalog } from './assets/objects'
 import { registerObjectArt } from './world/objects'
 import { daylight, formatHour, hourToCycle, skyOf, worldHour } from './world/daylight'
@@ -64,6 +64,8 @@ export interface VortableOptions {
   onZone?: (zone: ZoneData) => void
   /** Editor: mostra o botão "Personagem" e chama isto ao clicar. */
   onEditCharacter?: () => void
+  /** Editor: os NPCs especiais (os que têm ficha e personagem criado pelo mestre), pra pôr nas zonas. */
+  npcLibrary?: () => Promise<SpecialNpc[]>
   /** Editor: as ações do topo (nome, Nova, Abrir, Salvar, Testar…) saem do painel e ficam em `VortableHandle.editor`, pra quem monta pôr numa barra própria. */
   externalToolbar?: boolean
   /** Rede: com isto, os outros jogadores aparecem no mundo (sem, o jogo é solo). */
@@ -244,6 +246,7 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
       centerOnZone: () => editor()?.centerOnZone(),
       scene: () => editor(),
       editCharacter: opts.onEditCharacter,
+      npcLibrary: opts.npcLibrary,
       externalBar: opts.externalToolbar,
       curate: opts.curate
         ? async (pack, id, override) => {
@@ -441,6 +444,8 @@ export interface CreatorMountOptions {
   single?: boolean
   /** Título no alto da tela (padrão: "Definir aparência"). */
   title?: string
+  /** Nome do personagem novo (padrão: "Novo personagem"). */
+  name?: string
   saveLabel?: string
   activateOnSave?: boolean
   onSaved?: (c: CharacterSave) => void
@@ -454,6 +459,7 @@ export function mountCharacterCreator(parent: HTMLElement, opts: CreatorMountOpt
     back: opts.back,
     single: opts.single,
     title: opts.title,
+    initialName: opts.name,
     saveLabel: opts.saveLabel,
     activateOnSave: opts.activateOnSave,
     onSaved: opts.onSaved,

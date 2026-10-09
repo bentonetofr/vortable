@@ -14,7 +14,7 @@ import { generateBatch, generateNpc, type NpcDraft } from '../npc/generate'
 import { parseCharacterFile, pickTextFile } from '../character/transfer'
 import { CreatorUI } from '../character/CreatorUI'
 import type { CharacterStorage } from '../character/storage'
-import type { CharacterSave, Dir, ZoneNpc } from '../types'
+import type { CharacterSave, Dir, SpecialNpc, ZoneNpc } from '../types'
 import type { EditorState } from './EditorState'
 
 const BATCH = 6
@@ -25,6 +25,8 @@ export interface NpcPanelHooks {
   /** Leva a câmera do editor até um ponto da zona. */
   focus(x: number, y: number): void
   toast(msg: string, error?: boolean): void
+  /** Os NPCs especiais (com ficha) do mestre; sem isto, a seção não aparece. */
+  specials?: () => Promise<SpecialNpc[]>
 }
 
 export class NpcPanel {
@@ -35,6 +37,9 @@ export class NpcPanel {
   private style: ProfileId | 'auto' = 'auto'
   private drafts: NpcDraft[] = []
   private zoneId = ''
+  /** Os NPCs especiais (a última leitura); null = ainda não leu. */
+  private specials: SpecialNpc[] | null = null
+  private specialsEl: HTMLElement | null = null
   private body: HTMLElement
   private opened = false
   private off: () => void
@@ -50,7 +55,7 @@ export class NpcPanel {
     )
     this.off = state.on((c) => {
       if (!this.opened) return
-      if (c === 'zone') this.refreshAnalysis(true)
+      if (c === 'zone') { this.refreshAnalysis(true); this.syncLinked() }
       else if (c === 'npcs' || c === 'edit') this.renderList()
       else if (c === 'ui' && state.tool !== 'npc') this.renderList()
     })
@@ -76,6 +81,7 @@ export class NpcPanel {
       }
     }
     this.refreshAnalysis(true)
+    void this.loadSpecials()
   }
 
   close() {
@@ -130,6 +136,7 @@ export class NpcPanel {
     this.drafts.forEach((d, i) => grid.append(this.card(d, i)))
 
     this.listEl = h('div', { class: 'vt-npc-list' })
+    this.specialsEl = this.hooks.specials ? h('div', { class: 'vt-npc-specials' }) : null
     this.body.replaceChildren(
       h('div', { class: 'vt-npc-analysis' },
         h('b', {}, `Zona: ${a.label}`),
@@ -141,10 +148,84 @@ export class NpcPanel {
         h('button', { class: 'vt-btn', title: 'Usar um personagem salvo (arquivo) como NPC', html: `${ICONS.upload}<span>Importar personagem</span>`, onclick: () => void this.importCharacter() }),
       ),
       grid,
+      ...(this.specialsEl ? [this.specialsEl] : []),
       h('h4', {}, 'NPCs desta zona'),
       this.listEl,
     )
+    this.renderSpecials()
     this.renderList()
+  }
+
+  // ── NPCs especiais (os que têm ficha e personagem criado pelo mestre) ──
+
+  /** Lê a lista da ficha do mestre e acerta a aparência dos NPCs especiais que já estão na zona. */
+  private async loadSpecials() {
+    if (!this.hooks.specials) return
+    try {
+      this.specials = await this.hooks.specials()
+    } catch (err) {
+      this.specials = []
+      this.hooks.toast(`Não deu pra ler os NPCs especiais: ${(err as Error).message}`, true)
+    }
+    this.syncLinked()
+    this.renderSpecials()
+    this.renderList()
+  }
+
+  /** Os NPCs da zona ligados a uma ficha seguem o personagem dela (nome e aparência). */
+  private syncLinked() {
+    if (!this.specials) return
+    let changed = false
+    for (const n of this.state.zone.npcs ?? []) {
+      const sp = n.sheet ? this.specials.find((s) => s.key === n.sheet) : undefined
+      if (!sp) continue
+      if (n.name !== sp.name || JSON.stringify(n.appearance) !== JSON.stringify(sp.appearance)) {
+        n.name = sp.name
+        n.appearance = structuredClone(sp.appearance)
+        changed = true
+      }
+    }
+    if (changed) {
+      this.state.emit('npcs')
+      this.state.edited()
+      this.hooks.toast('A aparência dos NPCs especiais foi atualizada pelas fichas. Salve a zona pra guardar.')
+    }
+  }
+
+  private renderSpecials() {
+    const el = this.specialsEl
+    if (!el) return
+    const list = this.specials
+    const refresh = h('button', { class: 'vt-btn vt-icononly', title: 'Ler de novo as fichas', html: ICONS.undo, onclick: () => void this.loadSpecials() })
+    const inZone = new Set((this.state.zone.npcs ?? []).map((n) => n.sheet).filter(Boolean))
+    el.replaceChildren(
+      h('h4', {}, 'NPCs especiais (com ficha)', refresh),
+      !list
+        ? h('p', { class: 'vt-npc-note' }, 'Lendo as fichas…')
+        : list.length === 0
+          ? h('p', { class: 'vt-npc-note' }, 'Nenhum ainda. Na aba Ficha, em NPCs, crie o personagem de um NPC.')
+          : h('div', { class: 'vt-npc-specials-list' }, ...list.map((sp) => {
+            const canvas = h('canvas', { class: 'vt-npc-mini', width: 64, height: 64 }) as HTMLCanvasElement
+            void this.paint(canvas, { name: sp.name, role: '', appearance: sp.appearance })
+            const here = inZone.has(sp.key)
+            return h('div', { class: 'vt-npc-item' },
+              canvas,
+              h('div', { class: 'vt-npc-info' }, h('b', { title: sp.name }, sp.name), h('small', {}, here ? 'já está nesta zona' : 'com ficha')),
+              h('button', { class: 'vt-btn vt-primary', title: 'Escolher e clicar no mapa pra posicionar', html: `${ICONS.plus}<span>Adicionar</span>`, onclick: () => this.pickSpecial(sp) }),
+            )
+          })),
+    )
+  }
+
+  /** Um NPC especial só aparece uma vez por zona: se já está, leva a câmera até ele. */
+  private pickSpecial(sp: SpecialNpc) {
+    const there = (this.state.zone.npcs ?? []).find((n) => n.sheet === sp.key)
+    if (there) {
+      this.hooks.focus(there.x, there.y - 20)
+      this.hooks.toast(`${sp.name} já está nesta zona.`)
+      return
+    }
+    this.pick({ name: sp.name, role: 'NPC especial', appearance: structuredClone(sp.appearance), sheet: sp.key })
   }
 
   private listEl: HTMLElement | null = null
@@ -223,7 +304,9 @@ export class NpcPanel {
         title: n.showName ? 'Nome em cima da cabeça: ligado' : 'Nome em cima da cabeça: desligado',
         html: ICONS.nametag, onclick: () => this.toggleName(n),
       }),
-      h('button', { class: 'vt-btn vt-icononly', title: 'Alterar a aparência (o mesmo criador do personagem)', html: ICONS.person, onclick: () => this.editLook(n) }),
+      n.sheet
+        ? h('span', { class: 'vt-btn vt-icononly vt-on', title: 'NPC especial: a aparência vem da ficha dele', style: 'cursor:default', html: ICONS.star })
+        : h('button', { class: 'vt-btn vt-icononly', title: 'Alterar a aparência (o mesmo criador do personagem)', html: ICONS.person, onclick: () => this.editLook(n) }),
       h('button', { class: 'vt-btn vt-icononly', title: 'Virar (muda pra onde ele olha)', html: ICONS.flip, onclick: () => this.turn(n) }),
       h('button', { class: 'vt-btn vt-icononly', title: 'Mover: clique no novo lugar', html: ICONS.select, onclick: () => this.move(n) }),
       h('button', { class: 'vt-btn vt-icononly vt-danger', title: 'Remover da zona', html: ICONS.trash, onclick: () => this.remove(n) }),
@@ -286,7 +369,7 @@ export class NpcPanel {
   }
 
   private move(n: ZoneNpc) {
-    this.state.set({ tool: 'npc', npcDraft: { id: n.id, name: n.name, role: n.role, appearance: n.appearance, dir: n.dir, showName: n.showName } })
+    this.state.set({ tool: 'npc', npcDraft: { id: n.id, name: n.name, role: n.role, appearance: n.appearance, dir: n.dir, showName: n.showName, ...(n.sheet ? { sheet: n.sheet } : {}) } })
     this.hooks.toast('Clique no novo lugar (Esc cancela).')
     this.renderList()
   }
