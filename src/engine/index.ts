@@ -14,7 +14,7 @@ import { EditorScene } from './editor/EditorScene'
 import { EditorState } from './editor/EditorState'
 import { EditorUI } from './editor/EditorUI'
 import { LocalWorldStorage, type WorldStorage } from './storage'
-import { newZone, type Appearance, type CharacterSave, type Dir, type WorldSky, type ZoneData } from './types'
+import { newZone, type Appearance, type CharacterSave, type Dir, type WorldSky, type ZoneData, type ZoneNpc } from './types'
 import { setObjectCatalog, type ObjectCatalog } from './assets/objects'
 import { registerObjectArt } from './world/objects'
 import { daylight, formatHour, hourToCycle, skyOf, worldHour } from './world/daylight'
@@ -183,6 +183,14 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
     watch: mode === 'watch',
     listen: opts.listen,
     audioOn: () => watchListening,
+    onNpcTransfer: (t) => {
+      // a sala vê o NPC sair de uma zona e entrar na outra; o ajuste fica guardado nas duas
+      hub?.moveNpc({
+        zone: t.to, from: t.from, id: t.npc.id, x: t.x, y: t.y, dir: t.dir,
+        npc: { name: t.npc.name, role: t.npc.role, appearance: t.npc.appearance, showName: !!t.npc.showName },
+      })
+      void persistNpcTransfer(t).catch((err) => console.error('[vortable] não deu pra guardar a mudança de zona do NPC', err))
+    },
   })
 
   /**
@@ -300,6 +308,20 @@ export function mountVortable(parent: HTMLElement, opts: VortableOptions): Vorta
 
   const world = () => (game.scene.isActive('world') ? (game.scene.getScene('world') as WorldScene) : null)
   const editor = () => (game.scene.isActive('editor') ? (game.scene.getScene('editor') as EditorScene) : null)
+
+  /** O NPC mudou de zona: sai da lista de uma e entra na da outra (relê as duas do banco). */
+  const persistNpcTransfer = async (t: { npc: ZoneNpc; from: string; to: string; x: number; y: number; dir: Dir }) => {
+    const [a, b] = await Promise.all([storage.load(t.from), storage.load(t.to)])
+    if (a) {
+      a.npcs = (a.npcs ?? []).filter((n) => n.id !== t.npc.id)
+      if (!a.npcs.length) delete a.npcs
+      await storage.save(a)
+    }
+    if (b) {
+      b.npcs = [...(b.npcs ?? []).filter((n) => n.id !== t.npc.id), { ...t.npc, x: t.x, y: t.y, dir: t.dir }]
+      await storage.save(b)
+    }
+  }
 
   /** Guarda o ponto onde o mestre largou o NPC (relê a zona do banco, pra não passar por cima de edições). */
   const persistNpc = async (r: { id: string; zone: string; x: number; y: number; dir: Dir }) => {

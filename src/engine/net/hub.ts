@@ -27,7 +27,14 @@ export type NetAnim = 'idle' | 'walk' | 'run'
  * parado da zona some enquanto isso, e o nome só aparece se `showName`.
  */
 export interface NetHello { t: 'hello'; id: string; name: string; appearance: Appearance; npc?: boolean; showName?: boolean }
-export interface NetNpcMove { t: 'npcmove'; zone: string; id: string; x: number; y: number; dir: Dir }
+/**
+ * `from`: o NPC mudou de zona (saiu dela); `npc`: os dados dele pra quem ainda não o tem na zona de destino.
+ */
+export interface NetNpcMove {
+  t: 'npcmove'; zone: string; id: string; x: number; y: number; dir: Dir
+  from?: string
+  npc?: { name: string; role: string; appearance: Appearance; showName: boolean }
+}
 /** Prefixo do id de um NPC controlado pelo mestre na rede. */
 export const NPC_PEER = 'npc:'
 export interface NetState { t: 'state'; id: string; zone: string; x: number; y: number; dir: Dir; anim: NetAnim }
@@ -106,10 +113,29 @@ export function parseNet(raw: unknown): NetMsg | null {
       return { t: 'react', id: m.id, name: typeof m.name === 'string' ? m.name.slice(0, 60) : '', emoji: m.emoji, zone: m.zone, x: m.x, y: m.y }
     case 'npcmove':
       if (typeof m.zone !== 'string' || typeof m.id !== 'string' || !num(m.x) || !num(m.y)) return null
-      return { t: 'npcmove', zone: m.zone.slice(0, 80), id: m.id.slice(0, 80), x: m.x, y: m.y, dir: DIRS.includes(m.dir as Dir) ? (m.dir as Dir) : 'down' }
+      return {
+        t: 'npcmove', zone: m.zone.slice(0, 80), id: m.id.slice(0, 80), x: m.x, y: m.y, dir: DIRS.includes(m.dir as Dir) ? (m.dir as Dir) : 'down',
+        ...(typeof m.from === 'string' && m.from ? { from: m.from.slice(0, 80) } : {}),
+        ...parseNpcData(m.npc),
+      }
     case 'teleport':
       return typeof m.zone === 'string' && num(m.x) && num(m.y) ? { t: 'teleport', zone: m.zone, x: m.x, y: m.y } : null
     default: return null
+  }
+}
+
+/** Dados de um NPC que chegou pela rede (aparência conferida como a de um boneco). */
+function parseNpcData(raw: unknown): { npc?: NetNpcMove['npc'] } {
+  const n = raw as { name?: unknown; role?: unknown; appearance?: unknown; showName?: unknown } | null
+  const a = n?.appearance as Appearance | undefined
+  if (!n || typeof n !== 'object' || !a || a.version !== 2 || typeof a.slots !== 'object') return {}
+  return {
+    npc: {
+      name: typeof n.name === 'string' ? n.name.slice(0, 60) : 'NPC',
+      role: typeof n.role === 'string' ? n.role.slice(0, 60) : '',
+      appearance: a,
+      showName: n.showName === true,
+    },
   }
 }
 

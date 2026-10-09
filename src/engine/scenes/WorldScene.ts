@@ -19,7 +19,7 @@ import type { NetHub } from '../net/hub'
 import { BLOB, Lighting } from '../world/lighting'
 import { ZoneAudio } from '../audio/ZoneAudio'
 import { AudioEngine, readPrefs, writePrefs } from '../audio/engine'
-import { DAY_MINUTES, TILE, type Appearance, type Dir, type Portal, type WorldSky, type ZoneData } from '../types'
+import { DAY_MINUTES, TILE, type Appearance, type Dir, type Portal, type WorldSky, type ZoneData, type ZoneNpc } from '../types'
 
 export interface WorldSceneData {
   zone: ZoneData
@@ -57,6 +57,10 @@ export interface WorldSceneData {
   listen?: boolean
   /** Observador que ouve: o "Ouvir" está ligado? (lido a cada zona nova) */
   audioOn?: () => boolean
+  /** Câmera do mestre: id do NPC que atravessou uma saída e continua controlado na zona nova. */
+  carryNpc?: string
+  /** O NPC controlado trocou de zona: avisa a sala e guarda a mudança (sai de uma zona, entra na outra). */
+  onNpcTransfer?: (t: { npc: ZoneNpc; from: string; to: string; x: number; y: number; dir: Dir }) => void
 }
 
 const PLAYER_KEY = 'char:me'
@@ -103,7 +107,7 @@ export class WorldScene extends Phaser.Scene {
 
   init(data: WorldSceneData) {
     // a cena recomeçou com um NPC controlado (troca de zona): a sala deixa de vê-lo como jogador
-    if (this.npcCtl) this.cfg?.hub?.unhostNpc(NPC_PEER + this.npcCtl.id)
+    if (this.npcCtl && !data.carryNpc) this.cfg?.hub?.unhostNpc(NPC_PEER + this.npcCtl.id)
     this.npcCtl = null
     this.npcSolids = new Map()
     this.solids = undefined
@@ -152,11 +156,7 @@ export class WorldScene extends Phaser.Scene {
     addObjectSolids(this, zone.objects, solids)
     // NPCs parados: o jogador não atravessa
     this.solids = solids
-    for (const n of zone.npcs ?? []) {
-      const block = this.add.zone(n.x, n.y - 3, 18, 10)
-      solids.add(block)
-      this.npcSolids.set(n.id, block)
-    }
+    for (const n of zone.npcs ?? []) this.addNpcBlock(n)
     this.npcs = new NpcLayer(this, assetBase, this.cfg.watch ? 'always' : 'near')
     this.npcs.set(zone.npcs ?? [])
 
@@ -176,14 +176,24 @@ export class WorldScene extends Phaser.Scene {
     // reações dos espectadores: um emoji que sobe no ponto onde ele estava olhando
     // o mestre largou um NPC que controlava: o NPC parado da zona passa pra esse ponto
     if (this.cfg.hub) {
-      const off = this.cfg.hub.onNpcMove((m) => { if (m.zone === zone.id) this.applyNpcMove(m) })
+      const off = this.cfg.hub.onNpcMove((m) => {
+        if (m.from === zone.id && m.zone !== zone.id) this.removeNpc(m.id)
+        if (m.zone === zone.id) this.applyNpcMove(m)
+      })
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, off)
     }
     if (this.cfg.hub) {
       const off = this.cfg.hub.onReact((m) => { if (m.zone === zone.id) this.showReaction(m.emoji, m.name, m.x, m.y) })
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, off)
     }
-    if (this.cfg.watch) return this.startWatch(zone, W, H)
+    if (this.cfg.watch) {
+      this.startWatch(zone, W, H)
+      // o NPC que o mestre controlava atravessou uma saída: continua controlado aqui
+      const carry = this.cfg.carryNpc
+      this.cfg.carryNpc = undefined
+      if (carry) void this.controlNpc(carry)
+      return
+    }
 
     try {
       await buildCharacter(this, PLAYER_KEY, assetBase, appearance)
@@ -504,6 +514,12 @@ export class WorldScene extends Phaser.Scene {
       ctl.player.update()
       this.publishNpc(ctl)
       this.occluders.update(ctl.player.sprite.x, ctl.player.sprite.y)
+      // as saídas valem pro NPC como pro jogador: só disparam depois que ele sai de todas
+      if (!this.travelling) {
+        const portal = this.portalUnder(ctl.player.foot)
+        if (!portal) this.armed = true
+        else if (this.armed && portal.to) void this.travelNpc(portal)
+      }
     }
     const player = this.player
     if (!player) return
@@ -618,8 +634,14 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** O NPC parado passa pra este ponto (e o "calço" dele junto). */
-  private applyNpcMove(m: { id: string; x: number; y: number; dir: Dir }) {
-    const npc = (this.cfg.zone.npcs ?? []).find((n) => n.id === m.id)
+  private applyNpcMove(m: { id: string; x: number; y: number; dir: Dir; npc?: { name: string; role: string; appearance: Appearance; showName: boolean } }) {
+    let npc = (this.cfg.zone.npcs ?? []).find((n) => n.id === m.id)
+    if (!npc && m.npc) {
+      // chegou de outra zona: entra na lista desta (e ganha o "calço")
+      npc = { id: m.id, name: m.npc.name, role: m.npc.role, appearance: m.npc.appearance, x: m.x, y: m.y, dir: m.dir, ...(m.npc.showName ? { showName: true } : {}) }
+      ;(this.cfg.zone.npcs ??= []).push(npc)
+      this.addNpcBlock(npc)
+    }
     if (!npc) return
     npc.x = m.x
     npc.y = m.y
@@ -630,6 +652,52 @@ export class WorldScene extends Phaser.Scene {
       block.setPosition(m.x, m.y - 3)
       ;(block.body as Phaser.Physics.Arcade.StaticBody).updateFromGameObject()
     }
+  }
+
+  /** O "calço" (colisão) de um NPC parado. */
+  private addNpcBlock(n: ZoneNpc) {
+    if (!this.solids) return
+    const block = this.add.zone(n.x, n.y - 3, 18, 10)
+    this.solids.add(block)
+    this.npcSolids.set(n.id, block)
+  }
+
+  /** O NPC saiu desta zona (foi controlado por uma saída): some daqui. */
+  private removeNpc(id: string) {
+    const zone = this.cfg.zone
+    if (!zone.npcs?.some((n) => n.id === id)) return
+    zone.npcs = zone.npcs.filter((n) => n.id !== id)
+    this.npcs?.set(zone.npcs)
+    const block = this.npcSolids.get(id)
+    if (block) { block.destroy(); this.npcSolids.delete(id) }
+    this.hiddenNpcs = ''
+  }
+
+  /** O NPC controlado pisou numa saída: leva ele e a câmera pra zona de destino, e segue controlado lá. */
+  private async travelNpc(portal: Portal) {
+    const ctl = this.npcCtl
+    const to = portal.to
+    if (!ctl || !to) return
+    this.travelling = true
+    ctl.player.frozen = true
+    const zone = await this.cfg.loadZone(to.zone).catch(() => null)
+    const dest = zone?.portals.find((p) => p.id === to.portal)
+    const npc = (this.cfg.zone.npcs ?? []).find((n) => n.id === ctl.id)
+    if (!this.sys.isActive() || this.npcCtl !== ctl) return
+    if (!zone || !npc) {
+      ctl.player.frozen = false
+      this.travelling = false
+      this.armed = false
+      this.toast('Essa passagem não leva a lugar nenhum (zona apagada ou não salva).')
+      return
+    }
+    // chega no meio da saída de destino (ou no início da zona), virado pra mesma direção
+    const at = dest ? { x: dest.x + dest.w / 2, y: dest.y + dest.h / 2 + 5 } : zone.spawn
+    const dir = ctl.player.facing
+    const moved: ZoneNpc = { ...npc, x: Math.round(at.x), y: Math.round(at.y), dir }
+    ;(zone.npcs ??= []).push(moved)
+    this.cfg.onNpcTransfer?.({ npc: moved, from: this.cfg.zone.id, to: zone.id, x: moved.x, y: moved.y, dir })
+    this.scene.restart({ ...this.cfg, zone, arrival: undefined, at: undefined, carryNpc: ctl.id, notice: undefined } satisfies WorldSceneData)
   }
 
   /** Quem está sendo controlado pelo mestre some do lugar parado (e o "calço" dele deixa de barrar). */
